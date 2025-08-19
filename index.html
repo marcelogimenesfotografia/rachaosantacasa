@@ -46,8 +46,11 @@
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="responsive-logo w-full max-w-sm">
         </header>
 
-        <main id="geral-table-container">
-            <!-- A tabela de classificação geral será renderizada aqui -->
+        <main id="main-container">
+            <!-- As tabelas de classificação serão renderizadas aqui -->
+            <div id="geral-table-container"></div>
+            <div id="etapa1-table-container"></div>
+            <div id="etapa2-table-container"></div>
         </main>
     </div>
 
@@ -168,7 +171,12 @@
         
         window.onload = function() {
             const containerGeral = document.getElementById('geral-table-container');
+            const containerEtapa1 = document.getElementById('etapa1-table-container');
+            const containerEtapa2 = document.getElementById('etapa2-table-container');
+
             containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
+            containerEtapa1.appendChild(createTable('Classificação Etapa 1', dataEtapa1));
+            containerEtapa2.appendChild(createTable('Classificação Etapa 2', dataEtapa2));
         };
     </script>
 </body>

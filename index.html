@@ -11,26 +11,39 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9c836; /* Fundo amarelo */
+            background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
+            background-attachment: fixed;
+            height: 100vh;
         }
         .bg-card {
-            background-color: #ffffff; /* Fundo branco do cartão */
-        }
-        .text-tour-yellow {
-            color: #ffcd00;
+            background-color: #ffffff;
         }
         .responsive-logo {
             max-width: 100%;
             height: auto;
             margin: auto;
         }
+        .table-header-bg {
+            background-color: #0d0d0d;
+        }
+        .table-header-text {
+            color: #ffcd00;
+        }
+        .table-row-hover:hover {
+            background-color: #f0f0f0;
+        }
+        .table-cell {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e5e5;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-4xl mx-auto rounded-xl p-6 md:p-10 shadow-xl bg-card">
         <header class="text-center mb-10">
-            <!-- Usando a logo PNG em vez do texto -->
-            <img src="https://googleusercontent.com/file_content/uploaded:LOGO RACHAO.png-6823c63a-2e0b-4b40-87f2-f2620f9a05bd" alt="Logo Rachão Santa Casa" class="responsive-logo">
+            <!-- Usando a URL da logo fornecida -->
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="responsive-logo w-full max-w-sm">
         </header>
 
         <main id="geral-table-container">
@@ -71,22 +84,33 @@
             const container = document.createElement('div');
             container.classList.add('mb-8');
             
+            // Container para o título e o mês
+            const titleContainer = document.createElement('div');
+            titleContainer.classList.add('text-center', 'mb-4');
+
             const titleElement = document.createElement('h2');
-            titleElement.classList.add('text-xl', 'md:text-2xl', 'font-bold', 'text-gray-700', 'mb-4', 'pb-1');
+            titleElement.classList.add('text-xl', 'md:text-2xl', 'font-bold', 'text-gray-700');
             titleElement.textContent = title;
-            container.appendChild(titleElement);
+            titleContainer.appendChild(titleElement);
+
+            const monthElement = document.createElement('p');
+            monthElement.classList.add('text-gray-500', 'mt-1');
+            monthElement.textContent = 'Agosto/2025';
+            titleContainer.appendChild(monthElement);
+
+            container.appendChild(titleContainer);
 
             const table = document.createElement('table');
             table.classList.add('w-full', 'border-collapse', 'rounded-lg', 'overflow-hidden', 'shadow-md');
             
             const thead = document.createElement('thead');
-            thead.classList.add('bg-gray-100', 'text-gray-600', 'font-bold', 'text-sm', 'uppercase');
+            thead.classList.add('table-header-bg', 'text-white', 'font-bold', 'text-sm', 'uppercase');
             thead.innerHTML = `
                 <tr>
-                    <th class="p-4 text-left">#</th>
-                    <th class="p-4 text-left">Nome</th>
-                    <th class="p-4 text-left">Pts</th>
-                    ${isOverall ? '<th class="p-4 text-left hidden md:table-cell">Etapa 1</th><th class="p-4 text-left hidden md:table-cell">Etapa 2</th>' : ''}
+                    <th class="p-4 text-left table-header-text">#</th>
+                    <th class="p-4 text-left table-header-text">Nome</th>
+                    <th class="p-4 text-left table-header-text">Pts</th>
+                    ${isOverall ? '<th class="p-4 text-left table-header-text hidden md:table-cell">Etapa 1</th><th class="p-4 text-left table-header-text hidden md:table-cell">Etapa 2</th>' : ''}
                 </tr>
             `;
             table.appendChild(thead);
@@ -95,15 +119,15 @@
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-50');
+                row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100');
                 if (index === 0) {
                     row.classList.add('font-bold', 'bg-yellow-100');
                 }
                 row.innerHTML = `
-                    <td class="p-4 text-gray-800">${item.pos}</td>
-                    <td class="p-4 text-gray-800">${item.name}</td>
-                    <td class="p-4 text-gray-800">${item.pts}</td>
-                    ${isOverall ? `<td class="p-4 text-gray-800 hidden md:table-cell">${item.pts_etapa_1}</td><td class="p-4 text-gray-800 hidden md:table-cell">${item.pts_etapa_2}</td>` : ''}
+                    <td class="table-cell">${item.pos}</td>
+                    <td class="table-cell">${item.name}</td>
+                    <td class="table-cell">${item.pts}</td>
+                    ${isOverall ? `<td class="table-cell hidden md:table-cell">${item.pts_etapa_1}</td><td class="table-cell hidden md:table-cell">${item.pts_etapa_2}</td>` : ''}
                 `;
                 tbody.appendChild(row);
             });
@@ -149,4 +173,3 @@
     </script>
 </body>
 </html>
-

@@ -11,9 +11,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
-            background-attachment: fixed;
-            height: 100vh;
+            background-color: #f5f5f5;
         }
         .bg-card {
             background-color: #ffffff;
@@ -24,10 +22,10 @@
             margin: auto;
         }
         .table-header-bg {
-            background-color: #0d0d0d;
+            background-color: #e0e0e0;
         }
         .table-header-text {
-            color: #ffcd00;
+            color: #4b5563;
         }
         .table-row-hover:hover {
             background-color: #f0f0f0;
@@ -37,25 +35,96 @@
             text-align: left;
             border-bottom: 1px solid #e5e5e5;
         }
+        .profile-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%; /* Revertido para redondo */
+            object-fit: cover;
+            margin-right: 0.5rem;
+        }
+        .modal {
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            position: relative;
+            max-width: 90%;
+            margin: auto;
+        }
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-image {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%; /* Revertido para redondo */
+            object-fit: cover; /* Alterado para cover */
+            margin-bottom: 1rem;
+        }
+        /* Cores de pódio bem discretas */
+        .bg-subtle-gold {
+            background-color: #FFF8E1;
+        }
+        .bg-subtle-silver {
+            background-color: #E0E0E0;
+        }
+        .bg-subtle-bronze {
+            background-color: #D7CCC8;
+        }
+        /* Classes para alinhar as colunas */
+        .col-pos { width: 10%; }
+        .col-name { width: 50%; }
+        .col-pts { width: 15%; }
+        .col-etapa { width: 12.5%; }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-4xl mx-auto rounded-xl p-6 md:p-10 shadow-xl bg-card">
         <header class="text-center mb-10">
-            <!-- Usando a URL da logo fornecida -->
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="responsive-logo w-full max-w-sm">
         </header>
 
         <main id="main-container">
-            <!-- As tabelas de classificação serão renderizadas aqui -->
             <div id="geral-table-container"></div>
             <div id="etapa1-table-container"></div>
             <div id="etapa2-table-container"></div>
         </main>
     </div>
 
+    <div id="details-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <img id="modal-image" class="modal-image mx-auto mb-4" src="" alt="Profile Picture">
+            <h3 id="modal-name" class="text-2xl font-bold text-gray-800"></h3>
+            <p id="modal-position" class="text-gray-600"></p>
+        </div>
+    </div>
+
     <script>
-        // Data for each stage
+        const participantImages = {
+            'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png',
+            'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png'
+        };
+        const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
+
         const dataEtapa1 = [
             { pos: 1, name: 'MANDI', pts: 15 },
             { pos: 2, name: 'MAIQUE', pts: 13 },
@@ -82,56 +151,101 @@
             { pos: 10, name: 'GIMENES', pts: 1 }
         ];
 
-        // Function to create an HTML table from data
+        function openModal(pos, name) {
+            const imageUrl = participantImages[name] || defaultProfileImageUrl;
+            document.getElementById('modal-image').src = imageUrl;
+            document.getElementById('modal-name').textContent = name;
+            document.getElementById('modal-position').textContent = `Posição: ${pos}`;
+            document.getElementById('details-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').classList.add('hidden');
+        }
+        
         function createTable(title, data, isOverall = false) {
             const container = document.createElement('div');
             container.classList.add('mb-8');
             
-            // Container para o título e o mês
             const titleContainer = document.createElement('div');
             titleContainer.classList.add('text-center', 'mb-4');
-
             const titleElement = document.createElement('h2');
             titleElement.classList.add('text-xl', 'md:text-2xl', 'font-bold', 'text-gray-700');
             titleElement.textContent = title;
             titleContainer.appendChild(titleElement);
-
             const monthElement = document.createElement('p');
             monthElement.classList.add('text-gray-500', 'mt-1');
             monthElement.textContent = 'Agosto/2025';
             titleContainer.appendChild(monthElement);
-
             container.appendChild(titleContainer);
 
             const table = document.createElement('table');
             table.classList.add('w-full', 'border-collapse', 'rounded-lg', 'overflow-hidden', 'shadow-md');
             
             const thead = document.createElement('thead');
-            thead.classList.add('table-header-bg', 'text-white', 'font-bold', 'text-sm', 'uppercase');
-            thead.innerHTML = `
-                <tr>
-                    <th class="p-4 text-left table-header-text">#</th>
-                    <th class="p-4 text-left table-header-text">Nome</th>
-                    <th class="p-4 text-left table-header-text">Pts</th>
-                    ${isOverall ? '<th class="p-4 text-left table-header-text hidden md:table-cell">Etapa 1</th><th class="p-4 text-left table-header-text hidden md:table-cell">Etapa 2</th>' : ''}
-                </tr>
+            thead.classList.add('bg-gray-100', 'text-gray-600', 'font-bold', 'text-sm', 'uppercase');
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = `
+                <th class="p-4 text-left table-header-text col-pos">#</th>
+                <th class="p-4 text-left table-header-text col-name">Nome</th>
+                <th class="p-4 text-left table-header-text col-pts">Pts</th>
+                ${isOverall ? `<th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 1</th>
+                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 2</th>` : ''}
             `;
+            thead.appendChild(headerRow);
             table.appendChild(thead);
 
             const tbody = document.createElement('tbody');
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100');
-                if (index === 0) {
-                    row.classList.add('font-bold', 'bg-yellow-100');
+                row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100', 'cursor-pointer');
+                
+                if (isOverall) {
+                    if (index === 0) {
+                        row.classList.add('bg-subtle-gold');
+                    } else if (index === 1) {
+                        row.classList.add('bg-subtle-silver');
+                    } else if (index === 2) {
+                        row.classList.add('bg-subtle-bronze');
+                    }
                 }
-                row.innerHTML = `
-                    <td class="table-cell">${item.pos}</td>
-                    <td class="table-cell">${item.name}</td>
-                    <td class="table-cell">${item.pts}</td>
-                    ${isOverall ? `<td class="table-cell hidden md:table-cell">${item.pts_etapa_1}</td><td class="table-cell hidden md:table-cell">${item.pts_etapa_2}</td>` : ''}
+                
+                const imageUrl = participantImages[item.name] || defaultProfileImageUrl;
+                
+                const posCell = document.createElement('td');
+                posCell.classList.add('table-cell', 'col-pos');
+                posCell.textContent = item.pos;
+                row.appendChild(posCell);
+                
+                const nameCell = document.createElement('td');
+                nameCell.classList.add('table-cell', 'col-name');
+                nameCell.innerHTML = `
+                    <div class="flex items-center whitespace-nowrap">
+                        <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb flex-shrink-0">
+                        <span class="ml-2">${item.name}</span>
+                    </div>
                 `;
+                row.appendChild(nameCell);
+                
+                const ptsCell = document.createElement('td');
+                ptsCell.classList.add('table-cell', 'col-pts');
+                ptsCell.textContent = item.pts;
+                row.appendChild(ptsCell);
+
+                if (isOverall) {
+                    const etapa1Cell = document.createElement('td');
+                    etapa1Cell.classList.add('table-cell', 'hidden', 'md:table-cell', 'col-etapa');
+                    etapa1Cell.textContent = item.pts_etapa_1 !== undefined ? item.pts_etapa_1 : '';
+                    row.appendChild(etapa1Cell);
+
+                    const etapa2Cell = document.createElement('td');
+                    etapa2Cell.classList.add('table-cell', 'hidden', 'md:table-cell', 'col-etapa');
+                    etapa2Cell.textContent = item.pts_etapa_2 !== undefined ? item.pts_etapa_2 : '';
+                    row.appendChild(etapa2Cell);
+                }
+                
+                row.addEventListener('click', () => openModal(item.pos, item.name));
                 tbody.appendChild(row);
             });
             table.appendChild(tbody);
@@ -140,12 +254,11 @@
             return container;
         }
 
-        // Calculate overall classification
         function calculateOverall() {
             const allParticipants = new Set([...dataEtapa1.map(p => p.name), ...dataEtapa2.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
-                const participant1 = dataEtapa1.find(p => p.name === name) || { pts: 0 };
-                const participant2 = dataEtapa2.find(p => p.name === name) || { pts: 0 };
+                const participant1 = dataEtapa1.find(p => p.name === name) || { pts: 0, pos: 0 };
+                const participant2 = dataEtapa2.find(p => p.name === name) || { pts: 0, pos: 0 };
                 return {
                     name: name,
                     pts_etapa_1: participant1.pts,
@@ -154,10 +267,8 @@
                 };
             });
             
-            // Sort by total points in descending order
             overallData.sort((a, b) => b.pts - a.pts);
 
-            // Assign new positions
             return overallData.map((item, index) => ({
                 pos: index + 1,
                 name: item.name,
@@ -175,8 +286,8 @@
             const containerEtapa2 = document.getElementById('etapa2-table-container');
 
             containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
-            containerEtapa1.appendChild(createTable('Classificação Etapa 1', dataEtapa1));
-            containerEtapa2.appendChild(createTable('Classificação Etapa 2', dataEtapa2));
+            containerEtapa1.appendChild(createTable('Classificação Etapa 1', dataEtapa1, false));
+            containerEtapa2.appendChild(createTable('Classificação Etapa 2', dataEtapa2, false));
         };
     </script>
 </body>

@@ -39,7 +39,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-size: cover; /* Ajustado para "ampliar" e mostrar o rosto */
+            background-size: cover;
             background-position: center;
             margin-right: 0.5rem;
             flex-shrink: 0;
@@ -78,7 +78,7 @@
             width: 300px;
             height: 300px;
             border-radius: 50%;
-            object-fit: cover; /* Ajustado para mostrar a imagem completa no pop-up */
+            object-fit: cover;
             margin-bottom: 1rem;
         }
         /* Cores de pódio bem discretas */
@@ -96,6 +96,17 @@
         .col-name { width: 50%; }
         .col-pts { width: 15%; }
         .col-etapa { width: 12.5%; }
+        /* Estilo para a lista de atletas na modal da equipe */
+        .team-member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .team-member-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -111,12 +122,14 @@
         </main>
     </div>
 
+    <!-- Modal para exibir detalhes do ciclista -->
     <div id="details-modal" class="modal hidden">
         <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">&times;</span>
+            <span class="close-button" onclick="closeModal('details')">&times;</span>
             <img id="modal-image" class="modal-image mx-auto mb-4" src="" alt="Profile Picture">
             <h3 id="modal-name" class="text-2xl font-bold text-gray-800"></h3>
             <p id="modal-position" class="text-gray-600"></p>
+            <p id="modal-team" class="text-gray-600 mt-2"></p>
         </div>
     </div>
 
@@ -125,6 +138,22 @@
             'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png',
             'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png',
             'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png'
+        };
+        const participantTeams = {
+            'MANDI': 'WK Team',
+            'JULIANO': 'WK Team',
+            'VALMIR': 'EMC - Equipe Mourãoense de Ciclismo',
+            'MAIQUE': 'EMC - Equipe Mourãoense de Ciclismo',
+            'EDSON': 'EMC - Equipe Mourãoense de Ciclismo',
+            'VINICIUS': 'EMC - Equipe Mourãoense de Ciclismo',
+            'KLÉBER': 'EMC - Equipe Mourãoense de Ciclismo',
+            'RAUL': 'EMC - Equipe Mourãoense de Ciclismo',
+            'THIAGO BORGES': 'Sem equipe',
+            'DANILO': 'Sem equipe',
+            'ARIZINHO': 'Sem equipe',
+            'GIMENES': 'Sem equipe',
+            'EMANUEL': 'Sem equipe',
+            'ANDRÉ': 'Sem equipe'
         };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
@@ -159,10 +188,13 @@
             document.getElementById('modal-image').src = imageUrl;
             document.getElementById('modal-name').textContent = name;
             document.getElementById('modal-position').textContent = `Posição: ${pos}`;
+            const teamSpan = document.getElementById('modal-team');
+            const teamName = participantTeams[name] || '';
+            teamSpan.textContent = teamName ? `Equipe: ${teamName}` : '';
             document.getElementById('details-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
+        function closeModal(modalType) {
             document.getElementById('details-modal').classList.add('hidden');
         }
         
@@ -221,13 +253,17 @@
                 }
                 
                 const imageUrl = participantImages[item.name] || defaultProfileImageUrl;
+                const teamName = participantTeams[item.name] || '';
                 
                 let rowHtml = `
                     <td class="table-cell col-pos">${item.pos}</td>
                     <td class="table-cell col-name">
                         <div class="flex items-center whitespace-nowrap">
                             <div class="profile-thumb-container" style="background-image: url('${imageUrl}');"></div>
-                            <span class="ml-2">${item.name}</span>
+                            <div class="ml-2 flex flex-col">
+                                <span class="font-bold">${item.name}</span>
+                                ${teamName ? `<span class="text-xs text-gray-500">${teamName}</span>` : ''}
+                            </div>
                         </div>
                     </td>
                     <td class="table-cell col-pts">${item.pts}</td>`;

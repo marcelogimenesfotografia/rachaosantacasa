@@ -31,18 +31,22 @@
             background-color: #f0f0f0;
         }
         .table-cell {
-            padding: 0.5rem; /* Diminuído o padding para diminuir a altura */
+            padding: 0.5rem;
             text-align: left;
             border-bottom: 1px solid #e5e5e5;
         }
-        .profile-thumb-container {
+        .profile-thumb-wrapper {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-            margin-right: 0.5rem;
+            overflow: hidden;
             flex-shrink: 0;
+        }
+        .profile-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
         }
         .modal {
             position: fixed;
@@ -81,48 +85,28 @@
             object-fit: cover;
             margin-bottom: 1rem;
         }
-        /* Cores de pódio bem discretas */
-        .bg-subtle-gold {
-            background-color: #FFF8E1;
-        }
-        .bg-subtle-silver {
-            background-color: #E0E0E0;
-        }
-        .bg-subtle-bronze {
-            background-color: #D7CCC8;
-        }
-        /* Classes para alinhar as colunas */
+        .bg-subtle-gold { background-color: #FFF8E1; }
+        .bg-subtle-silver { background-color: #E0E0E0; }
+        .bg-subtle-bronze { background-color: #D7CCC8; }
         .col-pos { width: 10%; }
         .col-name { width: 50%; }
         .col-pts { width: 15%; }
         .col-etapa { width: 12.5%; }
-        /* Estilo para a lista de atletas na modal da equipe */
-        .team-member-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .team-member-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-4xl mx-auto rounded-xl p-6 md:p-10 shadow-xl bg-card">
-        <header class="text-center mb-10">
-            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="responsive-logo w-full max-w-sm">
+    <div class="max-w-4xl mx-auto rounded-xl shadow-xl bg-card">
+        <header class="text-center">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/toporachao.png" alt="Logo Rachão Santa Casa" class="w-full">
         </header>
 
-        <main id="main-container">
+        <main id="main-container" class="p-6 md:p-10">
             <div id="geral-table-container"></div>
             <div id="etapa1-table-container"></div>
             <div id="etapa2-table-container"></div>
         </main>
     </div>
 
-    <!-- Modal para exibir detalhes do ciclista -->
     <div id="details-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-button" onclick="closeModal('details')">&times;</span>
@@ -137,7 +121,7 @@
         const participantImages = {
             'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png',
             'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png',
-            'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png'
+            'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png',
         };
         const participantTeams = {
             'MANDI': 'WK Team',
@@ -155,42 +139,87 @@
             'EMANUEL': 'Sem equipe',
             'ANDRÉ': 'Sem equipe'
         };
+        
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
-        const dataEtapa1 = [
-            { pos: 1, name: 'MANDI', pts: 15 },
-            { pos: 2, name: 'MAIQUE', pts: 13 },
-            { pos: 3, name: 'JULIANO', pts: 11 },
-            { pos: 4, name: 'VALMIR', pts: 9 },
-            { pos: 5, name: 'ARIZINHO', pts: 7 },
-            { pos: 6, name: 'GIMENES', pts: 5 },
-            { pos: 7, name: 'EMANUEL', pts: 3 },
-            { pos: 8, name: 'ANDRÉ', pts: 1 },
-            { pos: 9, name: 'THIAGO BORGES', pts: 1 },
-            { pos: 10, name: 'LUCIANO', pts: 1 }
-        ];
+        const monthlyData = {
+            agosto: {
+                title: 'Agosto/2025',
+                etapa1: [
+                    { pos: 1, name: 'MANDI', pts: 15 },
+                    { pos: 2, name: 'MAIQUE', pts: 13 },
+                    { pos: 3, name: 'JULIANO', pts: 11 },
+                    { pos: 4, name: 'VALMIR', pts: 9 },
+                    { pos: 5, name: 'ARIZINHO', pts: 7 },
+                    { pos: 6, name: 'GIMENES', pts: 5 },
+                    { pos: 7, name: 'EMANUEL', pts: 3 },
+                    { pos: 8, name: 'ANDRÉ', pts: 1 },
+                    { pos: 9, name: 'THIAGO BORGES', pts: 1 },
+                    { pos: 10, name: 'LUCIANO', pts: 1 }
+                ],
+                etapa2: [
+                    { pos: 1, name: 'MANDI', pts: 15 },
+                    { pos: 2, name: 'EDSON', pts: 13 },
+                    { pos: 3, name: 'VINICIUS', pts: 11 },
+                    { pos: 4, name: 'JULIANO', pts: 9 },
+                    { pos: 5, name: 'VALMIR', pts: 7 },
+                    { pos: 6, name: 'KLÉBER', pts: 5 },
+                    { pos: 7, name: 'ARIZINHO', pts: 3 },
+                    { pos: 8, name: 'RAUL', pts: 1 },
+                    { pos: 9, name: 'DANILO', pts: 1 },
+                    { pos: 10, name: 'GIMENES', pts: 1 }
+                ]
+            }
+        };
 
-        const dataEtapa2 = [
-            { pos: 1, name: 'MANDI', pts: 15 },
-            { pos: 2, name: 'EDSON', pts: 13 },
-            { pos: 3, name: 'VINICIUS', pts: 11 },
-            { pos: 4, name: 'JULIANO', pts: 9 },
-            { pos: 5, name: 'VALMIR', pts: 7 },
-            { pos: 6, name: 'KLÉBER', pts: 5 },
-            { pos: 7, name: 'ARIZINHO', pts: 3 },
-            { pos: 8, name: 'RAUL', pts: 1 },
-            { pos: 9, name: 'DANILO', pts: 1 },
-            { pos: 10, name: 'GIMENES', pts: 1 }
-        ];
+        let allParticipantsData = [];
+
+        function calculateOverall(etapa1Data, etapa2Data) {
+            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name)]);
+            const overallData = Array.from(allParticipants).map(name => {
+                const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
+                const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
+                return {
+                    name: name,
+                    pts_etapa_1: participant1.pts,
+                    pts_etapa_2: participant2.pts,
+                    pts: participant1.pts + participant2.pts
+                };
+            });
+            
+            overallData.sort((a, b) => b.pts - a.pts);
+
+            return overallData.map((item, index) => ({
+                pos: index + 1,
+                name: item.name,
+                pts: item.pts,
+                pts_etapa_1: item.pts_etapa_1,
+                pts_etapa_2: item.pts_etapa_2
+            }));
+        }
+
+        function getParticipantData(overallData) {
+            return overallData.map(p => ({
+                name: p.name,
+                image: participantImages[p.name] || defaultProfileImageUrl,
+                team: participantTeams[p.name] || 'Sem equipe',
+                posOverall: p.pos,
+                ptsOverall: p.pts,
+                ptsEtapa1: p.pts_etapa_1,
+                ptsEtapa2: p.pts_etapa_2
+            }));
+        }
 
         function openModal(pos, name) {
-            const imageUrl = participantImages[name] || defaultProfileImageUrl;
-            document.getElementById('modal-image').src = imageUrl;
-            document.getElementById('modal-name').textContent = name;
-            document.getElementById('modal-position').textContent = `Posição: ${pos}`;
+            const participant = allParticipantsData.find(p => p.name === name);
+            if (!participant) return;
+
+            document.getElementById('modal-image').src = participant.image;
+            document.getElementById('modal-name').textContent = participant.name;
+            document.getElementById('modal-position').textContent = `Posição Geral: ${participant.posOverall}`;
             const teamSpan = document.getElementById('modal-team');
             const teamName = participantTeams[name] || '';
-            teamSpan.textContent = teamName ? `Equipe: ${teamName}` : '';
+            teamSpan.textContent = teamName ? `${teamName}` : '';
             document.getElementById('details-modal').classList.remove('hidden');
         }
 
@@ -210,7 +239,7 @@
             titleContainer.appendChild(titleElement);
             const monthElement = document.createElement('p');
             monthElement.classList.add('text-gray-500', 'mt-1');
-            monthElement.textContent = 'Agosto/2025';
+            monthElement.textContent = monthlyData.agosto.title;
             titleContainer.appendChild(monthElement);
             container.appendChild(titleContainer);
 
@@ -259,7 +288,9 @@
                     <td class="table-cell col-pos">${item.pos}</td>
                     <td class="table-cell col-name">
                         <div class="flex items-center whitespace-nowrap">
-                            <div class="profile-thumb-container" style="background-image: url('${imageUrl}');"></div>
+                            <div class="profile-thumb-wrapper">
+                                <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb">
+                            </div>
                             <div class="ml-2 flex flex-col">
                                 <span class="font-bold">${item.name}</span>
                                 ${teamName ? `<span class="text-xs text-gray-500">${teamName}</span>` : ''}
@@ -268,8 +299,9 @@
                     </td>
                     <td class="table-cell col-pts">${item.pts}</td>`;
                 if (isOverall) {
-                    rowHtml += `<td class="table-cell hidden md:table-cell col-etapa">${item.pts_etapa_1 !== undefined ? item.pts_etapa_1 : ''}</td>
-                                <td class="table-cell hidden md:table-cell col-etapa">${item.pts_etapa_2 !== undefined ? item.pts_etapa_2 : ''}</td>`;
+                    const participant = allParticipantsData.find(p => p.name === item.name);
+                    rowHtml += `<td class="table-cell hidden md:table-cell col-etapa">${participant.ptsEtapa1}</td>
+                                <td class="table-cell hidden md:table-cell col-etapa">${participant.ptsEtapa2}</td>`;
                 } else {
                     rowHtml += `<td class="table-cell hidden md:table-cell col-etapa"></td>
                                 <td class="table-cell hidden md:table-cell col-etapa"></td>`;
@@ -286,11 +318,11 @@
             return container;
         }
 
-        function calculateOverall() {
-            const allParticipants = new Set([...dataEtapa1.map(p => p.name), ...dataEtapa2.map(p => p.name)]);
+        function calculateOverall(etapa1Data, etapa2Data) {
+            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
-                const participant1 = dataEtapa1.find(p => p.name === name) || { pts: 0, pos: 0 };
-                const participant2 = dataEtapa2.find(p => p.name === name) || { pts: 0, pos: 0 };
+                const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
+                const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
                 return {
                     name: name,
                     pts_etapa_1: participant1.pts,
@@ -310,16 +342,37 @@
             }));
         }
 
-        const overallClassification = calculateOverall();
-        
-        window.onload = function() {
+        function getParticipantData(overallData) {
+            return overallData.map(p => ({
+                name: p.name,
+                image: participantImages[p.name] || defaultProfileImageUrl,
+                team: participantTeams[p.name] || 'Sem equipe',
+                posOverall: p.pos,
+                ptsOverall: p.pts,
+                ptsEtapa1: p.pts_etapa_1,
+                ptsEtapa2: p.pts_etapa_2
+            }));
+        }
+
+        function renderClassification() {
+            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2);
+            allParticipantsData = getParticipantData(overallClassification);
+            
             const containerGeral = document.getElementById('geral-table-container');
             const containerEtapa1 = document.getElementById('etapa1-table-container');
             const containerEtapa2 = document.getElementById('etapa2-table-container');
 
+            containerGeral.innerHTML = '';
+            containerEtapa1.innerHTML = '';
+            containerEtapa2.innerHTML = '';
+
             containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
-            containerEtapa1.appendChild(createTable('Classificação Etapa 1', dataEtapa1, false));
-            containerEtapa2.appendChild(createTable('Classificação Etapa 2', dataEtapa2, false));
+            containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
+            containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
+        }
+
+        window.onload = function() {
+            renderClassification();
         };
     </script>
 </body>

@@ -31,16 +31,18 @@
             background-color: #f0f0f0;
         }
         .table-cell {
-            padding: 1rem;
+            padding: 0.5rem; /* Diminuído o padding para diminuir a altura */
             text-align: left;
             border-bottom: 1px solid #e5e5e5;
         }
-        .profile-thumb {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%; /* Revertido para redondo */
-            object-fit: cover;
+        .profile-thumb-container {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-size: cover; /* Ajustado para "ampliar" e mostrar o rosto */
+            background-position: center;
             margin-right: 0.5rem;
+            flex-shrink: 0;
         }
         .modal {
             position: fixed;
@@ -75,8 +77,8 @@
         .modal-image {
             width: 300px;
             height: 300px;
-            border-radius: 50%; /* Revertido para redondo */
-            object-fit: cover; /* Alterado para cover */
+            border-radius: 50%;
+            object-fit: cover; /* Ajustado para mostrar a imagem completa no pop-up */
             margin-bottom: 1rem;
         }
         /* Cores de pódio bem discretas */
@@ -121,7 +123,8 @@
     <script>
         const participantImages = {
             'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png',
-            'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png'
+            'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png',
+            'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png'
         };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
@@ -185,13 +188,19 @@
             const thead = document.createElement('thead');
             thead.classList.add('bg-gray-100', 'text-gray-600', 'font-bold', 'text-sm', 'uppercase');
             const headerRow = document.createElement('tr');
-            headerRow.innerHTML = `
+            let headerHtml = `
                 <th class="p-4 text-left table-header-text col-pos">#</th>
                 <th class="p-4 text-left table-header-text col-name">Nome</th>
-                <th class="p-4 text-left table-header-text col-pts">Pts</th>
-                ${isOverall ? `<th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 1</th>
-                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 2</th>` : ''}
-            `;
+                <th class="p-4 text-left table-header-text col-pts">Pts</th>`;
+            if (isOverall) {
+                headerHtml += `<th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 1</th>
+                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 2</th>`;
+            } else {
+                headerHtml += `<th class="p-4 text-left table-header-text hidden md:table-cell col-etapa"></th>
+                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa"></th>`;
+            }
+            headerHtml += `</tr>`;
+            headerRow.innerHTML = headerHtml;
             thead.appendChild(headerRow);
             table.appendChild(thead);
 
@@ -213,37 +222,24 @@
                 
                 const imageUrl = participantImages[item.name] || defaultProfileImageUrl;
                 
-                const posCell = document.createElement('td');
-                posCell.classList.add('table-cell', 'col-pos');
-                posCell.textContent = item.pos;
-                row.appendChild(posCell);
-                
-                const nameCell = document.createElement('td');
-                nameCell.classList.add('table-cell', 'col-name');
-                nameCell.innerHTML = `
-                    <div class="flex items-center whitespace-nowrap">
-                        <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb flex-shrink-0">
-                        <span class="ml-2">${item.name}</span>
-                    </div>
-                `;
-                row.appendChild(nameCell);
-                
-                const ptsCell = document.createElement('td');
-                ptsCell.classList.add('table-cell', 'col-pts');
-                ptsCell.textContent = item.pts;
-                row.appendChild(ptsCell);
-
+                let rowHtml = `
+                    <td class="table-cell col-pos">${item.pos}</td>
+                    <td class="table-cell col-name">
+                        <div class="flex items-center whitespace-nowrap">
+                            <div class="profile-thumb-container" style="background-image: url('${imageUrl}');"></div>
+                            <span class="ml-2">${item.name}</span>
+                        </div>
+                    </td>
+                    <td class="table-cell col-pts">${item.pts}</td>`;
                 if (isOverall) {
-                    const etapa1Cell = document.createElement('td');
-                    etapa1Cell.classList.add('table-cell', 'hidden', 'md:table-cell', 'col-etapa');
-                    etapa1Cell.textContent = item.pts_etapa_1 !== undefined ? item.pts_etapa_1 : '';
-                    row.appendChild(etapa1Cell);
-
-                    const etapa2Cell = document.createElement('td');
-                    etapa2Cell.classList.add('table-cell', 'hidden', 'md:table-cell', 'col-etapa');
-                    etapa2Cell.textContent = item.pts_etapa_2 !== undefined ? item.pts_etapa_2 : '';
-                    row.appendChild(etapa2Cell);
+                    rowHtml += `<td class="table-cell hidden md:table-cell col-etapa">${item.pts_etapa_1 !== undefined ? item.pts_etapa_1 : ''}</td>
+                                <td class="table-cell hidden md:table-cell col-etapa">${item.pts_etapa_2 !== undefined ? item.pts_etapa_2 : ''}</td>`;
+                } else {
+                    rowHtml += `<td class="table-cell hidden md:table-cell col-etapa"></td>
+                                <td class="table-cell hidden md:table-cell col-etapa"></td>`;
                 }
+                rowHtml += `</tr>`;
+                row.innerHTML = rowHtml;
                 
                 row.addEventListener('click', () => openModal(item.pos, item.name));
                 tbody.appendChild(row);

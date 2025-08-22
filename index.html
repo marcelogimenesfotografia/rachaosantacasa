@@ -104,6 +104,7 @@
             <div id="geral-table-container"></div>
             <div id="etapa1-table-container"></div>
             <div id="etapa2-table-container"></div>
+            <div id="etapa3-table-container"></div>
         </main>
     </div>
 
@@ -122,6 +123,7 @@
             'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png',
             'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png',
             'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png',
+            'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg'
         };
         const participantTeams = {
             'MANDI': 'WK Team',
@@ -137,7 +139,8 @@
             'ARIZINHO': 'Sem equipe',
             'GIMENES': 'Sem equipe',
             'EMANUEL': 'Sem equipe',
-            'ANDRÉ': 'Sem equipe'
+            'ANDRÉ': 'Sem equipe',
+            'WALTER': 'Sem equipe'
         };
         
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
@@ -168,22 +171,36 @@
                     { pos: 8, name: 'RAUL', pts: 1 },
                     { pos: 9, name: 'DANILO', pts: 1 },
                     { pos: 10, name: 'GIMENES', pts: 1 }
+                ],
+                etapa3: [
+                    { pos: 1, name: 'WALTER', pts: 15 },
+                    { pos: 2, name: 'MAIQUE', pts: 13 },
+                    { pos: 3, name: 'JULIANO', pts: 11 },
+                    { pos: 4, name: 'VALMIR', pts: 9 },
+                    { pos: 5, name: 'ARIZINHO', pts: 7 },
+                    { pos: 6, name: 'KLÉBER', pts: 5 },
+                    { pos: 7, name: 'MANDI', pts: 3 },
+                    { pos: 8, name: 'LUCIANO', pts: 1 },
+                    { pos: 9, name: 'GIMENES', pts: 1 },
+                    { pos: 10, name: 'DANILO', pts: 1 }
                 ]
             }
         };
 
         let allParticipantsData = [];
 
-        function calculateOverall(etapa1Data, etapa2Data) {
-            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name)]);
+        function calculateOverall(etapa1Data, etapa2Data, etapa3Data) {
+            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
                 const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
                 const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
+                const participant3 = etapa3Data.find(p => p.name === name) || { pts: 0 };
                 return {
                     name: name,
                     pts_etapa_1: participant1.pts,
                     pts_etapa_2: participant2.pts,
-                    pts: participant1.pts + participant2.pts
+                    pts_etapa_3: participant3.pts,
+                    pts: participant1.pts + participant2.pts + participant3.pts
                 };
             });
             
@@ -194,20 +211,29 @@
                 name: item.name,
                 pts: item.pts,
                 pts_etapa_1: item.pts_etapa_1,
-                pts_etapa_2: item.pts_etapa_2
+                pts_etapa_2: item.pts_etapa_2,
+                pts_etapa_3: item.pts_etapa_3
             }));
         }
 
         function getParticipantData(overallData) {
-            return overallData.map(p => ({
-                name: p.name,
-                image: participantImages[p.name] || defaultProfileImageUrl,
-                team: participantTeams[p.name] || 'Sem equipe',
-                posOverall: p.pos,
-                ptsOverall: p.pts,
-                ptsEtapa1: p.pts_etapa_1,
-                ptsEtapa2: p.pts_etapa_2
-            }));
+            const allParticipants = new Set([...monthlyData.agosto.etapa1.map(p => p.name), ...monthlyData.agosto.etapa2.map(p => p.name), ...monthlyData.agosto.etapa3.map(p => p.name)]);
+            return Array.from(allParticipants).map(name => {
+                const participantOverall = overallData.find(p => p.name === name);
+                const participantEtapa1 = monthlyData.agosto.etapa1.find(p => p.name === name) || { pts: 0, pos: 0 };
+                const participantEtapa2 = monthlyData.agosto.etapa2.find(p => p.name === name) || { pts: 0, pos: 0 };
+                const participantEtapa3 = monthlyData.agosto.etapa3.find(p => p.name === name) || { pts: 0, pos: 0 };
+                return {
+                    name: name,
+                    image: participantImages[name] || defaultProfileImageUrl,
+                    team: participantTeams[name] || 'Sem equipe',
+                    posOverall: participantOverall ? participantOverall.pos : '',
+                    ptsOverall: participantOverall ? participantOverall.pts : '',
+                    ptsEtapa1: participantEtapa1.pts,
+                    ptsEtapa2: participantEtapa2.pts,
+                    ptsEtapa3: participantEtapa3.pts
+                };
+            });
         }
 
         function openModal(pos, name) {
@@ -255,9 +281,11 @@
                 <th class="p-4 text-left table-header-text col-pts">Pts</th>`;
             if (isOverall) {
                 headerHtml += `<th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 1</th>
-                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 2</th>`;
+                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 2</th>
+                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa">Etapa 3</th>`;
             } else {
                 headerHtml += `<th class="p-4 text-left table-header-text hidden md:table-cell col-etapa"></th>
+                               <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa"></th>
                                <th class="p-4 text-left table-header-text hidden md:table-cell col-etapa"></th>`;
             }
             headerHtml += `</tr>`;
@@ -301,9 +329,11 @@
                 if (isOverall) {
                     const participant = allParticipantsData.find(p => p.name === item.name);
                     rowHtml += `<td class="table-cell hidden md:table-cell col-etapa">${participant.ptsEtapa1}</td>
-                                <td class="table-cell hidden md:table-cell col-etapa">${participant.ptsEtapa2}</td>`;
+                                <td class="table-cell hidden md:table-cell col-etapa">${participant.ptsEtapa2}</td>
+                                <td class="table-cell hidden md:table-cell col-etapa">${participant.ptsEtapa3}</td>`;
                 } else {
                     rowHtml += `<td class="table-cell hidden md:table-cell col-etapa"></td>
+                                <td class="table-cell hidden md:table-cell col-etapa"></td>
                                 <td class="table-cell hidden md:table-cell col-etapa"></td>`;
                 }
                 rowHtml += `</tr>`;
@@ -318,16 +348,18 @@
             return container;
         }
 
-        function calculateOverall(etapa1Data, etapa2Data) {
-            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name)]);
+        function calculateOverall(etapa1Data, etapa2Data, etapa3Data) {
+            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
                 const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
                 const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
+                const participant3 = etapa3Data.find(p => p.name === name) || { pts: 0 };
                 return {
                     name: name,
                     pts_etapa_1: participant1.pts,
                     pts_etapa_2: participant2.pts,
-                    pts: participant1.pts + participant2.pts
+                    pts_etapa_3: participant3.pts,
+                    pts: participant1.pts + participant2.pts + participant3.pts
                 };
             });
             
@@ -338,37 +370,49 @@
                 name: item.name,
                 pts: item.pts,
                 pts_etapa_1: item.pts_etapa_1,
-                pts_etapa_2: item.pts_etapa_2
+                pts_etapa_2: item.pts_etapa_2,
+                pts_etapa_3: item.pts_etapa_3
             }));
         }
 
         function getParticipantData(overallData) {
-            return overallData.map(p => ({
-                name: p.name,
-                image: participantImages[p.name] || defaultProfileImageUrl,
-                team: participantTeams[p.name] || 'Sem equipe',
-                posOverall: p.pos,
-                ptsOverall: p.pts,
-                ptsEtapa1: p.pts_etapa_1,
-                ptsEtapa2: p.pts_etapa_2
-            }));
+            const allParticipants = new Set([...monthlyData.agosto.etapa1.map(p => p.name), ...monthlyData.agosto.etapa2.map(p => p.name), ...monthlyData.agosto.etapa3.map(p => p.name)]);
+            return Array.from(allParticipants).map(name => {
+                const participantOverall = overallData.find(p => p.name === name);
+                const participantEtapa1 = monthlyData.agosto.etapa1.find(p => p.name === name) || { pts: 0, pos: 0 };
+                const participantEtapa2 = monthlyData.agosto.etapa2.find(p => p.name === name) || { pts: 0, pos: 0 };
+                const participantEtapa3 = monthlyData.agosto.etapa3.find(p => p.name === name) || { pts: 0, pos: 0 };
+                return {
+                    name: name,
+                    image: participantImages[name] || defaultProfileImageUrl,
+                    team: participantTeams[name] || 'Sem equipe',
+                    posOverall: participantOverall ? participantOverall.pos : '',
+                    ptsOverall: participantOverall ? participantOverall.pts : '',
+                    ptsEtapa1: participantEtapa1.pts,
+                    ptsEtapa2: participantEtapa2.pts,
+                    ptsEtapa3: participantEtapa3.pts
+                };
+            });
         }
 
         function renderClassification() {
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2);
+            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
             allParticipantsData = getParticipantData(overallClassification);
             
             const containerGeral = document.getElementById('geral-table-container');
             const containerEtapa1 = document.getElementById('etapa1-table-container');
             const containerEtapa2 = document.getElementById('etapa2-table-container');
+            const containerEtapa3 = document.getElementById('etapa3-table-container');
 
             containerGeral.innerHTML = '';
             containerEtapa1.innerHTML = '';
             containerEtapa2.innerHTML = '';
+            containerEtapa3.innerHTML = '';
 
             containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
             containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
             containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
+            containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
         }
 
         window.onload = function() {

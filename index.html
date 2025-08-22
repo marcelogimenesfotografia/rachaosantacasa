@@ -92,6 +92,26 @@
         .col-name { width: 50%; }
         .col-pts { width: 15%; }
         .col-etapa { width: 12.5%; }
+        .table-grid-container {
+            display: grid;
+            grid-template-columns: 10% 50% 15% 12.5% 12.5%;
+        }
+        .table-row-grid {
+            display: contents;
+        }
+        .table-cell-grid {
+            padding: 0.5rem;
+            border-bottom: 1px solid #e5e5e5;
+            text-align: left;
+        }
+        @media (max-width: 768px) {
+            .table-grid-container {
+                grid-template-columns: 10% 60% 30%;
+            }
+            .table-cell-grid:nth-child(4), .table-cell-grid:nth-child(5) {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">

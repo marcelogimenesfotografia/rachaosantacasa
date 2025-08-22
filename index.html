@@ -92,26 +92,6 @@
         .col-name { width: 50%; }
         .col-pts { width: 15%; }
         .col-etapa { width: 12.5%; }
-        .table-grid-container {
-            display: grid;
-            grid-template-columns: 10% 50% 15% 12.5% 12.5%;
-        }
-        .table-row-grid {
-            display: contents;
-        }
-        .table-cell-grid {
-            padding: 0.5rem;
-            border-bottom: 1px solid #e5e5e5;
-            text-align: left;
-        }
-        @media (max-width: 768px) {
-            .table-grid-container {
-                grid-template-columns: 10% 60% 30%;
-            }
-            .table-cell-grid:nth-child(4), .table-cell-grid:nth-child(5) {
-                display: none;
-            }
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -396,23 +376,16 @@
         }
 
         function getParticipantData(overallData) {
-            const allParticipants = new Set([...monthlyData.agosto.etapa1.map(p => p.name), ...monthlyData.agosto.etapa2.map(p => p.name), ...monthlyData.agosto.etapa3.map(p => p.name)]);
-            return Array.from(allParticipants).map(name => {
-                const participantOverall = overallData.find(p => p.name === name);
-                const participantEtapa1 = monthlyData.agosto.etapa1.find(p => p.name === name) || { pts: 0, pos: 0 };
-                const participantEtapa2 = monthlyData.agosto.etapa2.find(p => p.name === name) || { pts: 0, pos: 0 };
-                const participantEtapa3 = monthlyData.agosto.etapa3.find(p => p.name === name) || { pts: 0, pos: 0 };
-                return {
-                    name: name,
-                    image: participantImages[name] || defaultProfileImageUrl,
-                    team: participantTeams[name] || 'Sem equipe',
-                    posOverall: participantOverall ? participantOverall.pos : '',
-                    ptsOverall: participantOverall ? participantOverall.pts : '',
-                    ptsEtapa1: participantEtapa1.pts,
-                    ptsEtapa2: participantEtapa2.pts,
-                    ptsEtapa3: participantEtapa3.pts
-                };
-            });
+            return overallData.map(p => ({
+                name: p.name,
+                image: participantImages[p.name] || defaultProfileImageUrl,
+                team: participantTeams[p.name] || 'Sem equipe',
+                posOverall: p.pos,
+                ptsOverall: p.pts,
+                ptsEtapa1: p.pts_etapa_1,
+                ptsEtapa2: p.pts_etapa_2,
+                ptsEtapa3: p.pts_etapa_3
+            }));
         }
 
         function renderClassification() {

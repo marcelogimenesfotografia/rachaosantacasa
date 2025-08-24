@@ -41,6 +41,7 @@
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
+            position: relative;
         }
         .profile-thumb {
             width: 100%;
@@ -92,6 +93,27 @@
         .col-name { width: 50%; }
         .col-pts { width: 15%; }
         .col-etapa { width: 12.5%; }
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            font-weight: 700;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-button-active {
+            background-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .tab-button:not(.tab-button-active) {
+            background-color: #d1d5db;
+            color: #4b5563;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -101,10 +123,17 @@
         </header>
 
         <main id="main-container" class="p-6 md:p-10">
+            <div id="tabs-container" class="tabs-container">
+                <button id="tab-geral" class="tab-button tab-button-active mr-2">Classificação Geral</button>
+                <button id="tab-etapa1" class="tab-button mr-2">Etapa 1</button>
+                <button id="tab-etapa2" class="tab-button mr-2">Etapa 2</button>
+                <button id="tab-etapa3" class="tab-button">Etapa 3</button>
+            </div>
+            
             <div id="geral-table-container"></div>
-            <div id="etapa1-table-container"></div>
-            <div id="etapa2-table-container"></div>
-            <div id="etapa3-table-container"></div>
+            <div id="etapa1-table-container" style="display: none;"></div>
+            <div id="etapa2-table-container" style="display: none;"></div>
+            <div id="etapa3-table-container" style="display: none;"></div>
         </main>
     </div>
 
@@ -186,7 +215,7 @@
                 ]
             }
         };
-
+        
         let allParticipantsData = [];
 
         function calculateOverall(etapa1Data, etapa2Data, etapa3Data) {
@@ -217,23 +246,16 @@
         }
 
         function getParticipantData(overallData) {
-            const allParticipants = new Set([...monthlyData.agosto.etapa1.map(p => p.name), ...monthlyData.agosto.etapa2.map(p => p.name), ...monthlyData.agosto.etapa3.map(p => p.name)]);
-            return Array.from(allParticipants).map(name => {
-                const participantOverall = overallData.find(p => p.name === name);
-                const participantEtapa1 = monthlyData.agosto.etapa1.find(p => p.name === name) || { pts: 0, pos: 0 };
-                const participantEtapa2 = monthlyData.agosto.etapa2.find(p => p.name === name) || { pts: 0, pos: 0 };
-                const participantEtapa3 = monthlyData.agosto.etapa3.find(p => p.name === name) || { pts: 0, pos: 0 };
-                return {
-                    name: name,
-                    image: participantImages[name] || defaultProfileImageUrl,
-                    team: participantTeams[name] || 'Sem equipe',
-                    posOverall: participantOverall ? participantOverall.pos : '',
-                    ptsOverall: participantOverall ? participantOverall.pts : '',
-                    ptsEtapa1: participantEtapa1.pts,
-                    ptsEtapa2: participantEtapa2.pts,
-                    ptsEtapa3: participantEtapa3.pts
-                };
-            });
+            return overallData.map(p => ({
+                name: p.name,
+                image: participantImages[p.name] || defaultProfileImageUrl,
+                team: participantTeams[p.name] || 'Sem equipe',
+                posOverall: p.pos,
+                ptsOverall: p.pts,
+                ptsEtapa1: p.pts_etapa_1,
+                ptsEtapa2: p.pts_etapa_2,
+                ptsEtapa3: p.pts_etapa_3
+            }));
         }
 
         function openModal(pos, name) {
@@ -388,7 +410,48 @@
             }));
         }
 
-        function renderClassification() {
+        function renderClassification(activeTab) {
+            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
+            allParticipantsData = getParticipantData(overallClassification);
+
+            const tabs = {
+                'geral': document.getElementById('geral-table-container'),
+                'etapa1': document.getElementById('etapa1-table-container'),
+                'etapa2': document.getElementById('etapa2-table-container'),
+                'etapa3': document.getElementById('etapa3-table-container')
+            };
+
+            for (const tab in tabs) {
+                tabs[tab].style.display = 'none';
+            }
+            tabs[activeTab].style.display = 'block';
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('tab-button-active');
+            });
+            document.getElementById(`tab-${activeTab}`).classList.add('tab-button-active');
+        }
+
+        function setupTabs() {
+            document.getElementById('tab-geral').addEventListener('click', () => {
+                renderClassification('geral');
+            });
+            document.getElementById('tab-etapa1').addEventListener('click', () => {
+                renderClassification('etapa1');
+            });
+            document.getElementById('tab-etapa2').addEventListener('click', () => {
+                renderClassification('etapa2');
+            });
+            document.getElementById('tab-etapa3').addEventListener('click', () => {
+                renderClassification('etapa3');
+            });
+        }
+
+        window.onload = function() {
+            setupTabs();
+            // Initial render
+            renderClassification('geral');
+            
             const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
             allParticipantsData = getParticipantData(overallClassification);
             
@@ -397,19 +460,10 @@
             const containerEtapa2 = document.getElementById('etapa2-table-container');
             const containerEtapa3 = document.getElementById('etapa3-table-container');
 
-            containerGeral.innerHTML = '';
-            containerEtapa1.innerHTML = '';
-            containerEtapa2.innerHTML = '';
-            containerEtapa3.innerHTML = '';
-
             containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
             containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
             containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
             containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
-        }
-
-        window.onload = function() {
-            renderClassification();
         };
     </script>
 </body>

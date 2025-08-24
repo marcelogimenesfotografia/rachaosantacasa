@@ -96,7 +96,9 @@
         .tabs-container {
             display: flex;
             justify-content: center;
+            gap: 0.5rem;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
         .tab-button {
             padding: 0.5rem 1rem;
@@ -124,9 +126,9 @@
 
         <main id="main-container" class="p-6 md:p-10">
             <div id="tabs-container" class="tabs-container">
-                <button id="tab-geral" class="tab-button mr-2">Classificação Geral</button>
-                <button id="tab-etapa1" class="tab-button mr-2">Etapa 1</button>
-                <button id="tab-etapa2" class="tab-button mr-2">Etapa 2</button>
+                <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
+                <button id="tab-etapa1" class="tab-button">Etapa 1</button>
+                <button id="tab-etapa2" class="tab-button">Etapa 2</button>
                 <button id="tab-etapa3" class="tab-button">Etapa 3</button>
             </div>
             
@@ -146,6 +148,13 @@
             <p id="modal-team" class="text-gray-600 mt-2"></p>
         </div>
     </div>
+    
+    <footer class="mt-8 p-8 bg-gray-800 text-gray-300 rounded-xl shadow-xl max-w-4xl mx-auto">
+        <div class="text-center">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-24 h-auto mx-auto mb-2">
+            <p class="text-sm font-bold text-gray-400">A gente pedala forte, mas o que nos mantém juntos é a amizade.</p>
+        </div>
+    </footer>
 
     <script>
         const participantImages = {
@@ -287,7 +296,7 @@
             titleContainer.appendChild(titleElement);
             const monthElement = document.createElement('p');
             monthElement.classList.add('text-gray-500', 'mt-1');
-            monthElement.textContent = monthlyData.agosto.title;
+            monthElement.textContent = "Agosto/2025";
             titleContainer.appendChild(monthElement);
             container.appendChild(titleContainer);
 

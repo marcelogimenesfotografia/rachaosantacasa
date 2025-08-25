@@ -17,7 +17,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #FFFFFF; /* Fundo branco puro */
-            color: #1f2937; /* Cor do texto */
+            color: #000000; /* Cor do texto principal */
         }
 
         /* Estilos do modal de detalhes */
@@ -42,7 +42,7 @@
             position: relative;
             max-width: 90%;
             width: 400px;
-            color: #1f2937;
+            color: #000000;
         }
         .close-button {
             position: absolute;
@@ -51,7 +51,7 @@
             font-size: 2rem;
             font-weight: bold;
             cursor: pointer;
-            color: #1f2937;
+            color: #000000;
         }
         .modal-image {
             width: 200px;
@@ -94,9 +94,9 @@
             color: #4b5563;
         }
         .tab-button-active {
-            background-color: #ef4444;
-            color: white;
-            border-color: #ef4444;
+            background-color: #FFD700; /* Fundo amarelo/ouro para o botão ativo */
+            color: #000000; /* Texto preto para o botão ativo */
+            border-color: #FFD700;
         }
     </style>
 </head>
@@ -314,7 +314,7 @@
                 let rowHtml = `
                     <td class="p-4">${item.pos}</td>
                     <td class="p-4">
-                        <div class="flex items-center"> <!-- Removido 'whitespace-nowrap' -->
+                        <div class="flex items-center">
                             <div class="profile-thumb-wrapper">
                                 <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb">
                             </div>

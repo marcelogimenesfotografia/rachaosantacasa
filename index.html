@@ -22,7 +22,7 @@
             margin: auto;
         }
         .table-header-bg {
-            background-color: #e0e0e0;
+            background-color: #f8f8f8;
         }
         .table-header-text {
             color: #4b5563;
@@ -31,13 +31,13 @@
             background-color: #f0f0f0;
         }
         .table-cell {
-            padding: 0.5rem;
+            padding: 0.75rem;
             text-align: left;
             border-bottom: 1px solid #e5e5e5;
         }
         .profile-thumb-wrapper {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
@@ -80,19 +80,15 @@
             cursor: pointer;
         }
         .modal-image {
-            width: 300px;
-            height: 300px;
+            width: 250px;
+            height: 250px;
             border-radius: 50%;
             object-fit: cover;
             margin-bottom: 1rem;
         }
-        .bg-subtle-gold { background-color: #FFF8E1; }
-        .bg-subtle-silver { background-color: #E0E0E0; }
-        .bg-subtle-bronze { background-color: #D7CCC8; }
-        .col-pos { width: 10%; }
-        .col-name { width: 50%; }
-        .col-pts { width: 15%; }
-        .col-etapa { width: 12.5%; }
+        .bg-subtle-gold { background-color: #FFD70020; }
+        .bg-subtle-silver { background-color: #C0C0C020; }
+        .bg-subtle-bronze { background-color: #CD7F3220; }
         .tabs-container {
             display: flex;
             justify-content: center;
@@ -106,25 +102,27 @@
             border-radius: 9999px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
+            background-color: transparent;
+            border: 2px solid #e5e5e5;
+            color: #4b5563;
         }
         .tab-button-active {
             background-color: #ef4444;
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-color: #ef4444;
         }
-        .tab-button:not(.tab-button-active) {
-            background-color: #d1d5db;
-            color: #4b5563;
+        .tab-button:not(.tab-button-active):hover {
+            background-color: #f0f0f0;
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-4xl mx-auto rounded-xl shadow-xl bg-card">
-        <header class="text-center">
+    <div class="max-w-4xl mx-auto rounded-xl shadow-xl bg-card p-6 md:p-10">
+        <header class="text-center mb-6">
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/toporachao.png" alt="Logo Rachão Santa Casa" class="w-full">
         </header>
 
-        <main id="main-container" class="p-6 md:p-10">
+        <main id="main-container">
             <div id="tabs-container" class="tabs-container">
                 <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
                 <button id="tab-etapa1" class="tab-button">Etapa 1</button>
@@ -296,7 +294,7 @@
             titleContainer.appendChild(titleElement);
             const monthElement = document.createElement('p');
             monthElement.classList.add('text-gray-500', 'mt-1');
-            monthElement.textContent = "Agosto/2025";
+            monthElement.textContent = monthlyData.agosto.title;
             titleContainer.appendChild(monthElement);
             container.appendChild(titleContainer);
 
@@ -420,9 +418,6 @@
         }
 
         function renderClassification(activeTab) {
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
-            allParticipantsData = getParticipantData(overallClassification);
-
             const tabs = {
                 'geral': document.getElementById('geral-table-container'),
                 'etapa1': document.getElementById('etapa1-table-container'),
@@ -441,7 +436,21 @@
             document.getElementById(`tab-${activeTab}`).classList.add('tab-button-active');
         }
 
-        function setupTabs() {
+        window.onload = function() {
+            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
+            allParticipantsData = getParticipantData(overallClassification);
+
+            const containerGeral = document.getElementById('geral-table-container');
+            const containerEtapa1 = document.getElementById('etapa1-table-container');
+            const containerEtapa2 = document.getElementById('etapa2-table-container');
+            const containerEtapa3 = document.getElementById('etapa3-table-container');
+
+            containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
+            containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
+            containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
+            containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
+
+            // Setup tabs after tables are created
             document.getElementById('tab-geral').addEventListener('click', () => {
                 renderClassification('geral');
             });
@@ -454,25 +463,9 @@
             document.getElementById('tab-etapa3').addEventListener('click', () => {
                 renderClassification('etapa3');
             });
-        }
 
-        window.onload = function() {
-            setupTabs();
             // Initial render
             renderClassification('geral');
-            
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
-            allParticipantsData = getParticipantData(overallClassification);
-            
-            const containerGeral = document.getElementById('geral-table-container');
-            const containerEtapa1 = document.getElementById('etapa1-table-container');
-            const containerEtapa2 = document.getElementById('etapa2-table-container');
-            const containerEtapa3 = document.getElementById('etapa3-table-container');
-
-            containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
-            containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
-            containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
-            containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
         };
     </script>
 </body>

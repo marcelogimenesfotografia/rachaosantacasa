@@ -53,7 +53,7 @@
             color: #1f2937;
         }
         .modal-image {
-            /* Tamanho maior para a imagem no modal */
+            /* Tamanho da imagem no modal */
             width: 200px;
             height: 200px;
             border-radius: 50%;
@@ -64,7 +64,7 @@
 
         /* Estilos para as miniaturas de perfil na tabela */
         .profile-thumb-wrapper {
-            /* Tamanho maior para as miniaturas na tabela */
+            /* Tamanho das miniaturas na tabela */
             width: 70px;
             height: 70px;
             border-radius: 50%;
@@ -99,12 +99,18 @@
             color: white;
             border-color: #ef4444;
         }
+
+        /* Removendo as larguras fixas para melhor responsividade */
+        th, td {
+            width: auto !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 p-4 md:p-8">
     <div class="max-w-5xl mx-auto">
         <header class="text-center mb-10">
-            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-2xl mx-auto">
+            <!-- A logo agora está com um tamanho menor -->
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-xs mx-auto">
         </header>
 
         <main id="main-container" class="bg-white p-6 md:p-12">

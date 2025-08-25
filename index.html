@@ -16,7 +16,7 @@
         /* Estilos globais do corpo da página */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f5f5f5; /* Cor de fundo */
+            background-color: #fff; /* Cor de fundo */
             color: #1f2937; /* Cor do texto */
         }
 
@@ -64,8 +64,9 @@
 
         /* Estilos para as miniaturas de perfil na tabela */
         .profile-thumb-wrapper {
-            width: 70px;
-            height: 70px;
+            /* Tamanho ajustado para melhorar a responsividade */
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
@@ -319,12 +320,12 @@
                 let rowHtml = `
                     <td class="p-4">${item.pos}</td>
                     <td class="p-4">
-                        <div class="flex items-center whitespace-nowrap">
+                        <div class="flex items-center"> <!-- Removido 'whitespace-nowrap' -->
                             <div class="profile-thumb-wrapper">
                                 <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb">
                             </div>
                             <div class="ml-3 flex flex-col">
-                                <span class="font-semibold text-gray-800">${item.name}</span>
+                                <span class="font-semibold text-gray-800 text-sm sm:text-base">${item.name}</span>
                                 ${teamName ? `<span class="text-xs text-gray-500">${teamName}</span>` : ''}
                             </div>
                         </div>

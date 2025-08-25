@@ -1,49 +1,24 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <!-- Define a codificação de caracteres e a responsividade -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título da página -->
     <title>Classificação Rachão Santa Casa.</title>
+    <!-- Importa a biblioteca Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Define a fonte Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* Estilos globais do corpo da página */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f5f5f5;
         }
-        .bg-card {
-            background-color: #ffffff;
-        }
-        .table-header-bg {
-            background-color: #f8f8f8;
-        }
-        .table-header-text {
-            color: #4b5563;
-            font-size: 0.7rem;
-        }
-        .table-row-hover:hover {
-            background-color: #f0f0f0;
-        }
-        .table-cell {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e5e5e5;
-        }
-        .profile-thumb-wrapper {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .profile-thumb {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center center;
-        }
+
+        /* Estilos do modal de detalhes */
         .modal {
             position: fixed;
             z-index: 100;
@@ -58,51 +33,65 @@
             justify-content: center;
         }
         .modal-content {
-            background-color: #fefefe;
-            padding: 2rem;
-            border-radius: 1rem;
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
             text-align: center;
             position: relative;
             max-width: 90%;
-            margin: auto;
+            width: 400px;
+            color: #1f2937;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .close-button {
             position: absolute;
-            top: 1rem;
+            top: 1.5rem;
             right: 1.5rem;
             font-size: 2rem;
             font-weight: bold;
             cursor: pointer;
+            color: #1f2937;
         }
         .modal-image {
+            /* Tamanho maior para a imagem no modal */
             width: 200px;
             height: 200px;
             border-radius: 50%;
             object-fit: cover;
             margin-bottom: 1rem;
+            border: 3px solid #e5e7eb;
         }
+
+        /* Estilos para as miniaturas de perfil na tabela */
+        .profile-thumb-wrapper {
+            /* Tamanho maior para as miniaturas na tabela */
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid #e5e7eb;
+        }
+        .profile-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Cores de destaque para os primeiros colocados */
         .bg-subtle-gold { background-color: #FFD70020; }
         .bg-subtle-silver { background-color: #C0C0C020; }
         .bg-subtle-bronze { background-color: #CD7F3220; }
-        .col-pos { width: 10%; }
-        .col-name { width: 50%; }
-        .col-pts { width: 15%; }
-        .col-etapa { width: 12.5%; }
-        .tabs-container {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
+
+        /* Estilos dos botões de abas */
         .tab-button {
             padding: 0.5rem 1rem;
             font-weight: 700;
             border-radius: 9999px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
-            background-color: transparent;
-            border: 2px solid #e5e5e5;
+            background-color: #f3f4f6;
+            border: 2px solid #e5e7eb;
             color: #4b5563;
         }
         .tab-button-active {
@@ -110,32 +99,32 @@
             color: white;
             border-color: #ef4444;
         }
-        .tab-button:not(.tab-button-active):hover {
-            background-color: #f0f0f0;
-        }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-4xl mx-auto rounded-xl shadow-xl bg-card">
-        <header class="text-center">
-            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/toporachao.png" alt="Logo Rachão Santa Casa" class="w-full">
+<body class="bg-gray-50 text-gray-800 p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-10">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-2xl mx-auto">
         </header>
 
-        <main id="main-container" class="p-6 md:p-10">
-            <div id="tabs-container" class="tabs-container">
+        <main id="main-container" class="bg-white p-6 md:p-12">
+            <!-- Contêiner de abas (tabs) -->
+            <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
                 <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
                 <button id="tab-etapa1" class="tab-button">Etapa 1</button>
                 <button id="tab-etapa2" class="tab-button">Etapa 2</button>
                 <button id="tab-etapa3" class="tab-button">Etapa 3</button>
             </div>
             
+            <!-- Contêineres das tabelas, com apenas um visível por vez -->
             <div id="geral-table-container"></div>
-            <div id="etapa1-table-container" style="display: none;"></div>
-            <div id="etapa2-table-container" style="display: none;"></div>
-            <div id="etapa3-table-container" style="display: none;"></div>
+            <div id="etapa1-table-container" class="hidden"></div>
+            <div id="etapa2-table-container" class="hidden"></div>
+            <div id="etapa3-table-container" class="hidden"></div>
         </main>
     </div>
 
+    <!-- Modal de detalhes do participante -->
     <div id="details-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-button" onclick="closeModal('details')">&times;</span>
@@ -146,14 +135,16 @@
         </div>
     </div>
     
-    <footer class="mt-8 p-8 bg-gray-800 text-gray-300 rounded-xl shadow-xl max-w-4xl mx-auto">
-        <div class="text-center">
-            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-24 h-auto mx-auto mb-2">
-            <p class="text-sm font-bold text-gray-400">A gente pedala forte, mas o que nos mantém juntos é a amizade.</p>
+    <!-- Rodapé -->
+    <footer class="mt-8 p-6 md:p-8 bg-gray-100 text-gray-600 max-w-5xl mx-auto text-center">
+        <div>
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-24 h-auto mx-auto mb-2 opacity-80">
+            <p class="text-sm font-bold">A gente pedala forte, mas o que nos mantém juntos é a amizade.</p>
         </div>
     </footer>
 
     <script>
+        // Dados dos participantes e suas equipes
         const participantImages = {
             'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png',
             'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png',
@@ -178,53 +169,39 @@
             'ANDRÉ': 'Sem equipe',
             'WALTER': 'Sem equipe'
         };
-        
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
+        // Dados mensais para as etapas e classificação
         const monthlyData = {
             agosto: {
                 title: 'Agosto/2025',
                 etapa1: [
-                    { pos: 1, name: 'MANDI', pts: 15 },
-                    { pos: 2, name: 'MAIQUE', pts: 13 },
-                    { pos: 3, name: 'JULIANO', pts: 11 },
-                    { pos: 4, name: 'VALMIR', pts: 9 },
-                    { pos: 5, name: 'ARIZINHO', pts: 7 },
-                    { pos: 6, name: 'GIMENES', pts: 5 },
-                    { pos: 7, name: 'EMANUEL', pts: 3 },
-                    { pos: 8, name: 'ANDRÉ', pts: 1 },
-                    { pos: 9, name: 'THIAGO BORGES', pts: 1 },
-                    { pos: 10, name: 'LUCIANO', pts: 1 }
+                    { pos: 1, name: 'MANDI', pts: 15 }, { pos: 2, name: 'MAIQUE', pts: 13 },
+                    { pos: 3, name: 'JULIANO', pts: 11 }, { pos: 4, name: 'VALMIR', pts: 9 },
+                    { pos: 5, name: 'ARIZINHO', pts: 7 }, { pos: 6, name: 'GIMENES', pts: 5 },
+                    { pos: 7, name: 'EMANUEL', pts: 3 }, { pos: 8, name: 'ANDRÉ', pts: 1 },
+                    { pos: 9, name: 'THIAGO BORGES', pts: 1 }, { pos: 10, name: 'LUCIANO', pts: 1 }
                 ],
                 etapa2: [
-                    { pos: 1, name: 'MANDI', pts: 15 },
-                    { pos: 2, name: 'EDSON', pts: 13 },
-                    { pos: 3, name: 'VINICIUS', pts: 11 },
-                    { pos: 4, name: 'JULIANO', pts: 9 },
-                    { pos: 5, name: 'VALMIR', pts: 7 },
-                    { pos: 6, name: 'KLÉBER', pts: 5 },
-                    { pos: 7, name: 'ARIZINHO', pts: 3 },
-                    { pos: 8, name: 'RAUL', pts: 1 },
-                    { pos: 9, name: 'DANILO', pts: 1 },
-                    { pos: 10, name: 'GIMENES', pts: 1 }
+                    { pos: 1, name: 'MANDI', pts: 15 }, { pos: 2, name: 'EDSON', pts: 13 },
+                    { pos: 3, name: 'VINICIUS', pts: 11 }, { pos: 4, name: 'JULIANO', pts: 9 },
+                    { pos: 5, name: 'VALMIR', pts: 7 }, { pos: 6, name: 'KLÉBER', pts: 5 },
+                    { pos: 7, name: 'ARIZINHO', pts: 3 }, { pos: 8, name: 'RAUL', pts: 1 },
+                    { pos: 9, name: 'DANILO', pts: 1 }, { pos: 10, name: 'GIMENES', pts: 1 }
                 ],
                 etapa3: [
-                    { pos: 1, name: 'WALTER', pts: 15 },
-                    { pos: 2, name: 'MAIQUE', pts: 13 },
-                    { pos: 3, name: 'JULIANO', pts: 11 },
-                    { pos: 4, name: 'VALMIR', pts: 9 },
-                    { pos: 5, name: 'ARIZINHO', pts: 7 },
-                    { pos: 6, name: 'KLÉBER', pts: 5 },
-                    { pos: 7, name: 'MANDI', pts: 3 },
-                    { pos: 8, name: 'LUCIANO', pts: 1 },
-                    { pos: 9, name: 'GIMENES', pts: 1 },
-                    { pos: 10, name: 'DANILO', pts: 1 }
+                    { pos: 1, name: 'WALTER', pts: 15 }, { pos: 2, name: 'MAIQUE', pts: 13 },
+                    { pos: 3, name: 'JULIANO', pts: 11 }, { pos: 4, name: 'VALMIR', pts: 9 },
+                    { pos: 5, name: 'ARIZINHO', pts: 7 }, { pos: 6, name: 'KLÉBER', pts: 5 },
+                    { pos: 7, name: 'MANDI', pts: 3 }, { pos: 8, name: 'LUCIANO', pts: 1 },
+                    { pos: 9, name: 'GIMENES', pts: 1 }, { pos: 10, name: 'DANILO', pts: 1 }
                 ]
             }
         };
         
         let allParticipantsData = [];
 
+        // Funções JavaScript para a lógica da página
         function calculateOverall(etapa1Data, etapa2Data, etapa3Data) {
             const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
@@ -265,7 +242,7 @@
             }));
         }
 
-        function openModal(pos, name) {
+        function openModal(name) {
             const participant = allParticipantsData.find(p => p.name === name);
             if (!participant) return;
 
@@ -274,11 +251,11 @@
             document.getElementById('modal-position').textContent = `Posição Geral: ${participant.posOverall}`;
             const teamSpan = document.getElementById('modal-team');
             const teamName = participantTeams[name] || '';
-            teamSpan.textContent = teamName ? `${teamName}` : '';
+            teamSpan.textContent = teamName ? `${teamName}` : 'Sem equipe';
             document.getElementById('details-modal').classList.remove('hidden');
         }
 
-        function closeModal(modalType) {
+        function closeModal() {
             document.getElementById('details-modal').classList.add('hidden');
         }
         
@@ -286,32 +263,27 @@
             const container = document.createElement('div');
             container.classList.add('mb-8');
             
-            const titleContainer = document.createElement('div');
-            titleContainer.classList.add('text-center', 'mb-4');
             const titleElement = document.createElement('h2');
-            titleElement.classList.add('text-xl', 'md:text-2xl', 'font-bold', 'text-gray-700');
+            titleElement.classList.add('text-center', 'text-2xl', 'md:text-3xl', 'font-bold', 'text-gray-700', 'mb-2');
             titleElement.textContent = title;
-            titleContainer.appendChild(titleElement);
+            container.appendChild(titleElement);
             const monthElement = document.createElement('p');
-            monthElement.classList.add('text-gray-500', 'mt-1');
+            monthElement.classList.add('text-gray-500', 'text-center', 'mb-6');
             monthElement.textContent = monthlyData.agosto.title;
-            titleContainer.appendChild(monthElement);
-            container.appendChild(titleContainer);
+            container.appendChild(monthElement);
 
             const table = document.createElement('table');
-            table.classList.add('w-full', 'border-collapse', 'rounded-lg', 'overflow-hidden', 'shadow-md');
+            table.classList.add('w-full', 'border-collapse', 'overflow-hidden');
             
             const thead = document.createElement('thead');
-            thead.classList.add('bg-gray-100', 'text-gray-600', 'font-bold', 'text-sm', 'uppercase');
+            thead.classList.add('bg-gray-100', 'text-gray-600', 'text-xs', 'md:text-sm', 'uppercase', 'font-bold');
             const headerRow = document.createElement('tr');
             let headerHtml = `
-                <th class="p-4 text-left table-header-text col-pos">#</th>
-                <th class="p-4 text-left table-header-text col-name">Nome</th>
-                <th class="p-4 text-right table-header-text col-pts">Pts</th>`;
+                <th class="p-4 text-left">#</th>
+                <th class="p-4 text-left">Nome</th>
+                <th class="p-4 text-right">Pts</th>`;
             if (isOverall) {
-                headerHtml += `<th class="p-4 text-right table-header-text hidden md:table-cell">Etapas</th>`;
-            } else {
-                headerHtml += `<th class="p-4 text-right table-header-text hidden md:table-cell"></th>`;
+                headerHtml += `<th class="p-4 text-right hidden md:table-cell">Etapas</th>`;
             }
             headerHtml += `</tr>`;
             headerRow.innerHTML = headerHtml;
@@ -322,7 +294,7 @@
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100', 'cursor-pointer');
+                row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100', 'cursor-pointer', 'transition-colors', 'duration-200');
                 
                 if (isOverall) {
                     if (index === 0) {
@@ -338,77 +310,35 @@
                 const teamName = participantTeams[item.name] || '';
                 
                 let rowHtml = `
-                    <td class="table-cell">${item.pos}</td>
-                    <td class="table-cell">
+                    <td class="p-4">${item.pos}</td>
+                    <td class="p-4">
                         <div class="flex items-center whitespace-nowrap">
                             <div class="profile-thumb-wrapper">
                                 <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb">
                             </div>
-                            <div class="ml-2 flex flex-col">
-                                <span class="font-bold">${item.name}</span>
+                            <div class="ml-3 flex flex-col">
+                                <span class="font-semibold text-gray-800">${item.name}</span>
                                 ${teamName ? `<span class="text-xs text-gray-500">${teamName}</span>` : ''}
                             </div>
                         </div>
                     </td>
-                    <td class="table-cell text-right"><b>${item.pts}</b></td>`;
+                    <td class="p-4 text-right text-black font-bold">${item.pts}</td>`;
                 if (isOverall) {
                     const participant = allParticipantsData.find(p => p.name === item.name);
-                    rowHtml += `<td class="table-cell hidden md:table-cell text-xs text-right">
+                    rowHtml += `<td class="p-4 hidden md:table-cell text-xs text-right text-gray-500">
                                     <span>(${participant.ptsEtapa1} | ${participant.ptsEtapa2} | ${participant.ptsEtapa3})</span>
                                 </td>`;
-                } else {
-                    rowHtml += `<td class="table-cell hidden md:table-cell"></td>`;
                 }
                 rowHtml += `</tr>`;
                 row.innerHTML = rowHtml;
                 
-                row.addEventListener('click', () => openModal(item.pos, item.name));
+                row.addEventListener('click', () => openModal(item.name));
                 tbody.appendChild(row);
             });
             table.appendChild(tbody);
             
             container.appendChild(table);
             return container;
-        }
-
-        function calculateOverall(etapa1Data, etapa2Data, etapa3Data) {
-            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name)]);
-            const overallData = Array.from(allParticipants).map(name => {
-                const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
-                const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
-                const participant3 = etapa3Data.find(p => p.name === name) || { pts: 0 };
-                return {
-                    name: name,
-                    pts_etapa_1: participant1.pts,
-                    pts_etapa_2: participant2.pts,
-                    pts_etapa_3: participant3.pts,
-                    pts: participant1.pts + participant2.pts + participant3.pts
-                };
-            });
-            
-            overallData.sort((a, b) => b.pts - a.pts);
-
-            return overallData.map((item, index) => ({
-                pos: index + 1,
-                name: item.name,
-                pts: item.pts,
-                pts_etapa_1: item.pts_etapa_1,
-                pts_etapa_2: item.pts_etapa_2,
-                pts_etapa_3: item.pts_etapa_3
-            }));
-        }
-
-        function getParticipantData(overallData) {
-            return overallData.map(p => ({
-                name: p.name,
-                image: participantImages[p.name] || defaultProfileImageUrl,
-                team: participantTeams[p.name] || 'Sem equipe',
-                posOverall: p.pos,
-                ptsOverall: p.pts,
-                ptsEtapa1: p.pts_etapa_1,
-                ptsEtapa2: p.pts_etapa_2,
-                ptsEtapa3: p.pts_etapa_3
-            }));
         }
 
         function renderClassification(activeTab) {
@@ -423,9 +353,9 @@
             };
 
             for (const tab in tabs) {
-                tabs[tab].style.display = 'none';
+                tabs[tab].classList.add('hidden');
             }
-            tabs[activeTab].style.display = 'block';
+            tabs[activeTab].classList.remove('hidden');
 
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('tab-button-active');
@@ -450,7 +380,6 @@
 
         window.onload = function() {
             setupTabs();
-            renderClassification('geral');
             
             const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
             allParticipantsData = getParticipantData(overallClassification);
@@ -464,6 +393,8 @@
             containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
             containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
             containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
+
+            renderClassification('geral');
         };
     </script>
 </body>

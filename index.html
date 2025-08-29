@@ -77,11 +77,31 @@
             height: 100%;
             object-fit: cover;
         }
+        
+        /* Estilos para o pódio */
+        .podium-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid;
+        }
 
-        /* Cores de destaque para os primeiros colocados */
-        .bg-subtle-gold { background-color: #FFD70020; }
-        .bg-subtle-silver { background-color: #C0C0C020; }
-        .bg-subtle-bronze { background-color: #CD7F3220; }
+        .champion-image {
+            width: 150px;
+            height: 150px;
+            border-color: #FFD700;
+        }
+        .second-place-image {
+            border-color: #C0C0C0;
+        }
+        .third-place-image {
+            border-color: #CD7F32;
+        }
+        .podium-name {
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
 
         /* Estilos dos botões de abas */
         .tab-button {
@@ -117,6 +137,7 @@
                 <button id="tab-etapa1" class="tab-button">Etapa 1</button>
                 <button id="tab-etapa2" class="tab-button">Etapa 2</button>
                 <button id="tab-etapa3" class="tab-button">Etapa 3</button>
+                <button id="tab-etapa4" class="tab-button">Etapa 4</button>
             </div>
             
             <!-- Contêineres das tabelas, com apenas um visível por vez -->
@@ -124,6 +145,7 @@
             <div id="etapa1-table-container" class="hidden"></div>
             <div id="etapa2-table-container" class="hidden"></div>
             <div id="etapa3-table-container" class="hidden"></div>
+            <div id="etapa4-table-container" class="hidden"></div>
         </main>
     
         <!-- Modal de detalhes do participante -->
@@ -173,7 +195,8 @@
             'GIMENES': 'EMA - Equipe Mourãoense de Avulsos',
             'EMANUEL': 'EMA - Equipe Mourãoense de Avulsos',
             'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos',
-            'WALTER': 'EMA - Equipe Mourãoense de Avulsos'
+            'WALTER': 'EMA - Equipe Mourãoense de Avulsos',
+            'MAYKON': 'EMA - Equipe Mourãoense de Avulsos'
         };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
@@ -201,6 +224,13 @@
                     { pos: 5, name: 'ARIZINHO', pts: 7 }, { pos: 6, name: 'KLÉBER', pts: 5 },
                     { pos: 7, name: 'MANDI', pts: 3 }, { pos: 8, name: 'LUCIANO', pts: 1 },
                     { pos: 9, name: 'GIMENES', pts: 1 }, { pos: 10, name: 'DANILO', pts: 1 }
+                ],
+                etapa4: [
+                    { pos: 1, name: 'MAIQUE', pts: 15 }, { pos: 2, name: 'WALTER', pts: 13 },
+                    { pos: 3, name: 'JULIANO', pts: 11 }, { pos: 4, name: 'VALMIR', pts: 9 },
+                    { pos: 5, name: 'KLÉBER', pts: 7 }, { pos: 6, name: 'VINICIUS', pts: 5 },
+                    { pos: 7, name: 'ARIZINHO', pts: 3 }, { pos: 8, name: 'DANILO', pts: 1 },
+                    { pos: 9, name: 'GIMENES', pts: 1 }, { pos: 10, name: 'MAYKON', pts: 1 }
                 ]
             }
         };
@@ -208,18 +238,20 @@
         let allParticipantsData = [];
 
         // Funções JavaScript para a lógica da página
-        function calculateOverall(etapa1Data, etapa2Data, etapa3Data) {
-            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name)]);
+        function calculateOverall(etapa1Data, etapa2Data, etapa3Data, etapa4Data) {
+            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name), ...etapa4Data.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
                 const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
                 const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
                 const participant3 = etapa3Data.find(p => p.name === name) || { pts: 0 };
+                const participant4 = etapa4Data.find(p => p.name === name) || { pts: 0 };
                 return {
                     name: name,
                     pts_etapa_1: participant1.pts,
                     pts_etapa_2: participant2.pts,
                     pts_etapa_3: participant3.pts,
-                    pts: participant1.pts + participant2.pts + participant3.pts
+                    pts_etapa_4: participant4.pts,
+                    pts: participant1.pts + participant2.pts + participant3.pts + participant4.pts
                 };
             });
             
@@ -231,7 +263,8 @@
                 pts: item.pts,
                 pts_etapa_1: item.pts_etapa_1,
                 pts_etapa_2: item.pts_etapa_2,
-                pts_etapa_3: item.pts_etapa_3
+                pts_etapa_3: item.pts_etapa_3,
+                pts_etapa_4: item.pts_etapa_4
             }));
         }
 
@@ -244,7 +277,8 @@
                 ptsOverall: p.pts,
                 ptsEtapa1: p.pts_etapa_1,
                 ptsEtapa2: p.pts_etapa_2,
-                ptsEtapa3: p.pts_etapa_3
+                ptsEtapa3: p.pts_etapa_3,
+                ptsEtapa4: p.pts_etapa_4
             }));
         }
 
@@ -278,6 +312,32 @@
             monthElement.textContent = monthlyData.agosto.title;
             container.appendChild(monthElement);
 
+            if (isOverall) {
+                const podiumWrapper = document.createElement('div');
+                podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
+                
+                // 1º Lugar
+                const firstPlace = data[0];
+                const podium1Container = document.createElement('div');
+                podium1Container.classList.add('flex', 'flex-col', 'items-center', 'mb-8');
+                const podium1 = createPodiumItem(firstPlace, 1, 'champion');
+                podium1Container.appendChild(podium1);
+                podiumWrapper.appendChild(podium1Container);
+
+                // 2º e 3º Lugar
+                const secondPlace = data[1];
+                const thirdPlace = data[2];
+                const podiumOthersContainer = document.createElement('div');
+                podiumOthersContainer.classList.add('flex', 'justify-center', 'items-end', 'gap-4', 'mt-4');
+                const podium2 = createPodiumItem(secondPlace, 2, 'second-place');
+                const podium3 = createPodiumItem(thirdPlace, 3, 'third-place');
+                podiumOthersContainer.appendChild(podium2);
+                podiumOthersContainer.appendChild(podium3);
+                podiumWrapper.appendChild(podiumOthersContainer);
+                
+                container.appendChild(podiumWrapper);
+            }
+
             const table = document.createElement('table');
             table.classList.add('w-full', 'border-collapse', 'overflow-hidden');
             
@@ -299,18 +359,11 @@
             const tbody = document.createElement('tbody');
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
+                // Se for a tabela geral, começar a renderização a partir do 4º colocado (índice 3)
+                if (isOverall && index < 3) return;
+
                 const row = document.createElement('tr');
                 row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100', 'cursor-pointer', 'transition-colors', 'duration-200');
-                
-                if (isOverall) {
-                    if (index === 0) {
-                        row.classList.add('bg-subtle-gold');
-                    } else if (index === 1) {
-                        row.classList.add('bg-subtle-silver');
-                    } else if (index === 2) {
-                        row.classList.add('bg-subtle-bronze');
-                    }
-                }
                 
                 const imageUrl = participantImages[item.name] || defaultProfileImageUrl;
                 const teamName = participantTeams[item.name] || '';
@@ -332,7 +385,7 @@
                 if (isOverall) {
                     const participant = allParticipantsData.find(p => p.name === item.name);
                     rowHtml += `<td class="p-4 hidden md:table-cell text-xs text-right text-gray-500">
-                                    <span>(${participant.ptsEtapa1} | ${participant.ptsEtapa2} | ${participant.ptsEtapa3})</span>
+                                    <span>(${participant.ptsEtapa1} | ${participant.ptsEtapa2} | ${participant.ptsEtapa3} | ${participant.ptsEtapa4})</span>
                                 </td>`;
                 }
                 rowHtml += `</tr>`;
@@ -347,15 +400,53 @@
             return container;
         }
 
+        function createPodiumItem(item, position, cssClass) {
+            const podiumItem = document.createElement('div');
+            podiumItem.classList.add('flex', 'flex-col', 'items-center', 'text-center');
+            
+            const img = document.createElement('img');
+            img.src = participantImages[item.name] || defaultProfileImageUrl;
+            img.alt = `Profile Picture of ${item.name}`;
+            img.classList.add('podium-image', `${cssClass}-image`);
+            
+            const nameElement = document.createElement('span');
+            nameElement.classList.add('podium-name', 'text-sm', 'text-gray-800');
+            nameElement.textContent = item.name;
+            
+            const detailsContainer = document.createElement('div');
+            detailsContainer.classList.add('mt-2', 'text-center');
+
+            const positionElement = document.createElement('p');
+            positionElement.classList.add('text-sm', 'font-semibold', 'text-gray-700');
+            positionElement.textContent = `Posição: ${position}º`;
+
+            const pointsElement = document.createElement('p');
+            pointsElement.classList.add('text-sm', 'text-gray-600');
+            pointsElement.textContent = `Pontos: ${item.pts}`;
+
+            detailsContainer.appendChild(positionElement);
+            detailsContainer.appendChild(pointsElement);
+
+            podiumItem.appendChild(img);
+            podiumItem.appendChild(nameElement);
+            podiumItem.appendChild(detailsContainer);
+
+            podiumItem.addEventListener('click', () => openModal(item.name));
+            
+            return podiumItem;
+        }
+
+
         function renderClassification(activeTab) {
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
+            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3, monthlyData.agosto.etapa4);
             allParticipantsData = getParticipantData(overallClassification);
 
             const tabs = {
                 'geral': document.getElementById('geral-table-container'),
                 'etapa1': document.getElementById('etapa1-table-container'),
                 'etapa2': document.getElementById('etapa2-table-container'),
-                'etapa3': document.getElementById('etapa3-table-container')
+                'etapa3': document.getElementById('etapa3-table-container'),
+                'etapa4': document.getElementById('etapa4-table-container')
             };
 
             for (const tab in tabs) {
@@ -382,23 +473,28 @@
             document.getElementById('tab-etapa3').addEventListener('click', () => {
                 renderClassification('etapa3');
             });
+            document.getElementById('tab-etapa4').addEventListener('click', () => {
+                renderClassification('etapa4');
+            });
         }
 
         window.onload = function() {
             setupTabs();
             
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3);
+            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3, monthlyData.agosto.etapa4);
             allParticipantsData = getParticipantData(overallClassification);
             
             const containerGeral = document.getElementById('geral-table-container');
             const containerEtapa1 = document.getElementById('etapa1-table-container');
             const containerEtapa2 = document.getElementById('etapa2-table-container');
             const containerEtapa3 = document.getElementById('etapa3-table-container');
+            const containerEtapa4 = document.getElementById('etapa4-table-container');
 
             containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
             containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
             containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
             containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
+            containerEtapa4.appendChild(createTable('Classificação Etapa 4', monthlyData.agosto.etapa4, false));
 
             renderClassification('geral');
         };

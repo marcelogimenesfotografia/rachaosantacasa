@@ -119,6 +119,29 @@
             color: #000000; /* Texto preto para o botão ativo */
             border-color: #FFD700;
         }
+
+        /* Estilos para o container de seleção de mês */
+        .month-selector-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Estilos para o menu suspenso de meses */
+        #month-select {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            border: 2px solid #e5e7eb;
+            background-color: #f3f4f6;
+            color: #4b5563;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-align-last: center;
+        }
+        
     </style>
 </head>
 <body>
@@ -131,6 +154,15 @@
 
         <!-- Contêiner principal com fundo e padding -->
         <main id="main-container" class="p-6 md:p-12">
+            <!-- Seletor de meses: agora é apenas um menu suspenso -->
+            <div class="month-selector-container mb-4">
+                <label for="month-select" class="font-bold text-gray-700">Mês:</label>
+                <select id="month-select" class="shadow-sm">
+                    <option value="agosto">Agosto</option>
+                    <option value="setembro" selected>Setembro</option>
+                </select>
+            </div>
+            
             <!-- Contêiner de abas (tabs) -->
             <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
                 <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
@@ -196,7 +228,8 @@
             'EMANUEL': 'EMA - Equipe Mourãoense de Avulsos',
             'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos',
             'WALTER': 'EMA - Equipe Mourãoense de Avulsos',
-            'MAYKON': 'EMA - Equipe Mourãoense de Avulsos'
+            'MAYKON': 'EMA - Equipe Mourãoense de Avulsos',
+            'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos'
         };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
@@ -232,19 +265,34 @@
                     { pos: 7, name: 'ARIZINHO', pts: 3 }, { pos: 8, name: 'DANILO', pts: 1 },
                     { pos: 9, name: 'GIMENES', pts: 1 }, { pos: 10, name: 'MAYKON', pts: 1 }
                 ]
+            },
+            setembro: {
+                title: 'Setembro/2025',
+                etapa1: [],
+                etapa2: [],
+                etapa3: [],
+                etapa4: []
             }
         };
         
         let allParticipantsData = [];
+        let currentTab = 'geral';
 
         // Funções JavaScript para a lógica da página
         function calculateOverall(etapa1Data, etapa2Data, etapa3Data, etapa4Data) {
-            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name), ...etapa4Data.map(p => p.name)]);
+            const allParticipants = new Set([
+                ...etapa1Data.map(p => p.name),
+                ...etapa2Data.map(p => p.name),
+                ...etapa3Data.map(p => p.name),
+                ...etapa4Data.map(p => p.name)
+            ]);
+            
             const overallData = Array.from(allParticipants).map(name => {
                 const participant1 = etapa1Data.find(p => p.name === name) || { pts: 0 };
                 const participant2 = etapa2Data.find(p => p.name === name) || { pts: 0 };
                 const participant3 = etapa3Data.find(p => p.name === name) || { pts: 0 };
                 const participant4 = etapa4Data.find(p => p.name === name) || { pts: 0 };
+                
                 return {
                     name: name,
                     pts_etapa_1: participant1.pts,
@@ -299,7 +347,7 @@
             document.getElementById('details-modal').classList.add('hidden');
         }
         
-        function createTable(title, data, isOverall = false) {
+        function createTable(title, data, isOverall = false, monthTitle) {
             const container = document.createElement('div');
             container.classList.add('mb-8');
             
@@ -307,34 +355,35 @@
             titleElement.classList.add('text-center', 'text-2xl', 'md:text-3xl', 'font-bold', 'text-gray-700', 'mb-2');
             titleElement.textContent = title;
             container.appendChild(titleElement);
+
             const monthElement = document.createElement('p');
             monthElement.classList.add('text-gray-500', 'text-center', 'mb-6');
-            monthElement.textContent = monthlyData.agosto.title;
+            monthElement.textContent = monthTitle;
             container.appendChild(monthElement);
 
-            if (isOverall) {
+            if (isOverall && data.length > 0) {
                 const podiumWrapper = document.createElement('div');
                 podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
                 
+                const podiumContainer = document.createElement('div');
+                podiumContainer.classList.add('flex', 'justify-center', 'items-end', 'gap-4');
+
+                // 2º Lugar
+                const secondPlace = data[1];
+                const podium2 = createPodiumItem(secondPlace, 2, 'second-place');
+                podiumContainer.appendChild(podium2);
+
                 // 1º Lugar
                 const firstPlace = data[0];
-                const podium1Container = document.createElement('div');
-                podium1Container.classList.add('flex', 'flex-col', 'items-center', 'mb-8');
                 const podium1 = createPodiumItem(firstPlace, 1, 'champion');
-                podium1Container.appendChild(podium1);
-                podiumWrapper.appendChild(podium1Container);
-
-                // 2º e 3º Lugar
-                const secondPlace = data[1];
-                const thirdPlace = data[2];
-                const podiumOthersContainer = document.createElement('div');
-                podiumOthersContainer.classList.add('flex', 'justify-center', 'items-end', 'gap-4', 'mt-4');
-                const podium2 = createPodiumItem(secondPlace, 2, 'second-place');
-                const podium3 = createPodiumItem(thirdPlace, 3, 'third-place');
-                podiumOthersContainer.appendChild(podium2);
-                podiumOthersContainer.appendChild(podium3);
-                podiumWrapper.appendChild(podiumOthersContainer);
+                podiumContainer.appendChild(podium1);
                 
+                // 3º Lugar
+                const thirdPlace = data[2];
+                const podium3 = createPodiumItem(thirdPlace, 3, 'third-place');
+                podiumContainer.appendChild(podium3);
+                
+                podiumWrapper.appendChild(podiumContainer);
                 container.appendChild(podiumWrapper);
             }
 
@@ -359,7 +408,7 @@
             const tbody = document.createElement('tbody');
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
-                // Se for a tabela geral, começar a renderização a partir do 4º colocado (índice 3)
+                // Se for a tabela geral e houver pódio, começar a renderização a partir do 4º colocado (índice 3)
                 if (isOverall && index < 3) return;
 
                 const row = document.createElement('tr');
@@ -373,7 +422,7 @@
                     <td class="p-4">
                         <div class="flex items-center">
                             <div class="profile-thumb-wrapper">
-                                <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb">
+                                <img src="${imageUrl}" alt="Profile Picture" class="profile-thumb" onerror="this.onerror=null;this.src='${defaultProfileImageUrl}';">
                             </div>
                             <div class="ml-3 flex flex-col">
                                 <span class="font-semibold text-gray-800 text-sm sm:text-base">${item.name}</span>
@@ -408,6 +457,7 @@
             img.src = participantImages[item.name] || defaultProfileImageUrl;
             img.alt = `Profile Picture of ${item.name}`;
             img.classList.add('podium-image', `${cssClass}-image`);
+            img.onerror = function() { this.onerror=null;this.src='${defaultProfileImageUrl}'; };
             
             const nameElement = document.createElement('span');
             nameElement.classList.add('podium-name', 'text-sm', 'text-gray-800');
@@ -437,66 +487,63 @@
         }
 
 
-        function renderClassification(activeTab) {
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3, monthlyData.agosto.etapa4);
-            allParticipantsData = getParticipantData(overallClassification);
-
-            const tabs = {
-                'geral': document.getElementById('geral-table-container'),
-                'etapa1': document.getElementById('etapa1-table-container'),
-                'etapa2': document.getElementById('etapa2-table-container'),
-                'etapa3': document.getElementById('etapa3-table-container'),
-                'etapa4': document.getElementById('etapa4-table-container')
-            };
-
-            for (const tab in tabs) {
-                tabs[tab].classList.add('hidden');
+        function renderClassification(month, tab) {
+            const monthData = monthlyData[month];
+            
+            // Esconde todas as tabelas
+            document.querySelectorAll('[id$="-table-container"]').forEach(container => {
+                container.classList.add('hidden');
+            });
+            // Mostra a tabela do mês e aba selecionados
+            const containerToShow = document.getElementById(`${tab}-table-container`);
+            if (containerToShow) {
+                containerToShow.classList.remove('hidden');
             }
-            tabs[activeTab].classList.remove('hidden');
 
+            // Atualiza o estado visual das abas de classificação
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('tab-button-active');
             });
-            document.getElementById(`tab-${activeTab}`).classList.add('tab-button-active');
+            const tabButton = document.getElementById(`tab-${tab}`);
+            if (tabButton) {
+                tabButton.classList.add('tab-button-active');
+            }
+
+            // Gera e insere a tabela no container correto
+            if (tab === 'geral') {
+                const overallClassification = calculateOverall(monthData.etapa1, monthData.etapa2, monthData.etapa3, monthData.etapa4);
+                allParticipantsData = getParticipantData(overallClassification);
+                containerToShow.innerHTML = '';
+                containerToShow.appendChild(createTable('Classificação Geral', overallClassification, true, monthData.title));
+            } else {
+                const etapaData = monthData[tab];
+                containerToShow.innerHTML = '';
+                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, etapaData, false, monthData.title));
+            }
         }
 
-        function setupTabs() {
-            document.getElementById('tab-geral').addEventListener('click', () => {
-                renderClassification('geral');
+        function setupEventListeners() {
+            // Event listener para as abas de classificação
+            document.getElementById('tabs-container').addEventListener('click', (event) => {
+                if (event.target.classList.contains('tab-button')) {
+                    currentTab = event.target.id.replace('tab-', '');
+                    const currentMonth = document.getElementById('month-select').value;
+                    renderClassification(currentMonth, currentTab);
+                }
             });
-            document.getElementById('tab-etapa1').addEventListener('click', () => {
-                renderClassification('etapa1');
-            });
-            document.getElementById('tab-etapa2').addEventListener('click', () => {
-                renderClassification('etapa2');
-            });
-            document.getElementById('tab-etapa3').addEventListener('click', () => {
-                renderClassification('etapa3');
-            });
-            document.getElementById('tab-etapa4').addEventListener('click', () => {
-                renderClassification('etapa4');
+
+            // Event listener para o menu suspenso de meses
+            document.getElementById('month-select').addEventListener('change', (event) => {
+                const currentMonth = event.target.value;
+                renderClassification(currentMonth, currentTab);
             });
         }
 
         window.onload = function() {
-            setupTabs();
-            
-            const overallClassification = calculateOverall(monthlyData.agosto.etapa1, monthlyData.agosto.etapa2, monthlyData.agosto.etapa3, monthlyData.agosto.etapa4);
-            allParticipantsData = getParticipantData(overallClassification);
-            
-            const containerGeral = document.getElementById('geral-table-container');
-            const containerEtapa1 = document.getElementById('etapa1-table-container');
-            const containerEtapa2 = document.getElementById('etapa2-table-container');
-            const containerEtapa3 = document.getElementById('etapa3-table-container');
-            const containerEtapa4 = document.getElementById('etapa4-table-container');
-
-            containerGeral.appendChild(createTable('Classificação Geral', overallClassification, true));
-            containerEtapa1.appendChild(createTable('Classificação Etapa 1', monthlyData.agosto.etapa1, false));
-            containerEtapa2.appendChild(createTable('Classificação Etapa 2', monthlyData.agosto.etapa2, false));
-            containerEtapa3.appendChild(createTable('Classificação Etapa 3', monthlyData.agosto.etapa3, false));
-            containerEtapa4.appendChild(createTable('Classificação Etapa 4', monthlyData.agosto.etapa4, false));
-
-            renderClassification('geral');
+            setupEventListeners();
+            // Renderiza a tabela inicial com o mês atual e a aba geral
+            const currentMonth = document.getElementById('month-select').value;
+            renderClassification(currentMonth, currentTab);
         };
     </script>
 </body>

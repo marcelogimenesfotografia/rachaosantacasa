@@ -210,7 +210,10 @@
             'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png',
             'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png',
             'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png',
-            'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png'
+            'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png',
+            'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L',
+            'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P',
+            'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C'
         };
         const participantTeams = {
             'MANDI': 'WK Team',
@@ -229,7 +232,10 @@
             'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos',
             'WALTER': 'EMA - Equipe Mourãoense de Avulsos',
             'MAYKON': 'EMA - Equipe Mourãoense de Avulsos',
-            'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos'
+            'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos',
+            'LUCAS': 'Team Lúcio',
+            'PEDROSO': 'Team HP',
+            'COUTO': 'EMC - Equipe Mourãoense de Ciclismo'
         };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
@@ -268,7 +274,18 @@
             },
             setembro: {
                 title: 'Setembro/2025',
-                etapa1: [],
+                etapa1: [
+                    { pos: 1, name: 'VINICIUS', pts: 15 },
+                    { pos: 2, name: 'EDSON', pts: 13 },
+                    { pos: 3, name: 'LUCAS', pts: 11 },
+                    { pos: 4, name: 'JULIANO', pts: 9 },
+                    { pos: 5, name: 'GIMENES', pts: 7 },
+                    { pos: 6, name: 'PEDROSO', pts: 5 },
+                    { pos: 7, name: 'RAUL', pts: 3 },
+                    { pos: 8, name: 'COUTO', pts: 1 },
+                    { pos: 9, name: 'KLÉBER', pts: 1 },
+                    { pos: 10, name: 'VALMIR', pts: 1 }
+                ],
                 etapa2: [],
                 etapa3: [],
                 etapa4: []
@@ -347,7 +364,7 @@
             document.getElementById('details-modal').classList.add('hidden');
         }
         
-        function createTable(title, data, isOverall = false, monthTitle) {
+        function createTable(title, data, isOverall = false, month, monthTitle) {
             const container = document.createElement('div');
             container.classList.add('mb-8');
             
@@ -361,7 +378,8 @@
             monthElement.textContent = monthTitle;
             container.appendChild(monthElement);
 
-            if (isOverall && data.length > 0) {
+            // Adiciona o pódio apenas se for a tabela geral e o mês estiver completo (todas as etapas com dados)
+            if (isOverall && data.length > 0 && monthlyData[month].etapa2.length > 0) {
                 const podiumWrapper = document.createElement('div');
                 podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
                 
@@ -409,8 +427,8 @@
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
                 // Se for a tabela geral e houver pódio, começar a renderização a partir do 4º colocado (índice 3)
-                if (isOverall && index < 3) return;
-
+                if (isOverall && monthlyData[month].etapa2.length > 0 && index < 3) return;
+                
                 const row = document.createElement('tr');
                 row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100', 'cursor-pointer', 'transition-colors', 'duration-200');
                 
@@ -514,11 +532,11 @@
                 const overallClassification = calculateOverall(monthData.etapa1, monthData.etapa2, monthData.etapa3, monthData.etapa4);
                 allParticipantsData = getParticipantData(overallClassification);
                 containerToShow.innerHTML = '';
-                containerToShow.appendChild(createTable('Classificação Geral', overallClassification, true, monthData.title));
+                containerToShow.appendChild(createTable('Classificação Geral', overallClassification, true, month, monthData.title));
             } else {
                 const etapaData = monthData[tab];
                 containerToShow.innerHTML = '';
-                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, etapaData, false, monthData.title));
+                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, etapaData, false, month, monthData.title));
             }
         }
 

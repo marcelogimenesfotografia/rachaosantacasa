@@ -13,14 +13,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos globais do corpo da página */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #FFFFFF; /* Fundo branco puro */
-            color: #000000; /* Cor do texto principal */
+            background-color: #FFFFFF;
+            color: #000000;
         }
-
-        /* Estilos do modal de detalhes */
         .modal {
             position: fixed;
             z-index: 100;
@@ -61,8 +58,6 @@
             margin-bottom: 1rem;
             border: 3px solid #e5e7eb;
         }
-
-        /* Estilos para as miniaturas de perfil na tabela */
         .profile-thumb-wrapper {
             width: 50px;
             height: 50px;
@@ -70,15 +65,13 @@
             overflow: hidden;
             flex-shrink: 0;
             border: 2px solid #e5e7eb;
-            background-color: #e5e7eb; /* Adicionado o fundo cinza aqui */
+            background-color: #e5e7eb;
         }
         .profile-thumb {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        
-        /* Estilos para o pódio */
         .podium-image {
             width: 120px;
             height: 120px;
@@ -86,24 +79,17 @@
             object-fit: cover;
             border: 4px solid;
         }
-
         .champion-image {
             width: 150px;
             height: 150px;
             border-color: #FFD700;
         }
-        .second-place-image {
-            border-color: #C0C0C0;
-        }
-        .third-place-image {
-            border-color: #CD7F32;
-        }
+        .second-place-image { border-color: #C0C0C0; }
+        .third-place-image { border-color: #CD7F32; }
         .podium-name {
             font-weight: 600;
             margin-top: 0.5rem;
         }
-
-        /* Estilos dos botões de abas */
         .tab-button {
             padding: 0.5rem 1rem;
             font-weight: 700;
@@ -115,12 +101,10 @@
             color: #4b5563;
         }
         .tab-button-active {
-            background-color: #FFD700; /* Fundo amarelo/ouro para o botão ativo */
-            color: #000000; /* Texto preto para o botão ativo */
+            background-color: #FFD700;
+            color: #000000;
             border-color: #FFD700;
         }
-
-        /* Estilos para o container de seleção de mês */
         .month-selector-container {
             display: flex;
             flex-wrap: wrap;
@@ -128,8 +112,6 @@
             gap: 1rem;
             align-items: center;
         }
-
-        /* Estilos para o menu suspenso de meses */
         #month-select {
             padding: 0.5rem 1rem;
             border-radius: 9999px;
@@ -141,20 +123,15 @@
             text-align: center;
             text-align-last: center;
         }
-        
     </style>
 </head>
 <body>
-    <!-- Contêiner principal para centralizar e controlar a largura em todas as telas -->
     <div class="max-w-5xl mx-auto md:w-full p-4 md:p-8">
         <header class="text-center mb-10">
-            <!-- A logo agora está com um tamanho menor -->
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-xs mx-auto">
         </header>
 
-        <!-- Contêiner principal com fundo e padding -->
         <main id="main-container" class="p-6 md:p-12">
-            <!-- Seletor de meses: agora é apenas um menu suspenso -->
             <div class="month-selector-container mb-4">
                 <label for="month-select" class="font-bold text-gray-700">Mês:</label>
                 <select id="month-select" class="shadow-sm">
@@ -163,7 +140,6 @@
                 </select>
             </div>
             
-            <!-- Contêiner de abas (tabs) -->
             <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
                 <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
                 <button id="tab-etapa1" class="tab-button">Etapa 1</button>
@@ -172,18 +148,16 @@
                 <button id="tab-etapa4" class="tab-button">Etapa 4</button>
             </div>
             
-            <!-- Contêineres das tabelas, com apenas um visível por vez -->
             <div id="geral-table-container"></div>
-            <div id="etapa1-table-container" class="hidden"></div>
-            <div id="etapa2-table-container" class="hidden"></div>
-            <div id="etapa3-table-container" class="hidden"></div>
-            <div id="etapa4-table-container" class="hidden"></div>
+            <div id="etapa1-table-container"></div>
+            <div id="etapa2-table-container"></div>
+            <div id="etapa3-table-container"></div>
+            <div id="etapa4-table-container"></div>
         </main>
     
-        <!-- Modal de detalhes do participante -->
         <div id="details-modal" class="modal hidden">
             <div class="modal-content">
-                <span class="close-button" onclick="closeModal('details')">&times;</span>
+                <span class="close-button" onclick="closeModal()">&times;</span>
                 <img id="modal-image" class="modal-image mx-auto mb-4" src="" alt="Profile Picture">
                 <h3 id="modal-name" class="text-xl md:text-2xl font-bold text-gray-800"></h3>
                 <p id="modal-position" class="text-sm text-gray-600"></p>
@@ -191,7 +165,6 @@
             </div>
         </div>
         
-        <!-- Rodapé -->
         <footer class="mt-8 p-6 md:p-8 text-gray-600 text-center">
             <div>
                 <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-24 h-auto mx-auto mb-2 opacity-80">
@@ -234,8 +207,8 @@
             'WALTER': 'EMA - Equipe Mourãoense de Avulsos',
             'MAYKON': 'EMA - Equipe Mourãoense de Avulsos',
             'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos',
-            'LUCAS': 'Team Lúcio',
-            'PEDROSO': 'Team HP',
+            'LUCAS': 'Sem equipe',
+            'PEDROSO': 'Equipe Team HP',
             'COUTO': 'EMC - Equipe Mourãoense de Ciclismo',
             'VALENTINO': 'EMC - Equipe Mourãoense de Ciclismo'
         };
@@ -381,7 +354,7 @@
             container.appendChild(monthElement);
 
             // Adiciona o pódio apenas se for a tabela geral e o mês estiver completo (todas as etapas com dados)
-            if (isOverall && data.length > 0 && monthlyData[month].etapa2.length > 0) {
+            if (isOverall && data.length > 0 && monthlyData[month].etapa1.length > 0 && monthlyData[month].etapa2.length > 0 && monthlyData[month].etapa3.length > 0 && monthlyData[month].etapa4.length > 0) {
                 const podiumWrapper = document.createElement('div');
                 podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
                 
@@ -429,7 +402,7 @@
             tbody.classList.add('text-sm', 'md:text-base');
             data.forEach((item, index) => {
                 // Se for a tabela geral e houver pódio, começar a renderização a partir do 4º colocado (índice 3)
-                if (isOverall && monthlyData[month].etapa2.length > 0 && index < 3) return;
+                if (isOverall && monthlyData[month].etapa1.length > 0 && monthlyData[month].etapa2.length > 0 && monthlyData[month].etapa3.length > 0 && monthlyData[month].etapa4.length > 0 && index < 3) return;
                 
                 const row = document.createElement('tr');
                 row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-100', 'cursor-pointer', 'transition-colors', 'duration-200');
@@ -562,4 +535,10 @@
         window.onload = function() {
             setupEventListeners();
             // Renderiza a tabela inicial com o mês atual e a aba geral
-            const currentMonth = document.getElementById('month-select').value
+            const currentMonth = document.getElementById('month-select').value;
+            renderClassification(currentMonth, currentTab);
+        };
+    </script>
+</body>
+</html>
+

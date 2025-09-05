@@ -213,7 +213,8 @@
             'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png',
             'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L',
             'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P',
-            'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C'
+            'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C',
+            'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V'
         };
         const participantTeams = {
             'MANDI': 'WK Team',
@@ -235,7 +236,8 @@
             'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos',
             'LUCAS': 'Team Lúcio',
             'PEDROSO': 'Team HP',
-            'COUTO': 'EMC - Equipe Mourãoense de Ciclismo'
+            'COUTO': 'EMC - Equipe Mourãoense de Ciclismo',
+            'VALENTINO': 'EMC - Equipe Mourãoense de Ciclismo'
         };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
 
@@ -277,14 +279,14 @@
                 etapa1: [
                     { pos: 1, name: 'VINICIUS', pts: 15 },
                     { pos: 2, name: 'EDSON', pts: 13 },
-                    { pos: 3, name: 'LUCAS', pts: 11 },
-                    { pos: 4, name: 'JULIANO', pts: 9 },
-                    { pos: 5, name: 'GIMENES', pts: 7 },
-                    { pos: 6, name: 'PEDROSO', pts: 5 },
-                    { pos: 7, name: 'RAUL', pts: 3 },
-                    { pos: 8, name: 'COUTO', pts: 1 },
-                    { pos: 9, name: 'KLÉBER', pts: 1 },
-                    { pos: 10, name: 'VALMIR', pts: 1 }
+                    { pos: 3, name: 'JULIANO', pts: 11 },
+                    { pos: 4, name: 'GIMENES', pts: 9 },
+                    { pos: 5, name: 'PEDROSO', pts: 7 },
+                    { pos: 6, name: 'RAUL', pts: 5 },
+                    { pos: 7, name: 'COUTO', pts: 3 },
+                    { pos: 8, name: 'KLÉBER', pts: 1 },
+                    { pos: 9, name: 'VALMIR', pts: 1 },
+                    { pos: 10, name: 'VALENTINO', pts: 1 }
                 ],
                 etapa2: [],
                 etapa3: [],
@@ -560,9 +562,4 @@
         window.onload = function() {
             setupEventListeners();
             // Renderiza a tabela inicial com o mês atual e a aba geral
-            const currentMonth = document.getElementById('month-select').value;
-            renderClassification(currentMonth, currentTab);
-        };
-    </script>
-</body>
-</html>
+            const currentMonth = document.getElementById('month-select').value

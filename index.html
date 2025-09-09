@@ -185,6 +185,8 @@
             'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png',
             'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png',
             'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png',
+            'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png',
+            'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png',
             'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L',
             'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P',
             'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C',
@@ -226,6 +228,7 @@
                     { pos: 7, name: 'EMANUEL', pts: 3 }, { pos: 8, name: 'ANDRÉ', pts: 1 },
                     { pos: 9, name: 'THIAGO BORGES', pts: 1 }, { pos: 10, name: 'LUCIANO', pts: 1 }
                 ],
+                etapa1_podium_img: null,
                 etapa2: [
                     { pos: 1, name: 'MANDI', pts: 15 }, { pos: 2, name: 'EDSON', pts: 13 },
                     { pos: 3, name: 'VINICIUS', pts: 11 }, { pos: 4, name: 'JULIANO', pts: 9 },
@@ -233,6 +236,7 @@
                     { pos: 7, name: 'ARIZINHO', pts: 3 }, { pos: 8, name: 'RAUL', pts: 1 },
                     { pos: 9, name: 'DANILO', pts: 1 }, { pos: 10, name: 'GIMENES', pts: 1 }
                 ],
+                etapa2_podium_img: null,
                 etapa3: [
                     { pos: 1, name: 'WALTER', pts: 15 }, { pos: 2, name: 'MAIQUE', pts: 13 },
                     { pos: 3, name: 'JULIANO', pts: 11 }, { pos: 4, name: 'VALMIR', pts: 9 },
@@ -240,13 +244,15 @@
                     { pos: 7, name: 'MANDI', pts: 3 }, { pos: 8, name: 'LUCIANO', pts: 1 },
                     { pos: 9, name: 'GIMENES', pts: 1 }, { pos: 10, name: 'DANILO', pts: 1 }
                 ],
+                etapa3_podium_img: null,
                 etapa4: [
                     { pos: 1, name: 'MAIQUE', pts: 15 }, { pos: 2, name: 'WALTER', pts: 13 },
                     { pos: 3, name: 'JULIANO', pts: 11 }, { pos: 4, name: 'VALMIR', pts: 9 },
                     { pos: 5, name: 'KLÉBER', pts: 7 }, { pos: 6, name: 'VINICIUS', pts: 5 },
                     { pos: 7, name: 'ARIZINHO', pts: 3 }, { pos: 8, name: 'DANILO', pts: 1 },
                     { pos: 9, name: 'GIMENES', pts: 1 }, { pos: 10, name: 'MAYKON', pts: 1 }
-                ]
+                ],
+                etapa4_podium_img: null
             },
             setembro: {
                 title: 'Setembro/2025',
@@ -262,9 +268,13 @@
                     { pos: 9, name: 'VALMIR', pts: 1 },
                     { pos: 10, name: 'VALENTINO', pts: 1 }
                 ],
+                etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png',
                 etapa2: [],
+                etapa2_podium_img: null,
                 etapa3: [],
-                etapa4: []
+                etapa3_podium_img: null,
+                etapa4: [],
+                etapa4_podium_img: null
             }
         };
         
@@ -340,7 +350,7 @@
             document.getElementById('details-modal').classList.add('hidden');
         }
         
-        function createTable(title, data, isOverall = false, month, monthTitle) {
+        function createTable(title, data, isOverall = false, month, monthTitle, tab = '') {
             const container = document.createElement('div');
             container.classList.add('mb-8');
             
@@ -440,6 +450,26 @@
             table.appendChild(tbody);
             
             container.appendChild(table);
+
+            // Adiciona a imagem do pódio para as etapas
+            if (!isOverall && tab) {
+                const podiumImageKey = `${tab}_podium_img`;
+                const imageUrl = monthlyData[month][podiumImageKey];
+                
+                if (imageUrl) {
+                    const podiumImageContainer = document.createElement('div');
+                    podiumImageContainer.classList.add('mt-8', 'text-center');
+                    
+                    const podiumImage = document.createElement('img');
+                    podiumImage.src = imageUrl;
+                    podiumImage.alt = `Pódio ${title}`;
+                    podiumImage.classList.add('mx-auto', 'rounded-lg', 'shadow-lg', 'max-w-full', 'h-auto');
+                    
+                    podiumImageContainer.appendChild(podiumImage);
+                    container.appendChild(podiumImageContainer);
+                }
+            }
+
             return container;
         }
 
@@ -512,7 +542,7 @@
             } else {
                 const etapaData = monthData[tab];
                 containerToShow.innerHTML = '';
-                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, etapaData, false, month, monthData.title));
+                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, etapaData, false, month, monthData.title, tab));
             }
         }
 

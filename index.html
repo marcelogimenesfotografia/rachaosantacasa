@@ -382,12 +382,13 @@
             const container = document.createElement('div');
             container.id = `comments-section-${stageId}`;
             container.className = 'mt-8 pt-8 border-t border-gray-200 max-w-2xl mx-auto';
+            const savedName = localStorage.getItem('commenterName') || '';
 
             container.innerHTML = `
                 <h3 class="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
                 <div class="bg-gray-50 p-4 rounded-lg mb-6 shadow-sm">
                     <form onsubmit="handleCommentSubmit(event, '${stageId}')">
-                        <input type="text" name="name" placeholder="Seu nome" required class="w-full p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        <input type="text" name="name" placeholder="Seu nome" required class="w-full p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" value="${savedName}">
                         <textarea name="comment" placeholder="Escreva seu comentário..." required rows="3" class="w-full p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
                         <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition w-full sm:w-auto">Publicar Comentário</button>
                     </form>
@@ -402,6 +403,7 @@
             if (!commentsListContainer) return;
             commentsListContainer.innerHTML = ''; 
 
+            const savedName = localStorage.getItem('commenterName') || '';
             const stageComments = commentsData[stageId] || [];
             stageComments.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
 
@@ -426,7 +428,7 @@
                     </div>
                     <div id="reply-form-container-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-gray-200">
                         <form onsubmit="handleReplySubmit(event, '${comment.id}')">
-                            <input type="text" name="name" placeholder="Seu nome" required class="w-full text-sm p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                            <input type="text" name="name" placeholder="Seu nome" required class="w-full text-sm p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" value="${savedName}">
                             <textarea name="reply" placeholder="Escreva sua resposta..." required rows="2" class="w-full text-sm p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
                             <button type="submit" class="bg-gray-600 text-white font-bold py-1 px-3 text-sm rounded-lg hover:bg-gray-700 transition">Enviar Resposta</button>
                         </form>
@@ -509,11 +511,13 @@
             const text = form.comment.value.trim();
             if (!name || !text || !userId) return;
 
+            localStorage.setItem('commenterName', name);
+
             try {
                 await addDoc(collection(db, 'comments'), {
                     stageId, name, text, likes: 0, likedBy: [], timestamp: serverTimestamp(), authorId: userId
                 });
-                form.reset();
+                form.comment.value = '';
             } catch (error) { console.error("Erro ao adicionar comentário: ", error); }
         }
 
@@ -534,10 +538,13 @@
             const name = form.name.value.trim();
             const text = form.reply.value.trim();
             if (!name || !text || !userId) return;
+            
+            localStorage.setItem('commenterName', name);
+
             try {
                 const repliesColRef = collection(db, `comments/${commentId}/replies`);
                 await addDoc(repliesColRef, { name, text, timestamp: serverTimestamp(), authorId: userId });
-                form.reset();
+                form.reply.value = ''; 
                 toggleReplyForm(commentId); 
                 const currentMonth = document.getElementById('month-select').value;
                 const currentTab = document.querySelector('.tab-button-active').id.replace('tab-','');

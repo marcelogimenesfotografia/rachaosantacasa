@@ -185,12 +185,19 @@
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, runTransaction, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuração do Firebase
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Sua configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
+            authDomain: "rachaosc.firebaseapp.com",
+            projectId: "rachaosc",
+            storageBucket: "rachaosc.firebasestorage.app",
+            messagingSenderId: "28309536958",
+            appId: "1:28309536958:web:eac51586cdabd82f691eef"
+        };
+        const appId = firebaseConfig.appId;
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -251,13 +258,12 @@
             monthElement.textContent = monthTitle; 
             container.appendChild(monthElement);
 
-            // Bloco de interação (Curtir) acima da tabela
             const stageId = isOverall ? `${month}_geral` : `${month}_${tab}`;
             const hasDataForLikes = (isOverall && data.length > 0) || (!isOverall && tab && data.length > 0);
 
             if (hasDataForLikes) {
                 const interactionContainer = document.createElement('div');
-                interactionContainer.className = 'mb-4 flex justify-center'; // Center the button
+                interactionContainer.className = 'mb-4 flex justify-center';
 
                 const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
                 const userHasLiked = userId && likeInfo.likedBy.includes(userId);
@@ -275,9 +281,27 @@
                 container.appendChild(interactionContainer);
             }
             
-            // Lógica do Pódio
             if (isOverall && data.length >= 3 && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length) {
-                // (código do pódio omitido para brevidade)
+                const podiumWrapper = document.createElement('div');
+                podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
+                
+                const podiumContainer = document.createElement('div');
+                podiumContainer.classList.add('flex', 'justify-center', 'items-end', 'gap-4');
+
+                const secondPlace = data[1];
+                const podium2 = createPodiumItem(secondPlace, 2, 'second-place');
+                podiumContainer.appendChild(podium2);
+
+                const firstPlace = data[0];
+                const podium1 = createPodiumItem(firstPlace, 1, 'champion');
+                podiumContainer.appendChild(podium1);
+                
+                const thirdPlace = data[2];
+                const podium3 = createPodiumItem(thirdPlace, 3, 'third-place');
+                podiumContainer.appendChild(podium3);
+                
+                podiumWrapper.appendChild(podiumContainer);
+                container.appendChild(podiumWrapper);
             }
 
             const table = document.createElement('table'); 
@@ -285,7 +309,9 @@
             table.innerHTML = `<thead class="bg-gray-100 text-gray-600 text-xs md:text-sm uppercase font-bold"><tr><th class="p-4 text-left">#</th><th class="p-4 text-left">Nome</th><th class="p-4 text-right">Pts</th>${isOverall ? '<th class="p-4 text-right hidden md:table-cell">Etapas</th>' : ''}</tr></thead>`;
             const tbody = document.createElement('tbody'); 
             tbody.className = 'text-sm md:text-base';
-            data.forEach((item) => {
+            data.forEach((item, index) => {
+                if (isOverall && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length && index < 3) return;
+
                 const row = document.createElement('tr'); 
                 row.className = 'border-b border-gray-200';
                 row.innerHTML = `
@@ -306,7 +332,6 @@
             table.appendChild(tbody);
             container.appendChild(table);
 
-            // Imagem do pódio para as etapas
             if (!isOverall && tab && monthlyData[month][`${tab}_podium_img`]) {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';
@@ -314,6 +339,43 @@
                 container.appendChild(podiumImageContainer);
             }
             return container;
+        }
+        
+        function createPodiumItem(item, position, cssClass) {
+            const podiumItem = document.createElement('div');
+            podiumItem.classList.add('flex', 'flex-col', 'items-center', 'text-center');
+            
+            const img = document.createElement('img');
+            img.src = participantImages[item.name] || defaultProfileImageUrl;
+            img.alt = `Foto de ${item.name}`;
+            img.classList.add('podium-image', `${cssClass}-image`);
+            img.onerror = function() { this.onerror=null;this.src='${defaultProfileImageUrl}'; };
+            
+            const nameElement = document.createElement('span');
+            nameElement.classList.add('podium-name', 'text-sm', 'text-gray-800');
+            nameElement.textContent = item.name;
+            
+            const detailsContainer = document.createElement('div');
+            detailsContainer.classList.add('mt-2', 'text-center');
+
+            const positionElement = document.createElement('p');
+            positionElement.classList.add('text-sm', 'font-semibold', 'text-gray-700');
+            positionElement.textContent = `${position}º Lugar`;
+
+            const pointsElement = document.createElement('p');
+            pointsElement.classList.add('text-sm', 'text-gray-600');
+            pointsElement.textContent = `${item.pts} Pontos`;
+
+            detailsContainer.appendChild(positionElement);
+            detailsContainer.appendChild(pointsElement);
+
+            podiumItem.appendChild(img);
+            podiumItem.appendChild(nameElement);
+            podiumItem.appendChild(detailsContainer);
+
+            podiumItem.addEventListener('click', () => openModal(item.name));
+            
+            return podiumItem;
         }
 
         function renderClassification(month, tab) {
@@ -350,22 +412,18 @@
         window.toggleLike = toggleLike;
         
         async function initializeAppAndData() {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    const likesColRef = collection(db, `artifacts/${appId}/public/data/likes`);
-                    onSnapshot(likesColRef, (snapshot) => {
-                        snapshot.docs.forEach(doc => { likesData[doc.id] = doc.data(); });
-                        renderClassification(document.getElementById('month-select').value, currentTab);
-                    });
-                } else { 
-                    userId = null; 
-                }
-            });
-
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); } else { await signInAnonymously(auth); }
-            } catch (error) { console.error("Falha na autenticação:", error); }
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                const likesColRef = collection(db, `artifacts/${appId}/public/data/likes`);
+                onSnapshot(likesColRef, (snapshot) => {
+                    snapshot.docs.forEach(doc => { likesData[doc.id] = doc.data(); });
+                    renderClassification(document.getElementById('month-select').value, currentTab);
+                });
+            } catch (error) {
+                console.error("Falha na autenticação ou ao carregar dados:", error);
+                userId = null; 
+            }
         }
 
         window.onload = function() {

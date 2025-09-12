@@ -178,6 +178,7 @@
                 <h3 id="modal-name" class="text-xl md:text-2xl font-bold text-gray-800"></h3>
                 <p id="modal-position" class="text-sm text-gray-600"></p>
                 <p id="modal-team" class="text-sm text-gray-600 mt-2"></p>
+                <div id="modal-stages-summary" class="mt-4 w-full"></div>
             </div>
         </div>
 
@@ -259,8 +260,56 @@
             const participant = allParticipantsData.find(p => p.name === name); if (!participant) return;
             document.getElementById('modal-image').src = participant.image;
             document.getElementById('modal-name').textContent = participant.name;
-            document.getElementById('modal-position').textContent = `Posição Geral: ${participant.posOverall}`;
+            document.getElementById('modal-position').textContent = `Posição Geral: ${participant.posOverall}º (${participant.ptsOverall} pts)`;
             document.getElementById('modal-team').textContent = participantTeams[name] || 'Sem equipe';
+            
+            const currentMonth = document.getElementById('month-select').value;
+            const monthData = monthlyData[currentMonth];
+            const stagesSummaryContainer = document.getElementById('modal-stages-summary');
+            stagesSummaryContainer.innerHTML = '';
+
+            const summaryTitle = document.createElement('h4');
+            summaryTitle.className = 'text-md font-bold text-gray-700 mt-4 mb-2 border-t pt-4';
+            summaryTitle.textContent = `Resumo de ${monthData.title.split('/')[0]}`;
+            stagesSummaryContainer.appendChild(summaryTitle);
+
+            const summaryGrid = document.createElement('div');
+            summaryGrid.className = 'grid grid-cols-2 sm:grid-cols-4 gap-2 text-center';
+
+            for (let i = 1; i <= 4; i++) {
+                const stageKey = `etapa${i}`;
+                const stageData = monthData[stageKey];
+                if(stageData && stageData.length > 0) {
+                    const stageResult = stageData.find(p => p.name === name);
+                    const stageDiv = document.createElement('div');
+                    stageDiv.className = 'bg-gray-100 p-2 rounded-md';
+
+                    const stageTitle = document.createElement('p');
+                    stageTitle.className = 'text-xs font-bold text-gray-500 uppercase';
+                    stageTitle.textContent = `Etapa ${i}`;
+                    stageDiv.appendChild(stageTitle);
+
+                    if (stageResult) {
+                        const position = document.createElement('p');
+                        position.className = 'text-xl font-bold text-gray-800';
+                        position.textContent = `${stageResult.pos}º`;
+                        stageDiv.appendChild(position);
+
+                        const points = document.createElement('p');
+                        points.className = 'text-xs text-gray-600';
+                        points.textContent = `(${stageResult.pts} pts)`;
+                        stageDiv.appendChild(points);
+                    } else {
+                        const noResult = document.createElement('p');
+                        noResult.className = 'text-xl font-bold text-gray-400';
+                        noResult.textContent = '-';
+                        stageDiv.appendChild(noResult);
+                    }
+                    summaryGrid.appendChild(stageDiv);
+                }
+            }
+            stagesSummaryContainer.appendChild(summaryGrid);
+
             document.getElementById('details-modal').classList.remove('hidden');
         }
 

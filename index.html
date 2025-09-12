@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Define a fonte Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -132,6 +132,8 @@
         .like-button.liked .fa-heart {
             color: #ef4444; /* Cor do coração curtido (vermelho) */
         }
+        .comment-like-button .fa-heart { color: #9ca3af; }
+        .comment-like-button.liked .fa-heart { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -140,28 +142,33 @@
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-xs mx-auto">
         </header>
 
-        <main id="main-container" class="p-6 md:p-12">
-            <div class="month-selector-container mb-4">
-                <label for="month-select" class="font-bold text-gray-700">Mês:</label>
-                <select id="month-select" class="shadow-sm">
-                    <option value="agosto">Agosto</option>
-                    <option value="setembro" selected>Setembro</option>
-                </select>
+        <main>
+             <div id="loading-overlay" class="text-center p-10">
+                <p class="text-lg font-semibold text-gray-600">Carregando dados interativos...</p>
             </div>
-            
-            <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
-                <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
-                <button id="tab-etapa1" class="tab-button">Etapa 1</button>
-                <button id="tab-etapa2" class="tab-button">Etapa 2</button>
-                <button id="tab-etapa3" class="tab-button">Etapa 3</button>
-                <button id="tab-etapa4" class="tab-button">Etapa 4</button>
+            <div id="main-container" class="p-6 md:p-12" style="display: none;">
+                <div class="month-selector-container mb-4">
+                    <label for="month-select" class="font-bold text-gray-700">Mês:</label>
+                    <select id="month-select" class="shadow-sm">
+                        <option value="agosto">Agosto</option>
+                        <option value="setembro" selected>Setembro</option>
+                    </select>
+                </div>
+                
+                <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+                    <button id="tab-geral" class="tab-button tab-button-active">Classificação Geral</button>
+                    <button id="tab-etapa1" class="tab-button">Etapa 1</button>
+                    <button id="tab-etapa2" class="tab-button">Etapa 2</button>
+                    <button id="tab-etapa3" class="tab-button">Etapa 3</button>
+                    <button id="tab-etapa4" class="tab-button">Etapa 4</button>
+                </div>
+                
+                <div id="geral-table-container"></div>
+                <div id="etapa1-table-container"></div>
+                <div id="etapa2-table-container"></div>
+                <div id="etapa3-table-container"></div>
+                <div id="etapa4-table-container"></div>
             </div>
-            
-            <div id="geral-table-container"></div>
-            <div id="etapa1-table-container"></div>
-            <div id="etapa2-table-container"></div>
-            <div id="etapa3-table-container"></div>
-            <div id="etapa4-table-container"></div>
         </main>
     
         <div id="details-modal" class="modal hidden">
@@ -171,6 +178,17 @@
                 <h3 id="modal-name" class="text-xl md:text-2xl font-bold text-gray-800"></h3>
                 <p id="modal-position" class="text-sm text-gray-600"></p>
                 <p id="modal-team" class="text-sm text-gray-600 mt-2"></p>
+            </div>
+        </div>
+
+        <div id="delete-confirmation-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 class="text-lg font-bold mb-4">Confirmar Exclusão</h3>
+                <p class="mb-6">Você tem certeza que deseja apagar esta postagem? Esta ação não pode ser desfeita.</p>
+                <div class="flex justify-center gap-4">
+                    <button id="cancel-delete-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition">Cancelar</button>
+                    <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition">Apagar</button>
+                </div>
             </div>
         </div>
         
@@ -186,18 +204,21 @@
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, runTransaction, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // CONFIGURAÇÃO DE ADMINISTRADOR
+        // Para apagar qualquer comentário, encontre seu ID no console do navegador e cole-o aqui.
+        const ADMIN_USER_ID = "COLOQUE_SEU_USER_ID_AQUI"; 
 
         // Sua configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
             authDomain: "rachaosc.firebaseapp.com",
             projectId: "rachaosc",
-            storageBucket: "rachaosc.firebasestorage.app",
+            storageBucket: "rachaosc.appspot.com",
             messagingSenderId: "28309536958",
             appId: "1:28309536958:web:eac51586cdabd82f691eef"
         };
-        const appId = firebaseConfig.appId;
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -205,6 +226,7 @@
         
         let userId = null;
         let likesData = {};
+        let commentsData = {};
 
         // Dados estáticos da aplicação
         const participantImages = { 'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png', 'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png', 'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png', 'DANILO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/danilo.png', 'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png', 'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png', 'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png', 'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png', 'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png', 'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png', 'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png', 'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L', 'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P', 'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V', 'NETO': 'https://placehold.co/200x200/e5e7eb/000000?text=N' };
@@ -212,7 +234,7 @@
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
         const monthlyData = {
             agosto: { title: 'Agosto/2025', etapa1: [{pos:1,name:'MANDI',pts:15},{pos:2,name:'MAIQUE',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'ARIZINHO',pts:7},{pos:6,name:'GIMENES',pts:5},{pos:7,name:'EMANUEL',pts:3},{pos:8,name:'ANDRÉ',pts:1},{pos:9,name:'THIAGO BORGES',pts:1},{pos:10,name:'LUCIANO',pts:1}], etapa1_podium_img: null, etapa2: [{pos:1,name:'MANDI',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'VINICIUS',pts:11},{pos:4,name:'JULIANO',pts:9},{pos:5,name:'VALMIR',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'ARIZINHO',pts:3},{pos:8,name:'RAUL',pts:1},{pos:9,name:'DANILO',pts:1},{pos:10,name:'GIMENES',pts:1}], etapa2_podium_img: null, etapa3: [{pos:1,name:'WALTER',pts:15},{pos:2,name:'MAIQUE',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'ARIZINHO',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'MANDI',pts:3},{pos:8,name:'LUCIANO',pts:1},{pos:9,name:'GIMENES',pts:1},{pos:10,name:'DANILO',pts:1}], etapa3_podium_img: null, etapa4: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'WALTER',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'KLÉBER',pts:7},{pos:6,name:'VINICIUS',pts:5},{pos:7,name:'ARIZINHO',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'GIMENES',pts:1},{pos:10,name:'MAYKON',pts:1}], etapa4_podium_img: null },
-            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'GIMENES',pts:9},{pos:5,name:'PEDROSO',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'COUTO',pts:3},{pos:8,name:'KLÉBER',pts:1},{pos:9,name:'VALMIR',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'VALMIR',pts:13},{pos:3,name:'NETO',pts:11},{pos:4,name:'LUCIANO',pts:9},{pos:5,name:'GIMENES',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'KLÉBER',pts:3},{pos:8,name:'COUTO',pts:1},{pos:9,name:'PEDROSO',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [], etapa3_podium_img: null, etapa4: [], etapa4_podium_img: null }
+            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'GIMENES',pts:9},{pos:5,name:'PEDROSO',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'COUTO',pts:3},{pos:8,name:'KLÉBER',pts:1},{pos:9,name:'VALMIR',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'VALMIR',pts:13},{pos:3,name:'NETO',pts:11},{pos:4,name:'LUCIANO',pts:9},{pos:5,name:'GIMENES',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'KLÉBER',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'PEDROSO',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [], etapa3_podium_img: null, etapa4: [], etapa4_podium_img: null }
         };
         
         let allParticipantsData = [];
@@ -264,19 +286,12 @@
             if (hasDataForLikes) {
                 const interactionContainer = document.createElement('div');
                 interactionContainer.className = 'mb-4 flex justify-center';
-
                 const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
                 const userHasLiked = userId && likeInfo.likedBy.includes(userId);
-
                 const likeButton = document.createElement('button');
                 likeButton.className = `like-button ${userHasLiked ? 'liked' : ''} flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full shadow-sm hover:bg-gray-200 transition`;
                 likeButton.setAttribute('onclick', `toggleLike('${month}', '${isOverall ? 'geral' : tab}')`);
-
-                likeButton.innerHTML = `
-                    <span class="font-bold">Curtir</span>
-                    <i class="fas fa-heart text-xl"></i>
-                    <span class="text-base font-bold">${likeInfo.count}</span>
-                `;
+                likeButton.innerHTML = `<span class="font-bold">Curtir</span><i class="fas fa-heart text-xl"></i><span class="text-base font-bold">${likeInfo.count}</span>`;
                 interactionContainer.appendChild(likeButton);
                 container.appendChild(interactionContainer);
             }
@@ -284,22 +299,11 @@
             if (isOverall && data.length >= 3 && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length) {
                 const podiumWrapper = document.createElement('div');
                 podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
-                
                 const podiumContainer = document.createElement('div');
                 podiumContainer.classList.add('flex', 'justify-center', 'items-end', 'gap-4');
-
-                const secondPlace = data[1];
-                const podium2 = createPodiumItem(secondPlace, 2, 'second-place');
-                podiumContainer.appendChild(podium2);
-
-                const firstPlace = data[0];
-                const podium1 = createPodiumItem(firstPlace, 1, 'champion');
-                podiumContainer.appendChild(podium1);
-                
-                const thirdPlace = data[2];
-                const podium3 = createPodiumItem(thirdPlace, 3, 'third-place');
-                podiumContainer.appendChild(podium3);
-                
+                podiumContainer.appendChild(createPodiumItem(data[1], 2, 'second-place'));
+                podiumContainer.appendChild(createPodiumItem(data[0], 1, 'champion'));
+                podiumContainer.appendChild(createPodiumItem(data[2], 3, 'third-place'));
                 podiumWrapper.appendChild(podiumContainer);
                 container.appendChild(podiumWrapper);
             }
@@ -311,7 +315,6 @@
             tbody.className = 'text-sm md:text-base';
             data.forEach((item, index) => {
                 if (isOverall && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length && index < 3) return;
-
                 const row = document.createElement('tr'); 
                 row.className = 'border-b border-gray-200';
                 row.innerHTML = `
@@ -332,105 +335,324 @@
             table.appendChild(tbody);
             container.appendChild(table);
 
-            if (!isOverall && tab && monthlyData[month][`${tab}_podium_img`]) {
+            const hasPodiumPhoto = !isOverall && tab && monthlyData[month][`${tab}_podium_img`];
+            if (hasPodiumPhoto) {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';
                 podiumImageContainer.innerHTML = `<img src="${monthlyData[month][`${tab}_podium_img`]}" alt="Pódio ${title}" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
                 container.appendChild(podiumImageContainer);
             }
+
+            if ((isOverall && data.length > 0) || hasPodiumPhoto) {
+                 container.appendChild(createCommentsSection(stageId));
+            }
+
             return container;
         }
         
         function createPodiumItem(item, position, cssClass) {
             const podiumItem = document.createElement('div');
             podiumItem.classList.add('flex', 'flex-col', 'items-center', 'text-center');
-            
             const img = document.createElement('img');
             img.src = participantImages[item.name] || defaultProfileImageUrl;
             img.alt = `Foto de ${item.name}`;
             img.classList.add('podium-image', `${cssClass}-image`);
             img.onerror = function() { this.onerror=null;this.src='${defaultProfileImageUrl}'; };
-            
             const nameElement = document.createElement('span');
             nameElement.classList.add('podium-name', 'text-sm', 'text-gray-800');
             nameElement.textContent = item.name;
-            
             const detailsContainer = document.createElement('div');
             detailsContainer.classList.add('mt-2', 'text-center');
-
             const positionElement = document.createElement('p');
             positionElement.classList.add('text-sm', 'font-semibold', 'text-gray-700');
             positionElement.textContent = `${position}º Lugar`;
-
             const pointsElement = document.createElement('p');
             pointsElement.classList.add('text-sm', 'text-gray-600');
             pointsElement.textContent = `${item.pts} Pontos`;
-
             detailsContainer.appendChild(positionElement);
             detailsContainer.appendChild(pointsElement);
-
             podiumItem.appendChild(img);
             podiumItem.appendChild(nameElement);
             podiumItem.appendChild(detailsContainer);
-
             podiumItem.addEventListener('click', () => openModal(item.name));
-            
             return podiumItem;
         }
 
+        function createCommentsSection(stageId) {
+            const container = document.createElement('div');
+            container.id = `comments-section-${stageId}`;
+            container.className = 'mt-8 pt-8 border-t border-gray-200 max-w-2xl mx-auto';
+
+            container.innerHTML = `
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Comentários</h3>
+                <div class="bg-gray-50 p-4 rounded-lg mb-6 shadow-sm">
+                    <form onsubmit="handleCommentSubmit(event, '${stageId}')">
+                        <input type="text" name="name" placeholder="Seu nome" required class="w-full p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        <textarea name="comment" placeholder="Escreva seu comentário..." required rows="3" class="w-full p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition w-full sm:w-auto">Publicar Comentário</button>
+                    </form>
+                </div>
+                <div id="comments-list-${stageId}"></div>
+            `;
+            return container;
+        }
+
+        async function renderCommentsAndReplies(stageId) {
+            const commentsListContainer = document.getElementById(`comments-list-${stageId}`);
+            if (!commentsListContainer) return;
+            commentsListContainer.innerHTML = ''; 
+
+            const stageComments = commentsData[stageId] || [];
+            stageComments.sort((a, b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
+
+            for (const comment of stageComments) {
+                const userHasLiked = userId && comment.likedBy?.includes(userId);
+                const canDeleteComment = userId === comment.authorId || userId === ADMIN_USER_ID;
+
+                const commentEl = document.createElement('div');
+                commentEl.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4';
+                commentEl.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <p class="font-bold text-gray-900">${comment.name}</p>
+                        ${canDeleteComment ? `<button onclick="showDeleteConfirmation('comment', '${comment.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>` : ''}
+                    </div>
+                    <p class="text-gray-700 mt-1 whitespace-pre-wrap">${comment.text}</p>
+                    <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                        <button onclick="toggleCommentLike('${comment.id}')" class="comment-like-button ${userHasLiked ? 'liked' : ''} flex items-center gap-1 hover:text-red-500">
+                            <i class="fas fa-heart"></i>
+                            <span>${comment.likes || 0}</span>
+                        </button>
+                        <button onclick="toggleReplyForm('${comment.id}')" class="font-semibold hover:underline">Responder</button>
+                    </div>
+                    <div id="reply-form-container-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-gray-200">
+                        <form onsubmit="handleReplySubmit(event, '${comment.id}')">
+                            <input type="text" name="name" placeholder="Seu nome" required class="w-full text-sm p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                            <textarea name="reply" placeholder="Escreva sua resposta..." required rows="2" class="w-full text-sm p-2 border border-gray-300 rounded-md mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
+                            <button type="submit" class="bg-gray-600 text-white font-bold py-1 px-3 text-sm rounded-lg hover:bg-gray-700 transition">Enviar Resposta</button>
+                        </form>
+                    </div>
+                    <div id="replies-list-${comment.id}" class="mt-4 pl-6 border-l-2 border-gray-200 space-y-3"></div>
+                `;
+                commentsListContainer.appendChild(commentEl);
+
+                // Fetch and render replies
+                const repliesListContainer = document.getElementById(`replies-list-${comment.id}`);
+                const repliesColRef = collection(db, `comments/${comment.id}/replies`);
+                const q = query(repliesColRef, orderBy("timestamp", "asc"));
+                const repliesSnapshot = await getDocs(q);
+                repliesSnapshot.forEach(doc => {
+                    const reply = { id: doc.id, ...doc.data() };
+                    const canDeleteReply = userId === reply.authorId || userId === ADMIN_USER_ID;
+
+                    const replyEl = document.createElement('div');
+                    replyEl.className = 'text-sm bg-gray-50 p-3 rounded-md';
+                    replyEl.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <p class="font-bold text-gray-800">${reply.name}</p>
+                            ${canDeleteReply ? `<button onclick="showDeleteConfirmation('reply', '${comment.id}', '${reply.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>` : ''}
+                        </div>
+                        <p class="text-gray-600 whitespace-pre-wrap">${reply.text}</p>
+                    `;
+                    repliesListContainer.appendChild(replyEl);
+                });
+            }
+        }
+
         function renderClassification(month, tab) {
+            if (!userId) return; 
             const monthData = monthlyData[month];
+            
+            const mainContainer = document.getElementById('main-container');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (mainContainer) mainContainer.style.display = 'block';
+
+            document.querySelectorAll('[id$="-table-container"]').forEach(c => c.innerHTML = ''); // Limpa antes de renderizar
             document.querySelectorAll('[id$="-table-container"]').forEach(c => c.classList.add('hidden'));
+            
             const containerToShow = document.getElementById(`${tab}-table-container`);
             containerToShow.classList.remove('hidden');
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('tab-button-active'));
             document.getElementById(`tab-${tab}`).classList.add('tab-button-active');
 
+            let stageId = '';
             if (tab === 'geral') {
                 const overall = calculateOverall(monthData.etapa1, monthData.etapa2, monthData.etapa3, monthData.etapa4);
                 allParticipantsData = getParticipantData(overall);
-                containerToShow.innerHTML = '';
                 containerToShow.appendChild(createTable('Classificação Geral', allParticipantsData, true, month, monthData.title));
+                stageId = `${month}_geral`;
             } else {
                 const stageData = monthData[tab] || [];
-                containerToShow.innerHTML = '';
                 containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, stageData, false, month, monthData.title, tab));
+                stageId = `${month}_${tab}`;
             }
+            renderCommentsAndReplies(stageId);
         }
         
         function setupEventListeners() {
             document.getElementById('tabs-container').addEventListener('click', (e) => { if (e.target.classList.contains('tab-button')) { currentTab = e.target.id.replace('tab-', ''); renderClassification(document.getElementById('month-select').value, currentTab); } });
             document.getElementById('month-select').addEventListener('change', (e) => { renderClassification(e.target.value, currentTab); });
+            document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteConfirmation);
         }
         
         async function toggleLike(month, stage) {
             if (!userId) { console.error("Usuário não autenticado."); return; }
             const stageId = `${month}_${stage}`;
-            const likeRef = doc(db, `artifacts/${appId}/public/data/likes`, stageId);
+            const likeRef = doc(db, 'likes', stageId);
             try { await runTransaction(db, async (t) => { const doc = await t.get(likeRef); let newCount = 1; let newLikedBy = [userId]; if (doc.exists()) { const data = doc.data(); const likedBy = data.likedBy || []; if (likedBy.includes(userId)) { newCount = Math.max(0, data.count - 1); newLikedBy = likedBy.filter(id => id !== userId); } else { newCount = data.count + 1; newLikedBy = [...likedBy, userId]; } } t.set(likeRef, { count: newCount, likedBy: newLikedBy }); }); } catch (e) { console.error("Erro na transação de like: ", e); }
         }
-        window.toggleLike = toggleLike;
-        
-        async function initializeAppAndData() {
+
+        async function handleCommentSubmit(event, stageId) {
+            event.preventDefault();
+            const form = event.target;
+            const name = form.name.value.trim();
+            const text = form.comment.value.trim();
+            if (!name || !text || !userId) return;
+
             try {
-                const userCredential = await signInAnonymously(auth);
-                userId = userCredential.user.uid;
-                const likesColRef = collection(db, `artifacts/${appId}/public/data/likes`);
-                onSnapshot(likesColRef, (snapshot) => {
-                    snapshot.docs.forEach(doc => { likesData[doc.id] = doc.data(); });
-                    renderClassification(document.getElementById('month-select').value, currentTab);
+                await addDoc(collection(db, 'comments'), {
+                    stageId, name, text, likes: 0, likedBy: [], timestamp: serverTimestamp(), authorId: userId
                 });
+                form.reset();
+            } catch (error) { console.error("Erro ao adicionar comentário: ", error); }
+        }
+
+        async function toggleCommentLike(commentId) {
+            if (!userId) { console.error("Usuário não autenticado."); return; }
+            const commentRef = doc(db, 'comments', commentId);
+            try { await runTransaction(db, async (t) => { const doc = await t.get(commentRef); if (!doc.exists()) return; const data = doc.data(); const likedBy = data.likedBy || []; let newCount; let newLikedBy; if (likedBy.includes(userId)) { newCount = Math.max(0, (data.likes || 0) - 1); newLikedBy = likedBy.filter(id => id !== userId); } else { newCount = (data.likes || 0) + 1; newLikedBy = [...likedBy, userId]; } t.update(commentRef, { likes: newCount, likedBy: newLikedBy }); }); } catch (e) { console.error("Erro na transação de like do comentário: ", e); }
+        }
+        
+        function toggleReplyForm(commentId) {
+            const formContainer = document.getElementById(`reply-form-container-${commentId}`);
+            if (formContainer) formContainer.classList.toggle('hidden');
+        }
+
+        async function handleReplySubmit(event, commentId) {
+            event.preventDefault();
+            const form = event.target;
+            const name = form.name.value.trim();
+            const text = form.reply.value.trim();
+            if (!name || !text || !userId) return;
+            try {
+                const repliesColRef = collection(db, `comments/${commentId}/replies`);
+                await addDoc(repliesColRef, { name, text, timestamp: serverTimestamp(), authorId: userId });
+                form.reset();
+                toggleReplyForm(commentId); 
+                const currentMonth = document.getElementById('month-select').value;
+                const currentTab = document.querySelector('.tab-button-active').id.replace('tab-','');
+                const stageId = currentTab === 'geral' ? `${currentMonth}_geral` : `${currentMonth}_${currentTab}`;
+                renderCommentsAndReplies(stageId);
+
+            } catch (error) { console.error("Erro ao adicionar resposta: ", error); }
+        }
+
+        function showDeleteConfirmation(type, id1, id2 = null) {
+            const modal = document.getElementById('delete-confirmation-modal');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            
+            confirmBtn.onclick = () => {
+                if (type === 'comment') {
+                    deleteComment(id1);
+                } else if (type === 'reply') {
+                    deleteReply(id1, id2);
+                }
+            };
+            
+            modal.classList.remove('hidden');
+        }
+
+        function hideDeleteConfirmation() {
+            document.getElementById('delete-confirmation-modal').classList.add('hidden');
+        }
+
+        async function deleteComment(commentId) {
+            try {
+                // Delete all replies first
+                const repliesRef = collection(db, `comments/${commentId}/replies`);
+                const repliesSnapshot = await getDocs(repliesRef);
+                const batch = writeBatch(db);
+                repliesSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+
+                // Delete the comment itself
+                const commentRef = doc(db, 'comments', commentId);
+                await deleteDoc(commentRef);
             } catch (error) {
-                console.error("Falha na autenticação ou ao carregar dados:", error);
-                userId = null; 
+                console.error("Erro ao apagar comentário:", error);
+            } finally {
+                hideDeleteConfirmation();
             }
         }
 
-        window.onload = function() {
+        async function deleteReply(commentId, replyId) {
+            try {
+                const replyRef = doc(db, `comments/${commentId}/replies`, replyId);
+                await deleteDoc(replyRef);
+            } catch (error) {
+                console.error("Erro ao apagar resposta:", error);
+            } finally {
+                hideDeleteConfirmation();
+                // Re-render comments for immediate visual feedback
+                const currentMonth = document.getElementById('month-select').value;
+                const currentTab = document.querySelector('.tab-button-active').id.replace('tab-','');
+                const stageId = currentTab === 'geral' ? `${currentMonth}_geral` : `${currentMonth}_${currentTab}`;
+                renderCommentsAndReplies(stageId);
+            }
+        }
+
+        window.toggleLike = toggleLike;
+        window.handleCommentSubmit = handleCommentSubmit;
+        window.toggleCommentLike = toggleCommentLike;
+        window.toggleReplyForm = toggleReplyForm;
+        window.handleReplySubmit = handleReplySubmit;
+        window.showDeleteConfirmation = showDeleteConfirmation;
+        
+        function setupDataListeners() {
+            if (!userId) return; 
+
+            const likesColRef = collection(db, 'likes');
+            onSnapshot(likesColRef, (snapshot) => {
+                likesData = {};
+                snapshot.forEach(doc => { likesData[doc.id] = doc.data(); });
+                renderClassification(document.getElementById('month-select').value, currentTab);
+            }, (error) => {
+                console.error("Erro no listener de likes:", error);
+            });
+
+            const commentsColRef = collection(db, 'comments');
+            onSnapshot(commentsColRef, (snapshot) => {
+                commentsData = {};
+                snapshot.forEach(doc => {
+                    const comment = { id: doc.id, ...doc.data() };
+                    if (!commentsData[comment.stageId]) commentsData[comment.stageId] = [];
+                    commentsData[comment.stageId].push(comment);
+                });
+                renderClassification(document.getElementById('month-select').value, currentTab);
+            }, (error) => {
+                console.error("Erro no listener de comentários:", error);
+            });
+        }
+
+        async function initializeAppAndData() {
             setupEventListeners();
-            initializeAppAndData();
-            renderClassification(document.getElementById('month-select').value, currentTab);
-        };
+            try {
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                console.log(`Seu ID de Administrador é: ${userId}`);
+                setupDataListeners(); 
+
+            } catch (error) {
+                console.error("Falha na autenticação ou ao carregar dados:", error);
+                userId = null;
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loadingOverlay.innerHTML = '<p class="text-lg font-semibold text-red-600">Falha ao carregar os dados. Verifique as regras do Firebase e a conexão.</p>';
+            }
+        }
+
+        window.onload = initializeAppAndData;
     </script>
 </body>
 </html>

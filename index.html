@@ -132,33 +132,6 @@
         .like-button.liked .fa-heart {
             color: #ef4444; /* Cor do coração curtido (vermelho) */
         }
-        .comments-list-stage {
-            text-align: left;
-            max-height: 250px;
-            overflow-y: auto;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 1rem;
-        }
-        .comment {
-            background-color: #f9fafb;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .comment-author {
-            font-weight: bold;
-            font-size: 0.875rem;
-            color: #374151;
-            word-break: break-all;
-        }
-        .comment-text {
-            font-size: 1rem;
-            color: #4b5563;
-        }
-        .comment-form {
-            display: flex;
-            gap: 0.5rem;
-        }
     </style>
 </head>
 <body>
@@ -213,7 +186,7 @@
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, runTransaction, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Configuração do Firebase
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -225,7 +198,6 @@
         
         let userId = null;
         let likesData = {};
-        let commentsData = {};
 
         // Dados estáticos da aplicação
         const participantImages = { 'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png', 'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png', 'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png', 'DANILO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/danilo.png', 'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png', 'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png', 'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png', 'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png', 'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png', 'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png', 'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png', 'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L', 'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P', 'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V', 'NETO': 'https://placehold.co/200x200/e5e7eb/000000?text=N' };
@@ -266,20 +238,56 @@
         window.closeModal = function() { document.getElementById('details-modal').classList.add('hidden'); }
 
         function createTable(title, data, isOverall = false, month, monthTitle, tab = '') {
-            const container = document.createElement('div'); container.className = 'mb-8';
-            const titleElement = document.createElement('h2'); titleElement.className = 'text-center text-2xl md:text-3xl font-bold text-gray-700 mb-2'; titleElement.textContent = title; container.appendChild(titleElement);
-            const monthElement = document.createElement('p'); monthElement.className = 'text-gray-500 text-center mb-6'; monthElement.textContent = monthTitle; container.appendChild(monthElement);
+            const container = document.createElement('div'); 
+            container.className = 'mb-8';
+
+            const titleElement = document.createElement('h2'); 
+            titleElement.className = 'text-center text-2xl md:text-3xl font-bold text-gray-700 mb-2'; 
+            titleElement.textContent = title; 
+            container.appendChild(titleElement);
+
+            const monthElement = document.createElement('p'); 
+            monthElement.className = 'text-gray-500 text-center mb-6'; 
+            monthElement.textContent = monthTitle; 
+            container.appendChild(monthElement);
+
+            // Bloco de interação (Curtir) acima da tabela
+            const stageId = isOverall ? `${month}_geral` : `${month}_${tab}`;
+            const hasDataForLikes = (isOverall && data.length > 0) || (!isOverall && tab && data.length > 0);
+
+            if (hasDataForLikes) {
+                const interactionContainer = document.createElement('div');
+                interactionContainer.className = 'mb-4 flex justify-center'; // Center the button
+
+                const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
+                const userHasLiked = userId && likeInfo.likedBy.includes(userId);
+
+                const likeButton = document.createElement('button');
+                likeButton.className = `like-button ${userHasLiked ? 'liked' : ''} flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full shadow-sm hover:bg-gray-200 transition`;
+                likeButton.setAttribute('onclick', `toggleLike('${month}', '${isOverall ? 'geral' : tab}')`);
+
+                likeButton.innerHTML = `
+                    <span class="font-bold">Curtir</span>
+                    <i class="fas fa-heart text-xl"></i>
+                    <span class="text-base font-bold">${likeInfo.count}</span>
+                `;
+                interactionContainer.appendChild(likeButton);
+                container.appendChild(interactionContainer);
+            }
             
-            // Lógica do Pódio (se aplicável na Tabela Geral)
+            // Lógica do Pódio
             if (isOverall && data.length >= 3 && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length) {
                 // (código do pódio omitido para brevidade)
             }
 
-            const table = document.createElement('table'); table.className = 'w-full border-collapse overflow-hidden';
+            const table = document.createElement('table'); 
+            table.className = 'w-full border-collapse overflow-hidden';
             table.innerHTML = `<thead class="bg-gray-100 text-gray-600 text-xs md:text-sm uppercase font-bold"><tr><th class="p-4 text-left">#</th><th class="p-4 text-left">Nome</th><th class="p-4 text-right">Pts</th>${isOverall ? '<th class="p-4 text-right hidden md:table-cell">Etapas</th>' : ''}</tr></thead>`;
-            const tbody = document.createElement('tbody'); tbody.className = 'text-sm md:text-base';
+            const tbody = document.createElement('tbody'); 
+            tbody.className = 'text-sm md:text-base';
             data.forEach((item) => {
-                const row = document.createElement('tr'); row.className = 'border-b border-gray-200';
+                const row = document.createElement('tr'); 
+                row.className = 'border-b border-gray-200';
                 row.innerHTML = `
                     <td class="p-4">${item.pos}</td>
                     <td class="p-4">
@@ -298,93 +306,14 @@
             table.appendChild(tbody);
             container.appendChild(table);
 
-            if (isOverall) {
-                const stageId = `${month}_geral`;
-                const interactionWrapper = document.createElement('div');
-                interactionWrapper.className = 'mt-8 pt-8 border-t border-gray-200 text-center';
-
-                const interactionContainer = document.createElement('div');
-                interactionContainer.className = 'mt-4 p-4 bg-gray-50 rounded-lg max-w-2xl mx-auto';
-                
-                const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
-                const userHasLiked = userId && likeInfo.likedBy.includes(userId);
-                const commentCount = commentsData[stageId]?.length || 0;
-
-                interactionContainer.innerHTML = `
-                    <div class="flex items-center justify-center gap-6 mb-4">
-                        <button class="like-button ${userHasLiked ? 'liked' : ''}" onclick="toggleLike('${month}', 'geral')">
-                            <i class="fas fa-heart text-2xl"></i>
-                            <span class="text-lg font-bold ml-2">${likeInfo.count}</span>
-                        </button>
-                        <div class="flex items-center text-gray-500">
-                            <i class="fas fa-comment text-2xl"></i>
-                            <span class="text-lg font-bold ml-2">${commentCount}</span>
-                        </div>
-                    </div>
-                    <div class="comments-list-stage" id="comments-list-${stageId}"></div>
-                    <form class="comment-form mt-4" onsubmit="addCommentHandler(event, '${month}', 'geral')">
-                        <textarea class="w-full p-2 border rounded-lg" placeholder="Adicionar um comentário sobre a classificação geral..."></textarea>
-                        <button type="submit" class="bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">Enviar</button>
-                    </form>
-                `;
-                interactionWrapper.appendChild(interactionContainer);
-                container.appendChild(interactionWrapper);
-                renderStageComments(stageId);
-            }
-            
+            // Imagem do pódio para as etapas
             if (!isOverall && tab && monthlyData[month][`${tab}_podium_img`]) {
-                const stageId = `${month}_${tab}`;
-                const podiumContainer = document.createElement('div');
-                podiumContainer.className = 'mt-8 text-center';
-                podiumContainer.innerHTML = `<img src="${monthlyData[month][`${tab}_podium_img`]}" alt="Pódio ${title}" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
-                
-                const interactionContainer = document.createElement('div');
-                interactionContainer.className = 'mt-4 p-4 bg-gray-50 rounded-lg max-w-2xl mx-auto';
-                
-                const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
-                const userHasLiked = userId && likeInfo.likedBy.includes(userId);
-                const commentCount = commentsData[stageId]?.length || 0;
-
-                interactionContainer.innerHTML = `
-                    <div class="flex items-center justify-center gap-6 mb-4">
-                        <button class="like-button ${userHasLiked ? 'liked' : ''}" onclick="toggleLike('${month}', '${tab}')">
-                            <i class="fas fa-heart text-2xl"></i>
-                            <span class="text-lg font-bold ml-2">${likeInfo.count}</span>
-                        </button>
-                        <div class="flex items-center text-gray-500">
-                            <i class="fas fa-comment text-2xl"></i>
-                            <span class="text-lg font-bold ml-2">${commentCount}</span>
-                        </div>
-                    </div>
-                    <div class="comments-list-stage" id="comments-list-${stageId}"></div>
-                    <form class="comment-form mt-4" onsubmit="addCommentHandler(event, '${month}', '${tab}')">
-                        <textarea class="w-full p-2 border rounded-lg" placeholder="Adicionar um comentário..."></textarea>
-                        <button type="submit" class="bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">Enviar</button>
-                    </form>
-                `;
-                podiumContainer.appendChild(interactionContainer);
-                container.appendChild(podiumContainer);
-                renderStageComments(stageId);
+                const podiumImageContainer = document.createElement('div');
+                podiumImageContainer.className = 'mt-8 text-center';
+                podiumImageContainer.innerHTML = `<img src="${monthlyData[month][`${tab}_podium_img`]}" alt="Pódio ${title}" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
+                container.appendChild(podiumImageContainer);
             }
             return container;
-        }
-
-        function renderStageComments(stageId) {
-            const commentsList = document.getElementById(`comments-list-${stageId}`);
-            if (!commentsList) return;
-            commentsList.innerHTML = '';
-            const comments = commentsData[stageId] || [];
-            if (comments.length === 0) {
-                commentsList.innerHTML = '<p class="text-gray-500 text-center">Nenhum comentário ainda.</p>';
-                return;
-            }
-            const sortedComments = [...comments].sort((a, b) => a.createdAt?.seconds - b.createdAt?.seconds);
-            sortedComments.forEach(comment => {
-                const div = document.createElement('div');
-                div.className = 'comment';
-                div.innerHTML = `<p class="comment-author">${comment.authorId.substring(0, 8)}...</p><p class="comment-text">${comment.text}</p>`;
-                commentsList.appendChild(div);
-            });
         }
 
         function renderClassification(month, tab) {
@@ -401,8 +330,9 @@
                 containerToShow.innerHTML = '';
                 containerToShow.appendChild(createTable('Classificação Geral', allParticipantsData, true, month, monthData.title));
             } else {
+                const stageData = monthData[tab] || [];
                 containerToShow.innerHTML = '';
-                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, monthData[tab], false, month, monthData.title, tab));
+                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, stageData, false, month, monthData.title, tab));
             }
         }
         
@@ -418,39 +348,19 @@
             try { await runTransaction(db, async (t) => { const doc = await t.get(likeRef); let newCount = 1; let newLikedBy = [userId]; if (doc.exists()) { const data = doc.data(); const likedBy = data.likedBy || []; if (likedBy.includes(userId)) { newCount = Math.max(0, data.count - 1); newLikedBy = likedBy.filter(id => id !== userId); } else { newCount = data.count + 1; newLikedBy = [...likedBy, userId]; } } t.set(likeRef, { count: newCount, likedBy: newLikedBy }); }); } catch (e) { console.error("Erro na transação de like: ", e); }
         }
         window.toggleLike = toggleLike;
-
-        async function addComment(month, stage, text) {
-            if (!userId) { console.error("Usuário não autenticado."); return; }
-            const stageId = `${month}_${stage}`;
-            const commentsColRef = collection(db, `artifacts/${appId}/public/data/comments/${stageId}/messages`);
-            try { await addDoc(commentsColRef, { text: text, authorId: userId, createdAt: serverTimestamp() }); } catch (e) { console.error("Erro ao adicionar comentário: ", e); }
-        }
-        window.addCommentHandler = function(event, month, stage) { event.preventDefault(); const textarea = event.target.querySelector('textarea'); if (textarea.value.trim()) { addComment(month, stage, textarea.value.trim()); textarea.value = ''; } }
         
         async function initializeAppAndData() {
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     userId = user.uid;
-                    const stagesToMonitor = [];
-                    Object.keys(monthlyData).forEach(month => {
-                        stagesToMonitor.push(`${month}_geral`);
-                        for (let i = 1; i <= 4; i++) { stagesToMonitor.push(`${month}_etapa${i}`); }
-                    });
-                    
                     const likesColRef = collection(db, `artifacts/${appId}/public/data/likes`);
                     onSnapshot(likesColRef, (snapshot) => {
                         snapshot.docs.forEach(doc => { likesData[doc.id] = doc.data(); });
                         renderClassification(document.getElementById('month-select').value, currentTab);
                     });
-
-                    stagesToMonitor.forEach(stageId => {
-                        const commentsColRef = collection(db, `artifacts/${appId}/public/data/comments/${stageId}/messages`);
-                        onSnapshot(query(commentsColRef), (snapshot) => {
-                            commentsData[stageId] = snapshot.docs.map(doc => doc.data());
-                            renderClassification(document.getElementById('month-select').value, currentTab);
-                        });
-                    });
-                } else { userId = null; }
+                } else { 
+                    userId = null; 
+                }
             });
 
             try {

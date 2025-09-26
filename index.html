@@ -230,24 +230,49 @@
         let commentsData = {};
 
         // Dados estáticos da aplicação
-        const participantImages = { 'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png', 'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png', 'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png', 'DANILO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/danilo.png', 'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png', 'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png', 'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png', 'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png', 'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png', 'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png', 'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png', 'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L', 'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P', 'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V', 'NETO': 'https://placehold.co/200x200/e5e7eb/000000?text=N', 'JEFINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=J' };
-        const participantTeams = { 'MANDI': 'WK Team', 'JULIANO': 'WK Team', 'VALMIR': 'EMC - Equipe Mourãoense de Ciclismo', 'MAIQUE': 'EMC - Equipe Mourãoense de Ciclismo', 'EDSON': 'EMC - Equipe Mourãoense de Ciclismo', 'VINICIUS': 'EMC - Equipe Mourãoense de Ciclismo', 'KLÉBER': 'EMC - Equipe Mourãoense de Ciclismo', 'RAUL': 'EMC - Equipe Mourãoense de Ciclismo', 'THIAGO BORGES': 'EMA - Equipe Mourãoense de Avulsos', 'DANILO': 'EMA - Equipe Mourãoense de Avulsos', 'ARIZINHO': 'EMA - Equipe Mourãoense de Avulsos', 'GIMENES': 'EMA - Equipe Mourãoense de Avulsos', 'EMANUEL': 'EMA - Equipe Mourãoense de Avulsos', 'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos', 'WALTER': 'EMA - Equipe Mourãoense de Avulsos', 'MAYKON': 'EMA - Equipe Mourãoense de Avulsos', 'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos', 'LUCAS': 'Sem equipe', 'PEDROSO': 'Equipe Team HP', 'COUTO': 'EMC - Equipe Mourãoense de Ciclismo', 'VALENTINO': 'EMC - Equipe Mourãoense de Ciclismo', 'NETO': 'EMC - Equipe Mourãoense de Ciclismo', 'JEFINHO': 'EMA - Equipe Mourãoense de Avulsos' };
+        const sporadicRiders = ['CANIBAL'];
+        const participantImages = { 'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png', 'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png', 'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png', 'DANILO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/danilo.png', 'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png', 'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png', 'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png', 'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png', 'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png', 'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png', 'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png', 'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L', 'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P', 'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V', 'NETO': 'https://placehold.co/200x200/e5e7eb/000000?text=N', 'JEFINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=J', 'CANIBAL': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'BETINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=B' };
+        const participantTeams = { 'MANDI': 'WK Team', 'JULIANO': 'WK Team', 'VALMIR': 'EMC - Equipe Mourãoense de Ciclismo', 'MAIQUE': 'EMC - Equipe Mourãoense de Ciclismo', 'EDSON': 'EMC - Equipe Mourãoense de Ciclismo', 'VINICIUS': 'EMC - Equipe Mourãoense de Ciclismo', 'KLÉBER': 'EMC - Equipe Mourãoense de Ciclismo', 'RAUL': 'EMC - Equipe Mourãoense de Ciclismo', 'THIAGO BORGES': 'EMA - Equipe Mourãoense de Avulsos', 'DANILO': 'EMA - Equipe Mourãoense de Avulsos', 'ARIZINHO': 'EMA - Equipe Mourãoense de Avulsos', 'GIMENES': 'EMA - Equipe Mourãoense de Avulsos', 'EMANUEL': 'EMA - Equipe Mourãoense de Avulsos', 'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos', 'WALTER': 'EMA - Equipe Mourãoense de Avulsos', 'MAYKON': 'EMA - Equipe Mourãoense de Avulsos', 'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos', 'LUCAS': 'Sem equipe', 'PEDROSO': 'Equipe Team HP', 'COUTO': 'EMC - Equipe Mourãoense de Ciclismo', 'VALENTINO': 'EMC - Equipe Mourãoense de Ciclismo', 'NETO': 'EMC - Equipe Mourãoense de Ciclismo', 'JEFINHO': 'EMA - Equipe Mourãoense de Avulsos', 'CANIBAL': 'Sem equipe', 'BETINHO': 'Sem equipe' };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
         const monthlyData = {
             agosto: { title: 'Agosto/2025', etapa1: [{pos:1,name:'MANDI',pts:15},{pos:2,name:'MAIQUE',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'ARIZINHO',pts:7},{pos:6,name:'GIMENES',pts:5},{pos:7,name:'EMANUEL',pts:3},{pos:8,name:'ANDRÉ',pts:1},{pos:9,name:'THIAGO BORGES',pts:1},{pos:10,name:'LUCIANO',pts:1}], etapa1_podium_img: null, etapa2: [{pos:1,name:'MANDI',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'VINICIUS',pts:11},{pos:4,name:'JULIANO',pts:9},{pos:5,name:'VALMIR',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'ARIZINHO',pts:3},{pos:8,name:'RAUL',pts:1},{pos:9,name:'DANILO',pts:1},{pos:10,name:'GIMENES',pts:1}], etapa2_podium_img: null, etapa3: [{pos:1,name:'WALTER',pts:15},{pos:2,name:'MAIQUE',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'ARIZINHO',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'MANDI',pts:3},{pos:8,name:'LUCIANO',pts:1},{pos:9,name:'GIMENES',pts:1},{pos:10,name:'DANILO',pts:1}], etapa3_podium_img: null, etapa4: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'WALTER',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'KLÉBER',pts:7},{pos:6,name:'VINICIUS',pts:5},{pos:7,name:'ARIZINHO',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'GIMENES',pts:1},{pos:10,name:'MAYKON',pts:1}], etapa4_podium_img: null },
-            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'GIMENES',pts:9},{pos:5,name:'PEDROSO',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'COUTO',pts:3},{pos:8,name:'KLÉBER',pts:1},{pos:9,name:'VALMIR',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'VALMIR',pts:13},{pos:3,name:'NETO',pts:11},{pos:4,name:'LUCIANO',pts:9},{pos:5,name:'GIMENES',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'KLÉBER',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'PEDROSO',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [{pos:1,name:'WALTER',pts:15},{pos:2,name:'VINICIUS',pts:13},{pos:3,name:'MAIQUE',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'JULIANO',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'LUCIANO',pts:3},{pos:8,name:'GIMENES',pts:1},{pos:9,name:'DANILO',pts:1},{pos:10,name:'JEFINHO',pts:1}], etapa3_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc18-09-2025.png', etapa4: [], etapa4_podium_img: null }
+            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'GIMENES',pts:9},{pos:5,name:'PEDROSO',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'COUTO',pts:3},{pos:8,name:'KLÉBER',pts:1},{pos:9,name:'VALMIR',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'VALMIR',pts:13},{pos:3,name:'NETO',pts:11},{pos:4,name:'LUCIANO',pts:9},{pos:5,name:'GIMENES',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'KLÉBER',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'PEDROSO',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [{pos:1,name:'WALTER',pts:15},{pos:2,name:'VINICIUS',pts:13},{pos:3,name:'MAIQUE',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'JULIANO',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'LUCIANO',pts:3},{pos:8,name:'GIMENES',pts:1},{pos:9,name:'DANILO',pts:1},{pos:10,name:'JEFINHO',pts:1}], etapa3_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc18-09-2025.png', etapa4: [{pos:1,name:'MANDI'},{pos:2,name:'CANIBAL'},{pos:3,name:'MAIQUE'},{pos:4,name:'WALTER'},{pos:5,name:'VINICIUS'},{pos:6,name:'EDSON'},{pos:7,name:'VALMIR'},{pos:8,name:'BETINHO'},{pos:9,name:'DANILO'}], etapa4_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc26-09-2025.jpg', geral_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/geral-setembro.jpg' }
         };
         
         let allParticipantsData = [];
         let currentTab = 'geral';
 
         // Funções da aplicação
+        function processStageData(stageData) {
+            const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
+            let pointsIndex = 0;
+            return stageData.map(participant => {
+                if (sporadicRiders.includes(participant.name)) {
+                    return { ...participant, pts: 0 }; 
+                } else {
+                    const points = pointsDistribution[pointsIndex] || 0;
+                    pointsIndex++;
+                    return { ...participant, pts: points };
+                }
+            });
+        }
+        
+        function getProcessedMonthData(month) {
+            const data = JSON.parse(JSON.stringify(monthlyData[month]));
+            if(data.etapa1) data.etapa1 = processStageData(data.etapa1);
+            if(data.etapa2) data.etapa2 = processStageData(data.etapa2);
+            if(data.etapa3) data.etapa3 = processStageData(data.etapa3);
+            if(data.etapa4) data.etapa4 = processStageData(data.etapa4);
+            return data;
+        }
+
         function calculateOverall(etapa1Data, etapa2Data, etapa3Data, etapa4Data) {
             const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name), ...etapa4Data.map(p => p.name)]);
             const overallData = Array.from(allParticipants).map(name => {
+                if (sporadicRiders.includes(name)) return null;
                 const p1 = etapa1Data.find(p => p.name === name) || { pts: 0 }; const p2 = etapa2Data.find(p => p.name === name) || { pts: 0 }; const p3 = etapa3Data.find(p => p.name === name) || { pts: 0 }; const p4 = etapa4Data.find(p => p.name === name) || { pts: 0 };
                 return { name, pts_etapa_1: p1.pts, pts_etapa_2: p2.pts, pts_etapa_3: p3.pts, pts_etapa_4: p4.pts, pts: p1.pts + p2.pts + p3.pts + p4.pts };
-            });
+            }).filter(Boolean);
             overallData.sort((a, b) => b.pts - a.pts);
             return overallData.map((item, index) => ({ ...item, pos: index + 1 }));
         }
@@ -264,7 +289,8 @@
             document.getElementById('modal-team').textContent = participantTeams[name] || 'Sem equipe';
             
             const currentMonth = document.getElementById('month-select').value;
-            const monthData = monthlyData[currentMonth];
+            const monthData = getProcessedMonthData(currentMonth);
+            const originalMonthData = monthlyData[currentMonth];
             const stagesSummaryContainer = document.getElementById('modal-stages-summary');
             stagesSummaryContainer.innerHTML = '';
 
@@ -279,8 +305,11 @@
             for (let i = 1; i <= 4; i++) {
                 const stageKey = `etapa${i}`;
                 const stageData = monthData[stageKey];
+                const originalStageData = originalMonthData[stageKey];
                 if(stageData && stageData.length > 0) {
-                    const stageResult = stageData.find(p => p.name === name);
+                    const originalResult = originalStageData.find(p => p.name === name);
+                    const processedResult = stageData.find(p => p.name === name);
+
                     const stageDiv = document.createElement('div');
                     stageDiv.className = 'bg-gray-100 p-2 rounded-md';
 
@@ -289,15 +318,16 @@
                     stageTitle.textContent = `Etapa ${i}`;
                     stageDiv.appendChild(stageTitle);
 
-                    if (stageResult) {
+                    if (originalResult) {
+                        const isSporadic = sporadicRiders.includes(originalResult.name);
                         const position = document.createElement('p');
                         position.className = 'text-xl font-bold text-gray-800';
-                        position.textContent = `${stageResult.pos}º`;
+                        position.textContent = isSporadic ? `*${originalResult.pos}º` : `${originalResult.pos}º`;
                         stageDiv.appendChild(position);
 
                         const points = document.createElement('p');
                         points.className = 'text-xs text-gray-600';
-                        points.textContent = `(${stageResult.pts} pts)`;
+                        points.textContent = `(${processedResult.pts} pts)`;
                         stageDiv.appendChild(points);
                     } else {
                         const noResult = document.createElement('p');
@@ -364,10 +394,15 @@
             tbody.className = 'text-sm md:text-base';
             data.forEach((item, index) => {
                 if (isOverall && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length && index < 3) return;
+                
+                const isSporadic = !isOverall && sporadicRiders.includes(item.name);
+                const positionDisplay = isSporadic ? `*${item.pos}` : item.pos;
+                const pointsDisplay = isSporadic ? '-' : item.pts;
+
                 const row = document.createElement('tr'); 
                 row.className = 'border-b border-gray-200';
                 row.innerHTML = `
-                    <td class="p-4">${item.pos}</td>
+                    <td class="p-4">${positionDisplay}</td>
                     <td class="p-4">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="openModal('${item.name}')">
                             <div class="profile-thumb-wrapper flex-shrink-0"><img src="${participantImages[item.name] || defaultProfileImageUrl}" alt="Profile Picture" class="profile-thumb" onerror="this.onerror=null;this.src='${defaultProfileImageUrl}';"></div>
@@ -377,20 +412,32 @@
                             </div>
                         </div>
                     </td>
-                    <td class="p-4 text-right text-black font-bold">${item.pts}</td>
+                    <td class="p-4 text-right text-black font-bold">${pointsDisplay}</td>
                     ${isOverall ? `<td class="p-4 hidden md:table-cell text-xs text-right text-gray-500"><span>(${item.pts_etapa_1} | ${item.pts_etapa_2} | ${item.pts_etapa_3} | ${item.pts_etapa_4})</span></td>` : ''}`;
                 tbody.appendChild(row);
             });
             table.appendChild(tbody);
             container.appendChild(table);
 
-            const hasPodiumPhoto = !isOverall && tab && monthlyData[month][`${tab}_podium_img`];
+            let podiumImageUrl = null;
+            let podiumImageAlt = "Pódio";
+            if (!isOverall && tab && monthlyData[month][`${tab}_podium_img`]) {
+                podiumImageUrl = monthlyData[month][`${tab}_podium_img`];
+                podiumImageAlt = `Pódio ${title}`;
+            } else if (isOverall && monthlyData[month]['geral_podium_img']) {
+                podiumImageUrl = monthlyData[month]['geral_podium_img'];
+                podiumImageAlt = `Pódio Geral ${monthTitle.split('/')[0]}`;
+            }
+
+            const hasPodiumPhoto = !!podiumImageUrl;
+
             if (hasPodiumPhoto) {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';
-                podiumImageContainer.innerHTML = `<img src="${monthlyData[month][`${tab}_podium_img`]}" alt="Pódio ${title}" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
+                podiumImageContainer.innerHTML = `<img src="${podiumImageUrl}" alt="${podiumImageAlt}" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
                 container.appendChild(podiumImageContainer);
             }
+
 
             if ((isOverall && data.length > 0) || hasPodiumPhoto) {
                  container.appendChild(createCommentsSection(stageId));
@@ -511,8 +558,9 @@
 
         function renderClassification(month, tab) {
             if (!userId) return; 
-            const monthData = monthlyData[month];
-            
+            const monthData = getProcessedMonthData(month);
+            const originalMonthData = monthlyData[month];
+
             const mainContainer = document.getElementById('main-container');
             const loadingOverlay = document.getElementById('loading-overlay');
             if (loadingOverlay) loadingOverlay.style.display = 'none';
@@ -533,7 +581,11 @@
                 containerToShow.appendChild(createTable('Classificação Geral', allParticipantsData, true, month, monthData.title));
                 stageId = `${month}_geral`;
             } else {
-                const stageData = monthData[tab] || [];
+                const stageData = originalMonthData[tab] ? originalMonthData[tab].map(p => {
+                    const processed = monthData[tab].find(proc => proc.name === p.name);
+                    return {...p, pts: processed ? processed.pts : 0};
+                }) : [];
+
                 containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, stageData, false, month, monthData.title, tab));
                 stageId = `${month}_${tab}`;
             }

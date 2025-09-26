@@ -79,7 +79,7 @@
                     <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
                     <form id="add-participant-form" class="space-y-3 mb-6">
                         <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
-                        <input id="participant-team" type="text" placeholder="Equipa" class="input-field">
+                        <select id="participant-team" class="input-field"></select>
                         <input id="participant-image" type="url" placeholder="URL da Foto" class="input-field">
                         <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
                     </form>
@@ -121,7 +121,7 @@
                 </div>
                 <div>
                     <label for="edit-participant-team" class="font-medium">Equipa</label>
-                    <input id="edit-participant-team" type="text" class="input-field mt-1">
+                    <select id="edit-participant-team" class="input-field mt-1"></select>
                 </div>
                 <div>
                     <label for="edit-participant-image" class="font-medium">URL da Foto</label>
@@ -165,6 +165,7 @@
         let participantsData = {};
         let monthlyData = {};
         let sporadicRiders = [];
+        let allTeams = new Set();
 
         // --- LÓGICA DE LOGIN ---
         const loginSection = document.getElementById('login-section');
@@ -216,9 +217,15 @@
                 rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
 
                 sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
+                
+                allTeams.clear();
+                Object.values(participantsData).forEach(p => {
+                    if (p.team) allTeams.add(p.team);
+                });
 
                 renderParticipants();
                 renderMonthSelector();
+                renderTeamSelectors();
                 
                 const initialMonth = document.getElementById('month-select-admin').value;
                 if(initialMonth) renderResultsForm(initialMonth);
@@ -228,6 +235,46 @@
                 alert("Não foi possível carregar os dados do Firebase. Verifique a consola.");
             }
         }
+
+        // --- GESTÃO DE EQUIPAS ---
+        function renderTeamSelectors(newTeamToSelect = '') {
+            const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team')];
+            const sortedTeams = [...allTeams].sort();
+
+            selects.forEach(select => {
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Selecionar equipa</option>';
+                sortedTeams.forEach(team => {
+                    select.add(new Option(team, team));
+                });
+                select.add(new Option("--- Criar nova equipa ---", "new_team"));
+
+                if (newTeamToSelect) {
+                    select.value = newTeamToSelect;
+                } else if (currentValue) {
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        function handleTeamSelection(selectElementId) {
+            const select = document.getElementById(selectElementId);
+            if (select.value === 'new_team') {
+                const newTeam = prompt("Digite o nome da nova equipa:");
+                if (newTeam && newTeam.trim()) {
+                    const trimmedTeam = newTeam.trim();
+                    allTeams.add(trimmedTeam);
+                    renderTeamSelectors(trimmedTeam);
+                } else {
+                    select.value = '';
+                }
+            }
+        }
+
+        document.getElementById('participant-team').addEventListener('change', () => handleTeamSelection('participant-team'));
+        document.getElementById('edit-participant-team').addEventListener('change', () => handleTeamSelection('edit-participant-team'));
+
 
         // --- GESTÃO DE PARTICIPANTES ---
         function renderParticipants() {

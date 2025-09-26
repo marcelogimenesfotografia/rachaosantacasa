@@ -56,6 +56,10 @@
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo" class="w-48 mx-auto mb-6">
             <h2 class="text-2xl font-bold text-center mb-6">Acesso Restrito</h2>
             <form id="login-form" class="space-y-4">
+                 <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" class="input-field mt-1" required>
+                </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
                     <input type="password" id="password" class="input-field mt-1" required>
@@ -144,11 +148,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- ATENÇÃO: Segurança ---
-        // Este método de palavra-passe no código é INSEGURO e serve apenas para demonstração.
-        // Para um ambiente real, utilize o sistema de Autenticação do Firebase (Email/Password, Google, etc.).
-        const ADMIN_PASSWORD = "admin"; 
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
@@ -161,6 +162,7 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         let participantsData = {};
         let monthlyData = {};
@@ -173,27 +175,37 @@
         const loginForm = document.getElementById('login-form');
         const logoutBtn = document.getElementById('logout-btn');
 
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            if (password === ADMIN_PASSWORD) {
-                sessionStorage.setItem('isAdminAuthenticated', 'true');
-                showDashboard();
-            } else {
-                alert('Palavra-passe incorreta!');
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // O onAuthStateChanged tratará de mostrar o dashboard
+            } catch (error) {
+                console.error("Erro de login:", error.code);
+                alert('Email ou palavra-passe incorreta!');
             }
         });
 
-        logoutBtn.addEventListener('click', () => {
-            sessionStorage.removeItem('isAdminAuthenticated');
-            loginSection.style.display = 'flex';
-            dashboardSection.style.display = 'none';
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // O onAuthStateChanged tratará de mostrar a tela de login
+            } catch (error) {
+                console.error("Erro ao sair:", error);
+            }
         });
 
         function showDashboard() {
             loginSection.style.display = 'none';
             dashboardSection.style.display = 'block';
             loadAllData();
+        }
+
+        function showLogin() {
+            loginSection.style.display = 'flex';
+            dashboardSection.style.display = 'none';
         }
         
         // --- FUNÇÕES GLOBAIS ---
@@ -523,10 +535,16 @@
             }
         });
 
-        // --- INICIALIZAÇÃO ---
-        if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
-            showDashboard();
-        }
+        // --- INICIALIZAÇÃO E GESTÃO DE ESTADO DE AUTENTICAÇÃO ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // O utilizador está autenticado, mostra o painel
+                showDashboard();
+            } else {
+                // O utilizador não está autenticado, mostra o formulário de login
+                showLogin();
+            }
+        });
     </script>
 </body>
 </html>

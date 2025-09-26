@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração - Rachão Santa Casa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f4f5;
+            --card-bg-color: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --accent-color: #eab308;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background-color: #f9fafb;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-primary { background-color: var(--accent-color); color: white; }
+        .btn-primary:hover { background-color: #d99f07; }
+        .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
+        .btn-secondary:hover { background-color: #d1d5db; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .modal { display: none; }
+        .modal.is-open { display: flex; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Tela de Login -->
+    <div id="login-section" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <div class="card w-full max-w-sm">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo" class="w-48 mx-auto mb-6">
+            <h2 class="text-2xl font-bold text-center mb-6">Acesso Restrito</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
+                    <input type="password" id="password" class="input-field mt-1" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Painel Principal (escondido por padrão) -->
+    <div id="dashboard-section" class="hidden max-w-7xl mx-auto p-4 md:p-8">
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-bold">Painel de Administração</h1>
+            <button id="logout-btn" class="btn btn-secondary">Sair</button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Coluna da Esquerda: Participantes -->
+            <div class="lg:col-span-1">
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
+                    <form id="add-participant-form" class="space-y-3 mb-6">
+                        <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
+                        <input id="participant-team" type="text" placeholder="Equipa" class="input-field">
+                        <input id="participant-image" type="url" placeholder="URL da Foto" class="input-field">
+                        <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
+                    </form>
+                    <div id="participants-list" class="space-y-2">
+                        <!-- Lista de participantes será preenchida aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna da Direita: Resultados -->
+            <div class="lg:col-span-2">
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Gerir Resultados</h2>
+                    <div class="flex flex-wrap gap-4 items-center mb-6">
+                        <select id="month-select-admin" class="input-field flex-grow"></select>
+                        <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
+                    </div>
+
+                    <div id="results-form" class="space-y-6">
+                        <!-- Formulários de resultados serão preenchidos aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Participante -->
+    <div id="edit-participant-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+        <div class="card w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Editar Participante</h2>
+                <button onclick="closeModal('edit-participant-modal')" class="text-2xl">&times;</button>
+            </div>
+            <form id="edit-participant-form" class="space-y-3">
+                <input type="hidden" id="edit-participant-id">
+                <div>
+                    <label for="edit-participant-name" class="font-medium">Nome</label>
+                    <input id="edit-participant-name" type="text" class="input-field mt-1" required disabled>
+                </div>
+                <div>
+                    <label for="edit-participant-team" class="font-medium">Equipa</label>
+                    <input id="edit-participant-team" type="text" class="input-field mt-1">
+                </div>
+                <div>
+                    <label for="edit-participant-image" class="font-medium">URL da Foto</label>
+                    <input id="edit-participant-image" type="url" class="input-field mt-1">
+                </div>
+                <div class="pt-2">
+                    <label class="flex items-center gap-2">
+                         <input type="checkbox" id="edit-participant-sporadic" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                         <span class="font-medium">Marcar como participante esporádico (não pontua)</span>
+                    </label>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                     <button type="button" onclick="closeModal('edit-participant-modal')" class="btn btn-secondary">Cancelar</button>
+                     <button type="submit" class="btn btn-primary">Guardar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- ATENÇÃO: Segurança ---
+        // Este método de palavra-passe no código é INSEGURO e serve apenas para demonstração.
+        // Para um ambiente real, utilize o sistema de Autenticação do Firebase (Email/Password, Google, etc.).
+        const ADMIN_PASSWORD = "admin"; 
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
+            authDomain: "rachaosc.firebaseapp.com",
+            projectId: "rachaosc",
+            storageBucket: "rachaosc.appspot.com",
+            messagingSenderId: "28309536958",
+            appId: "1:28309536958:web:eac51586cdabd82f691eef"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let participantsData = {};
+        let monthlyData = {};
+        let sporadicRiders = [];
+
+        // --- LÓGICA DE LOGIN ---
+        const loginSection = document.getElementById('login-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const loginForm = document.getElementById('login-form');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('isAdminAuthenticated', 'true');
+                showDashboard();
+            } else {
+                alert('Palavra-passe incorreta!');
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('isAdminAuthenticated');
+            loginSection.style.display = 'flex';
+            dashboardSection.style.display = 'none';
+        });
+
+        function showDashboard() {
+            loginSection.style.display = 'none';
+            dashboardSection.style.display = 'block';
+            loadAllData();
+        }
+        
+        // --- FUNÇÕES GLOBAIS ---
+        function openModal(id) { document.getElementById(id).classList.add('is-open'); }
+        window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
+
+
+        // --- CARREGAMENTO DE DADOS ---
+        async function loadAllData() {
+            try {
+                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                    getDocs(collection(db, "participants")),
+                    getDocs(collection(db, "results")),
+                    getDoc(doc(db, "settings", "config"))
+                ]);
+                
+                participantsData = {};
+                pSnap.forEach(doc => participantsData[doc.id] = doc.data());
+                
+                monthlyData = {};
+                rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
+
+                sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
+
+                renderParticipants();
+                renderMonthSelector();
+                
+                const initialMonth = document.getElementById('month-select-admin').value;
+                if(initialMonth) renderResultsForm(initialMonth);
+
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+                alert("Não foi possível carregar os dados do Firebase. Verifique a consola.");
+            }
+        }
+
+        // --- GESTÃO DE PARTICIPANTES ---
+        function renderParticipants() {
+            const list = document.getElementById('participants-list');
+            list.innerHTML = '';
+            Object.keys(participantsData).sort().forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
+                const isSporadic = sporadicRiders.includes(name);
+                div.innerHTML = `
+                    <div>
+                        <span class="font-medium">${name}</span>
+                        ${isSporadic ? '<span class="ml-2 text-xs font-bold text-white bg-blue-500 px-2 py-1 rounded-full">ESPORÁDICO</span>' : ''}
+                    </div>
+                    <div class="space-x-2">
+                        <button class="text-blue-500 hover:text-blue-700" data-name="${name}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700" data-name="${name}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('participant-name');
+            const name = nameInput.value.trim().toUpperCase();
+            if (!name) return;
+
+            const data = {
+                team: document.getElementById('participant-team').value.trim(),
+                imageUrl: document.getElementById('participant-image').value.trim()
+            };
+            
+            try {
+                await setDoc(doc(db, 'participants', name), data);
+                alert('Participante adicionado com sucesso!');
+                e.target.reset();
+                loadAllData();
+            } catch (error) {
+                console.error("Erro ao adicionar participante:", error);
+                alert('Ocorreu um erro.');
+            }
+        });
+        
+        document.getElementById('participants-list').addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+            const name = button.dataset.name;
+
+            if (button.querySelector('.fa-edit')) { // Botão Editar
+                const data = participantsData[name];
+                document.getElementById('edit-participant-id').value = name;
+                document.getElementById('edit-participant-name').value = name;
+                document.getElementById('edit-participant-team').value = data.team || '';
+                document.getElementById('edit-participant-image').value = data.imageUrl || '';
+                document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(name);
+                openModal('edit-participant-modal');
+            } else if (button.querySelector('.fa-trash')) { // Botão Apagar
+                if (confirm(`Tem a certeza que deseja apagar ${name}?`)) {
+                    deleteParticipant(name);
+                }
+            }
+        });
+        
+        document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('edit-participant-id').value;
+            const isSporadic = document.getElementById('edit-participant-sporadic').checked;
+
+            const participantData = {
+                team: document.getElementById('edit-participant-team').value.trim(),
+                imageUrl: document.getElementById('edit-participant-image').value.trim()
+            };
+
+            const settingsRef = doc(db, "settings", "config");
+            const participantRef = doc(db, 'participants', name);
+
+            try {
+                // Atualiza os dados do participante
+                await setDoc(participantRef, participantData, { merge: true });
+
+                // Atualiza a lista de esporádicos
+                if(isSporadic) {
+                    await updateDoc(settingsRef, { sporadicRiders: arrayUnion(name) });
+                } else {
+                    await updateDoc(settingsRef, { sporadicRiders: arrayRemove(name) });
+                }
+                
+                alert('Participante atualizado!');
+                closeModal('edit-participant-modal');
+                loadAllData();
+            } catch (error) {
+                // Se o doc 'settings' não existe e tentamos adicionar, ele cria
+                if (error.code === 'not-found' && isSporadic) {
+                    await setDoc(settingsRef, { sporadicRiders: [name] });
+                    alert('Participante atualizado e marcado como esporádico!');
+                    closeModal('edit-participant-modal');
+                    loadAllData();
+                } else {
+                    console.error("Erro ao atualizar participante:", error);
+                    alert('Ocorreu um erro.');
+                }
+            }
+        });
+        
+        async function deleteParticipant(name) {
+            try {
+                await deleteDoc(doc(db, 'participants', name));
+                 // Também remove da lista de esporádicos se lá estiver
+                await updateDoc(doc(db, "settings", "config"), { sporadicRiders: arrayRemove(name) });
+                alert('Participante apagado com sucesso!');
+                loadAllData();
+            } catch (error) {
+                console.error("Erro ao apagar participante:", error);
+                alert('Ocorreu um erro.');
+            }
+        }
+        
+        // --- GESTÃO DE RESULTADOS ---
+        function renderMonthSelector() {
+            const select = document.getElementById('month-select-admin');
+            select.innerHTML = '';
+            Object.keys(monthlyData).sort().forEach(id => {
+                select.add(new Option(monthlyData[id].title, id));
+            });
+             if (select.options.length > 0) select.selectedIndex = select.options.length - 1;
+        }
+
+        document.getElementById('month-select-admin').addEventListener('change', (e) => {
+            renderResultsForm(e.target.value);
+        });
+
+        function renderResultsForm(monthId) {
+            const container = document.getElementById('results-form');
+            if (!monthId || !monthlyData[monthId]) {
+                container.innerHTML = '<p>Selecione um mês para ver os resultados.</p>';
+                return;
+            }
+            const data = monthlyData[monthId];
+            let formHTML = '';
+
+            for (let i = 1; i <= 4; i++) {
+                const etapaKey = `etapa${i}`;
+                const podiumKey = `${etapaKey}_podium_img`;
+                const participants = (data[etapaKey] || []).map(p => p.name).join(', ');
+                formHTML += `
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">Etapa ${i}</h3>
+                        <label class="font-medium text-sm">Participantes (ordem de chegada, separados por vírgula)</label>
+                        <textarea id="${etapaKey}" class="input-field mt-1 h-24">${participants}</textarea>
+                         <label class="font-medium text-sm mt-2 block">URL da Foto do Pódio (Etapa ${i})</label>
+                        <input type="url" id="${podiumKey}" class="input-field mt-1" value="${data[podiumKey] || ''}">
+                    </div>
+                `;
+            }
+             formHTML += `
+                <div>
+                    <h3 class="font-bold text-lg mb-2">Geral do Mês</h3>
+                    <label class="font-medium text-sm mt-2 block">URL da Foto do Pódio (Geral)</label>
+                    <input type="url" id="geral_podium_img" class="input-field mt-1" value="${data.geral_podium_img || ''}">
+                </div>
+            `;
+            
+            formHTML += '<button id="save-results-btn" class="btn btn-primary w-full mt-4">Guardar Resultados do Mês</button>';
+            container.innerHTML = formHTML;
+            
+            document.getElementById('save-results-btn').addEventListener('click', () => saveMonthData(monthId));
+        }
+        
+        async function saveMonthData(monthId) {
+            if (!monthId) return;
+            const docRef = doc(db, 'results', monthId);
+            const currentData = monthlyData[monthId];
+            const newData = { title: currentData.title };
+            
+            for (let i = 1; i <= 4; i++) {
+                const etapaKey = `etapa${i}`;
+                const podiumKey = `${etapaKey}_podium_img`;
+                const namesText = document.getElementById(etapaKey).value.trim();
+                newData[etapaKey] = namesText.split(',')
+                    .map(name => ({ name: name.trim().toUpperCase() }))
+                    .filter(p => p.name);
+                newData[podiumKey] = document.getElementById(podiumKey).value.trim();
+            }
+             newData.geral_podium_img = document.getElementById('geral_podium_img').value.trim();
+            
+            try {
+                await setDoc(docRef, newData);
+                alert('Resultados guardados com sucesso!');
+                loadAllData();
+            } catch (error) {
+                console.error("Erro ao guardar resultados:", error);
+                alert("Ocorreu um erro ao guardar os resultados.");
+            }
+        }
+        
+        document.getElementById('new-month-btn').addEventListener('click', async () => {
+            const monthId = prompt("Insira um ID para o novo mês (ex: 2024_09):");
+            if (!monthId) return;
+            const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2024):");
+            if (!monthTitle) return;
+
+            try {
+                await setDoc(doc(db, 'results', monthId), { title: monthTitle, etapa1: [], etapa2: [], etapa3: [], etapa4: [] });
+                alert('Novo mês criado com sucesso!');
+                await loadAllData();
+                document.getElementById('month-select-admin').value = monthId;
+                renderResultsForm(monthId);
+            } catch (error) {
+                console.error("Erro ao criar novo mês:", error);
+                alert("Ocorreu um erro ao criar o novo mês.");
+            }
+        });
+
+        // --- INICIALIZAÇÃO ---
+        if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
+            showDashboard();
+        }
+    </script>
+</body>
+</html>
+

@@ -149,10 +149,7 @@
             <div id="main-container" class="p-6 md:p-12" style="display: none;">
                 <div class="month-selector-container mb-4">
                     <label for="month-select" class="font-bold text-gray-700">Mês:</label>
-                    <select id="month-select" class="shadow-sm">
-                        <option value="agosto">Agosto</option>
-                        <option value="setembro" selected>Setembro</option>
-                    </select>
+                    <select id="month-select" class="shadow-sm"></select>
                 </div>
                 
                 <div id="tabs-container" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
@@ -230,20 +227,16 @@
         let userId = null;
         let likesData = {};
         let commentsData = {};
-
+        let monthlyData = {};
+        let participantsData = {};
         const sporadicRiders = ['CANIBAL'];
-        const participantImages = { 'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png', 'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png', 'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png', 'DANILO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/danilo.png', 'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png', 'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png', 'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png', 'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png', 'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png', 'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png', 'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png', 'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L', 'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P', 'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V', 'NETO': 'https://placehold.co/200x200/e5e7eb/000000?text=N', 'JEFINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=J', 'CANIBAL': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'BETINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=B' };
-        const participantTeams = { 'MANDI': 'WK Team', 'JULIANO': 'WK Team', 'VALMIR': 'EMC - Equipe Mourãoense de Ciclismo', 'MAIQUE': 'EMC - Equipe Mourãoense de Ciclismo', 'EDSON': 'EMC - Equipe Mourãoense de Ciclismo', 'VINICIUS': 'EMC - Equipe Mourãoense de Ciclismo', 'KLÉBER': 'EMC - Equipe Mourãoense de Ciclismo', 'RAUL': 'EMC - Equipe Mourãoense de Ciclismo', 'THIAGO BORGES': 'EMA - Equipe Mourãoense de Avulsos', 'DANILO': 'EMA - Equipe Mourãoense de Avulsos', 'ARIZINHO': 'EMA - Equipe Mourãoense de Avulsos', 'GIMENES': 'EMA - Equipe Mourãoense de Avulsos', 'EMANUEL': 'EMA - Equipe Mourãoense de Avulsos', 'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos', 'WALTER': 'EMA - Equipe Mourãoense de Avulsos', 'MAYKON': 'EMA - Equipe Mourãoense de Avulsos', 'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos', 'LUCAS': 'Sem equipe', 'PEDROSO': 'Equipe Team HP', 'COUTO': 'EMC - Equipe Mourãoense de Ciclismo', 'VALENTINO': 'EMC - Equipe Mourãoense de Ciclismo', 'NETO': 'EMC - Equipe Mourãoense de Ciclismo', 'JEFINHO': 'EMA - Equipe Mourãoense de Avulsos', 'CANIBAL': 'Sem equipe', 'BETINHO': 'Sem equipe' };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
-        const monthlyData = {
-            agosto: { title: 'Agosto/2025', etapa1: [{pos:1,name:'MANDI'},{pos:2,name:'MAIQUE'},{pos:3,name:'JULIANO'},{pos:4,name:'VALMIR'},{pos:5,name:'ARIZINHO'},{pos:6,name:'GIMENES'},{pos:7,name:'EMANUEL'},{pos:8,name:'ANDRÉ'},{pos:9,name:'THIAGO BORGES'},{pos:10,name:'LUCIANO'}], etapa1_podium_img: null, etapa2: [{pos:1,name:'MANDI'},{pos:2,name:'EDSON'},{pos:3,name:'VINICIUS'},{pos:4,name:'JULIANO'},{pos:5,name:'VALMIR'},{pos:6,name:'KLÉBER'},{pos:7,name:'ARIZINHO'},{pos:8,name:'RAUL'},{pos:9,name:'DANILO'},{pos:10,name:'GIMENES'}], etapa2_podium_img: null, etapa3: [{pos:1,name:'WALTER'},{pos:2,name:'MAIQUE'},{pos:3,name:'JULIANO'},{pos:4,name:'VALMIR'},{pos:5,name:'ARIZINHO'},{pos:6,name:'KLÉBER'},{pos:7,name:'MANDI'},{pos:8,name:'LUCIANO'},{pos:9,name:'GIMENES'},{pos:10,name:'DANILO'}], etapa3_podium_img: null, etapa4: [{pos:1,name:'MAIQUE'},{pos:2,name:'WALTER'},{pos:3,name:'JULIANO'},{pos:4,name:'VALMIR'},{pos:5,name:'KLÉBER'},{pos:6,name:'VINICIUS'},{pos:7,name:'ARIZINHO'},{pos:8,name:'DANILO'},{pos:9,name:'GIMENES'},{pos:10,name:'MAYKON'}], etapa4_podium_img: null },
-            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS'},{pos:2,name:'EDSON'},{pos:3,name:'JULIANO'},{pos:4,name:'GIMENES'},{pos:5,name:'PEDROSO'},{pos:6,name:'RAUL'},{pos:7,name:'COUTO'},{pos:8,name:'KLÉBER'},{pos:9,name:'VALMIR'},{pos:10,name:'VALENTINO'}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE'},{pos:2,name:'VALMIR'},{pos:3,name:'NETO'},{pos:4,name:'LUCIANO'},{pos:5,name:'GIMENES'},{pos:6,name:'RAUL'},{pos:7,name:'KLÉBER'},{pos:8,name:'DANILO'},{pos:9,name:'PEDROSO'},{pos:10,name:'VALENTINO'}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [{pos:1,name:'WALTER'},{pos:2,name:'VINICIUS'},{pos:3,name:'MAIQUE'},{pos:4,name:'VALMIR'},{pos:5,name:'JULIANO'},{pos:6,name:'KLÉBER'},{pos:7,name:'LUCIANO'},{pos:8,name:'GIMENES'},{pos:9,name:'DANILO'},{pos:10,name:'JEFINHO'}], etapa3_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc18-09-2025.png', etapa4: [{pos:1,name:'MANDI'},{pos:2,name:'CANIBAL'},{pos:3,name:'MAIQUE'},{pos:4,name:'WALTER'},{pos:5,name:'VINICIUS'},{pos:6,name:'EDSON'},{pos:7,name:'VALMIR'},{pos:8,name:'BETINHO'},{pos:9,name:'DANILO'}], etapa4_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc26-09-2025.jpg', geral_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/geral-setembro.jpg' }
-        };
         
         let allParticipantsData = [];
         let currentTab = 'geral';
 
         function processStageData(stageData) {
+            if (!stageData) return [];
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
             let pointsIndex = 0;
             return stageData.map(participant => {
@@ -257,8 +250,8 @@
             });
         }
         
-        function getProcessedMonthData(month) {
-            const data = JSON.parse(JSON.stringify(monthlyData[month]));
+        function getProcessedMonthData(monthId) {
+            const data = JSON.parse(JSON.stringify(monthlyData[monthId]));
             if(data.etapa1) data.etapa1 = processStageData(data.etapa1);
             if(data.etapa2) data.etapa2 = processStageData(data.etapa2);
             if(data.etapa3) data.etapa3 = processStageData(data.etapa3);
@@ -267,30 +260,46 @@
         }
 
         function calculateOverall(etapa1Data, etapa2Data, etapa3Data, etapa4Data) {
-            const allParticipants = new Set([...etapa1Data.map(p => p.name), ...etapa2Data.map(p => p.name), ...etapa3Data.map(p => p.name), ...etapa4Data.map(p => p.name)]);
+            const allParticipants = new Set([
+                ...(etapa1Data || []).map(p => p.name),
+                ...(etapa2Data || []).map(p => p.name),
+                ...(etapa3Data || []).map(p => p.name),
+                ...(etapa4Data || []).map(p => p.name)
+            ]);
+            
             const overallData = Array.from(allParticipants).map(name => {
                 if (sporadicRiders.includes(name)) return null;
-                const p1 = etapa1Data.find(p => p.name === name) || { pts: 0 }; const p2 = etapa2Data.find(p => p.name === name) || { pts: 0 }; const p3 = etapa3Data.find(p => p.name === name) || { pts: 0 }; const p4 = etapa4Data.find(p => p.name === name) || { pts: 0 };
+                const p1 = (etapa1Data || []).find(p => p.name === name) || { pts: 0 };
+                const p2 = (etapa2Data || []).find(p => p.name === name) || { pts: 0 };
+                const p3 = (etapa3Data || []).find(p => p.name === name) || { pts: 0 };
+                const p4 = (etapa4Data || []).find(p => p.name === name) || { pts: 0 };
                 return { name, pts_etapa_1: p1.pts, pts_etapa_2: p2.pts, pts_etapa_3: p3.pts, pts_etapa_4: p4.pts, pts: p1.pts + p2.pts + p3.pts + p4.pts };
             }).filter(Boolean);
+            
             overallData.sort((a, b) => b.pts - a.pts);
             return overallData.map((item, index) => ({ ...item, pos: index + 1 }));
         }
 
         function getParticipantData(overallData) {
-            return overallData.map(p => ({ ...p, image: participantImages[p.name] || defaultProfileImageUrl, team: participantTeams[p.name] || 'Sem equipe', posOverall: p.pos, ptsOverall: p.pts, ptsEtapa1: p.pts_etapa_1, ptsEtapa2: p.pts_etapa_2, ptsEtapa3: p.pts_etapa_3, ptsEtapa4: p.pts_etapa_4 }));
+            return overallData.map(p => {
+                const participantInfo = participantsData[p.name] || {};
+                return { ...p, image: participantInfo.imageUrl || defaultProfileImageUrl, team: participantInfo.team || 'Sem equipe', posOverall: p.pos, ptsOverall: p.pts, ptsEtapa1: p.pts_etapa_1, ptsEtapa2: p.pts_etapa_2, ptsEtapa3: p.pts_etapa_3, ptsEtapa4: p.pts_etapa_4 }
+            });
         }
 
         window.openModal = function(name) {
-            const participant = allParticipantsData.find(p => p.name === name); if (!participant) return;
-            document.getElementById('modal-image').src = participant.image;
+            const participant = allParticipantsData.find(p => p.name === name);
+            if (!participant) return;
+            
+            const participantInfo = participantsData[name] || {};
+            document.getElementById('modal-image').src = participantInfo.imageUrl || defaultProfileImageUrl;
             document.getElementById('modal-name').textContent = participant.name;
             document.getElementById('modal-position').textContent = `Posição Geral: ${participant.posOverall}º (${participant.ptsOverall} pts)`;
-            document.getElementById('modal-team').textContent = participantTeams[name] || 'Sem equipe';
+            document.getElementById('modal-team').textContent = participantInfo.team || 'Sem equipe';
             
-            const currentMonth = document.getElementById('month-select').value;
-            const monthData = getProcessedMonthData(currentMonth);
-            const originalMonthData = monthlyData[currentMonth];
+            const currentMonthId = document.getElementById('month-select').value;
+            const monthData = getProcessedMonthData(currentMonthId);
+            const originalMonthData = monthlyData[currentMonthId];
             const stagesSummaryContainer = document.getElementById('modal-stages-summary');
             stagesSummaryContainer.innerHTML = '';
 
@@ -306,8 +315,8 @@
                 const stageKey = `etapa${i}`;
                 const stageData = monthData[stageKey];
                 const originalStageData = originalMonthData[stageKey];
-                if(stageData && stageData.length > 0) {
-                    const originalResult = originalStageData.find(p => p.name === name);
+                if (stageData && stageData.length > 0) {
+                    const originalResult = (originalStageData || []).find(p => p.name === name);
                     const processedResult = stageData.find(p => p.name === name);
 
                     const stageDiv = document.createElement('div');
@@ -345,21 +354,21 @@
 
         window.closeModal = function() { document.getElementById('details-modal').classList.add('hidden'); }
 
-        function createTable(title, data, isOverall = false, month, monthTitle, tab = '') {
-            const container = document.createElement('div'); 
+        function createTable(title, data, isOverall = false, monthId, monthTitle, tab = '') {
+            const container = document.createElement('div');
             container.className = 'mb-8';
 
-            const titleElement = document.createElement('h2'); 
-            titleElement.className = 'text-center text-2xl md:text-3xl font-bold text-gray-700 mb-2'; 
-            titleElement.textContent = title; 
+            const titleElement = document.createElement('h2');
+            titleElement.className = 'text-center text-2xl md:text-3xl font-bold text-gray-700 mb-2';
+            titleElement.textContent = title;
             container.appendChild(titleElement);
 
-            const monthElement = document.createElement('p'); 
-            monthElement.className = 'text-gray-500 text-center mb-6'; 
-            monthElement.textContent = monthTitle; 
+            const monthElement = document.createElement('p');
+            monthElement.className = 'text-gray-500 text-center mb-6';
+            monthElement.textContent = monthTitle;
             container.appendChild(monthElement);
 
-            const stageId = isOverall ? `${month}_geral` : `${month}_${tab}`;
+            const stageId = isOverall ? `${monthId}_geral` : `${monthId}_${tab}`;
             const hasDataForLikes = (isOverall && data.length > 0) || (!isOverall && tab && data.length > 0);
 
             if (hasDataForLikes) {
@@ -369,13 +378,13 @@
                 const userHasLiked = userId && likeInfo.likedBy.includes(userId);
                 const likeButton = document.createElement('button');
                 likeButton.className = `like-button ${userHasLiked ? 'liked' : ''} flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full shadow-sm hover:bg-gray-200 transition`;
-                likeButton.setAttribute('onclick', `toggleLike('${month}', '${isOverall ? 'geral' : tab}')`);
+                likeButton.setAttribute('onclick', `toggleLike('${monthId}', '${isOverall ? 'geral' : tab}')`);
                 likeButton.innerHTML = `<span class="font-bold">Curtir</span><i class="fas fa-heart text-xl"></i><span class="text-base font-bold">${likeInfo.count}</span>`;
                 interactionContainer.appendChild(likeButton);
                 container.appendChild(interactionContainer);
             }
             
-            if (isOverall && data.length >= 3 && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length) {
+            if (isOverall && data.length >= 3 && monthlyData[monthId].etapa1?.length && monthlyData[monthId].etapa2?.length && monthlyData[monthId].etapa3?.length && monthlyData[monthId].etapa4?.length) {
                 const podiumWrapper = document.createElement('div');
                 podiumWrapper.classList.add('bg-gray-100', 'p-6', 'rounded-xl', 'shadow-md', 'mb-8', 'text-gray-800');
                 const podiumContainer = document.createElement('div');
@@ -387,28 +396,29 @@
                 container.appendChild(podiumWrapper);
             }
 
-            const table = document.createElement('table'); 
+            const table = document.createElement('table');
             table.className = 'w-full border-collapse overflow-hidden';
             table.innerHTML = `<thead class="bg-gray-100 text-gray-600 text-xs md:text-sm uppercase font-bold"><tr><th class="p-4 text-left">#</th><th class="p-4 text-left">Nome</th><th class="p-4 text-right">Pts</th>${isOverall ? '<th class="p-4 text-right hidden md:table-cell">Etapas</th>' : ''}</tr></thead>`;
-            const tbody = document.createElement('tbody'); 
+            const tbody = document.createElement('tbody');
             tbody.className = 'text-sm md:text-base';
             data.forEach((item, index) => {
-                if (isOverall && monthlyData[month].etapa1.length && monthlyData[month].etapa2.length && monthlyData[month].etapa3.length && monthlyData[month].etapa4.length && index < 3) return;
+                if (isOverall && monthlyData[monthId].etapa1?.length && monthlyData[monthId].etapa2?.length && monthlyData[monthId].etapa3?.length && monthlyData[monthId].etapa4?.length && index < 3) return;
                 
+                const participantInfo = participantsData[item.name] || {};
                 const isSporadic = !isOverall && sporadicRiders.includes(item.name);
                 const positionDisplay = isSporadic ? `*${item.pos}` : item.pos;
                 const pointsDisplay = isSporadic ? '-' : item.pts;
 
-                const row = document.createElement('tr'); 
+                const row = document.createElement('tr');
                 row.className = 'border-b border-gray-200';
                 row.innerHTML = `
                     <td class="p-4">${positionDisplay}</td>
                     <td class="p-4">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="openModal('${item.name}')">
-                            <div class="profile-thumb-wrapper flex-shrink-0"><img src="${participantImages[item.name] || defaultProfileImageUrl}" alt="Profile Picture" class="profile-thumb" onerror="this.onerror=null;this.src='${defaultProfileImageUrl}';"></div>
+                            <div class="profile-thumb-wrapper flex-shrink-0"><img src="${participantInfo.imageUrl || defaultProfileImageUrl}" alt="Profile Picture" class="profile-thumb" onerror="this.onerror=null;this.src='${defaultProfileImageUrl}';"></div>
                             <div>
                                 <span class="font-semibold text-gray-800 text-sm sm:text-base">${item.name}</span>
-                                <span class="text-xs text-gray-500 block">${participantTeams[item.name] || ''}</span>
+                                <span class="text-xs text-gray-500 block">${participantInfo.team || ''}</span>
                             </div>
                         </div>
                     </td>
@@ -421,11 +431,11 @@
 
             let podiumImageUrl = null;
             let podiumImageAlt = "Pódio";
-            if (!isOverall && tab && monthlyData[month][`${tab}_podium_img`]) {
-                podiumImageUrl = monthlyData[month][`${tab}_podium_img`];
+            if (!isOverall && tab && monthlyData[monthId][`${tab}_podium_img`]) {
+                podiumImageUrl = monthlyData[monthId][`${tab}_podium_img`];
                 podiumImageAlt = `Pódio ${title}`;
-            } else if (isOverall && monthlyData[month]['geral_podium_img']) {
-                podiumImageUrl = monthlyData[month]['geral_podium_img'];
+            } else if (isOverall && monthlyData[monthId]['geral_podium_img']) {
+                podiumImageUrl = monthlyData[monthId]['geral_podium_img'];
                 podiumImageAlt = `Pódio Geral ${monthTitle.split('/')[0]}`;
             }
 
@@ -449,8 +459,9 @@
         function createPodiumItem(item, position, cssClass) {
             const podiumItem = document.createElement('div');
             podiumItem.classList.add('flex', 'flex-col', 'items-center', 'text-center');
+            const participantInfo = participantsData[item.name] || {};
             const img = document.createElement('img');
-            img.src = participantImages[item.name] || defaultProfileImageUrl;
+            img.src = participantInfo.imageUrl || defaultProfileImageUrl;
             img.alt = `Foto de ${item.name}`;
             img.classList.add('podium-image', `${cssClass}-image`);
             img.onerror = function() { this.onerror=null;this.src='${defaultProfileImageUrl}'; };
@@ -555,10 +566,10 @@
             }
         }
 
-        function renderClassification(month, tab) {
+        function renderClassification(monthId, tab) {
             if (!userId) return; 
-            const monthData = getProcessedMonthData(month);
-            const originalMonthData = monthlyData[month];
+            const monthData = getProcessedMonthData(monthId);
+            const originalMonthData = monthlyData[monthId];
 
             const mainContainer = document.getElementById('main-container');
             const loadingOverlay = document.getElementById('loading-overlay');
@@ -577,16 +588,16 @@
             if (tab === 'geral') {
                 const overall = calculateOverall(monthData.etapa1, monthData.etapa2, monthData.etapa3, monthData.etapa4);
                 allParticipantsData = getParticipantData(overall);
-                containerToShow.appendChild(createTable('Classificação Geral', allParticipantsData, true, month, monthData.title));
-                stageId = `${month}_geral`;
+                containerToShow.appendChild(createTable('Classificação Geral', allParticipantsData, true, monthId, monthData.title));
+                stageId = `${monthId}_geral`;
             } else {
-                const stageData = originalMonthData[tab] ? originalMonthData[tab].map(p => {
+                const stageData = originalMonthData[tab] ? originalMonthData[tab].map((p, index) => {
                     const processed = monthData[tab].find(proc => proc.name === p.name);
-                    return {...p, pts: processed ? processed.pts : 0};
+                    return {...p, pos: index + 1, pts: processed ? processed.pts : 0};
                 }) : [];
 
-                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, stageData, false, month, monthData.title, tab));
-                stageId = `${month}_${tab}`;
+                containerToShow.appendChild(createTable(`Classificação ${tab.replace('etapa', 'Etapa ')}`, stageData, false, monthId, monthData.title, tab));
+                stageId = `${monthId}_${tab}`;
             }
             renderCommentsAndReplies(stageId);
         }
@@ -597,9 +608,9 @@
             document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteConfirmation);
         }
         
-        async function toggleLike(month, stage) {
+        async function toggleLike(monthId, stage) {
             if (!userId) { console.error("Usuário não autenticado."); return; }
-            const stageId = `${month}_${stage}`;
+            const stageId = `${monthId}_${stage}`;
             const likeRef = doc(db, 'likes', stageId);
             try { await runTransaction(db, async (t) => { const doc = await t.get(likeRef); let newCount = 1; let newLikedBy = [userId]; if (doc.exists()) { const data = doc.data(); const likedBy = data.likedBy || []; if (likedBy.includes(userId)) { newCount = Math.max(0, data.count - 1); newLikedBy = likedBy.filter(id => id !== userId); } else { newCount = data.count + 1; newLikedBy = [...likedBy, userId]; } } t.set(likeRef, { count: newCount, likedBy: newLikedBy }); }); } catch (e) { console.error("Erro na transação de like: ", e); }
         }
@@ -646,9 +657,9 @@
                 await addDoc(repliesColRef, { name, text, timestamp: serverTimestamp(), authorId: userId });
                 form.reply.value = ''; 
                 toggleReplyForm(commentId); 
-                const currentMonth = document.getElementById('month-select').value;
+                const currentMonthId = document.getElementById('month-select').value;
                 const currentTab = document.querySelector('.tab-button-active').id.replace('tab-','');
-                const stageId = currentTab === 'geral' ? `${currentMonth}_geral` : `${currentMonth}_${currentTab}`;
+                const stageId = currentTab === 'geral' ? `${currentMonthId}_geral` : `${currentMonthId}_${currentTab}`;
                 renderCommentsAndReplies(stageId);
 
             } catch (error) { console.error("Erro ao adicionar resposta: ", error); }
@@ -700,9 +711,9 @@
                 console.error("Erro ao apagar resposta:", error);
             } finally {
                 hideDeleteConfirmation();
-                const currentMonth = document.getElementById('month-select').value;
+                const currentMonthId = document.getElementById('month-select').value;
                 const currentTab = document.querySelector('.tab-button-active').id.replace('tab-','');
-                const stageId = currentTab === 'geral' ? `${currentMonth}_geral` : `${currentMonth}_${currentTab}`;
+                const stageId = currentTab === 'geral' ? `${currentMonthId}_geral` : `${currentMonthId}_${currentTab}`;
                 renderCommentsAndReplies(stageId);
             }
         }
@@ -717,17 +728,13 @@
         function setupDataListeners() {
             if (!userId) return; 
 
-            const likesColRef = collection(db, 'likes');
-            onSnapshot(likesColRef, (snapshot) => {
+            onSnapshot(collection(db, 'likes'), (snapshot) => {
                 likesData = {};
                 snapshot.forEach(doc => { likesData[doc.id] = doc.data(); });
                 renderClassification(document.getElementById('month-select').value, currentTab);
-            }, (error) => {
-                console.error("Erro no listener de likes:", error);
             });
 
-            const commentsColRef = collection(db, 'comments');
-            onSnapshot(commentsColRef, (snapshot) => {
+            onSnapshot(collection(db, 'comments'), (snapshot) => {
                 commentsData = {};
                 snapshot.forEach(doc => {
                     const comment = { id: doc.id, ...doc.data() };
@@ -735,19 +742,51 @@
                     commentsData[comment.stageId].push(comment);
                 });
                 renderClassification(document.getElementById('month-select').value, currentTab);
-            }, (error) => {
-                console.error("Erro no listener de comentários:", error);
             });
+        }
+        
+        async function loadInitialData() {
+            try {
+                const [participantsSnapshot, resultsSnapshot] = await Promise.all([
+                    getDocs(collection(db, "participants")),
+                    getDocs(collection(db, "results"))
+                ]);
+
+                participantsSnapshot.forEach(doc => {
+                    participantsData[doc.id] = doc.data();
+                });
+
+                resultsSnapshot.forEach(doc => {
+                    monthlyData[doc.id] = doc.data();
+                });
+                
+                const monthSelect = document.getElementById('month-select');
+                monthSelect.innerHTML = '';
+                Object.keys(monthlyData).sort().forEach(monthId => {
+                    const option = document.createElement('option');
+                    option.value = monthId;
+                    option.textContent = monthlyData[monthId].title;
+                    monthSelect.appendChild(option);
+                });
+                // Select the most recent month
+                if(monthSelect.options.length > 0) {
+                    monthSelect.selectedIndex = monthSelect.options.length - 1;
+                }
+
+            } catch (e) {
+                console.error("Erro ao carregar dados iniciais:", e);
+                document.getElementById('loading-overlay').innerHTML = '<p class="text-lg font-semibold text-red-600">Falha ao carregar dados do banco. A página pode não funcionar corretamente.</p>';
+            }
         }
 
         async function initializeAppAndData() {
             setupEventListeners();
             try {
+                await loadInitialData();
                 const userCredential = await signInAnonymously(auth);
                 userId = userCredential.user.uid;
                 console.log(`Seu ID de Administrador é: ${userId}`);
                 setupDataListeners(); 
-
             } catch (error) {
                 console.error("Falha na autenticação ou ao carregar dados:", error);
                 userId = null;

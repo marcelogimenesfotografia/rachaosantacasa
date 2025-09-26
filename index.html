@@ -162,6 +162,12 @@
                     <button id="tab-etapa3" class="tab-button">Etapa 3</button>
                     <button id="tab-etapa4" class="tab-button">Etapa 4</button>
                 </div>
+
+                <div class="text-center mb-8">
+                    <a href="ranking_geral.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition shadow-md">
+                        Ver Ranking Anual
+                    </a>
+                </div>
                 
                 <div id="geral-table-container"></div>
                 <div id="etapa1-table-container"></div>
@@ -202,16 +208,12 @@
     </div>
     
     <script type="module">
-        // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURAÇÃO DE ADMINISTRADOR
-        // Para apagar qualquer comentário, encontre seu ID no console do navegador e cole-o aqui.
         const ADMIN_USER_ID = "COLOQUE_SEU_USER_ID_AQUI"; 
 
-        // Sua configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
             authDomain: "rachaosc.firebaseapp.com",
@@ -229,20 +231,18 @@
         let likesData = {};
         let commentsData = {};
 
-        // Dados estáticos da aplicação
         const sporadicRiders = ['CANIBAL'];
         const participantImages = { 'GIMENES': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/gimenes.png', 'MANDI': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/mandi.png', 'KLÉBER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/kleber.png', 'DANILO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/danilo.png', 'WALTER': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/walter.png', 'JULIANO': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/juliano.png', 'MAIQUE': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/maique.png', 'VALMIR': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/valmir.png', 'VINICIUS': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/vinicius.png', 'EDSON': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/edson.png', 'RAUL': 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/raul.png', 'LUCAS': 'https://placehold.co/200x200/e5e7eb/000000?text=L', 'PEDROSO': 'https://placehold.co/200x200/e5e7eb/000000?text=P', 'COUTO': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'VALENTINO': 'https://placehold.co/200x200/e5e7eb/000000?text=V', 'NETO': 'https://placehold.co/200x200/e5e7eb/000000?text=N', 'JEFINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=J', 'CANIBAL': 'https://placehold.co/200x200/e5e7eb/000000?text=C', 'BETINHO': 'https://placehold.co/200x200/e5e7eb/000000?text=B' };
         const participantTeams = { 'MANDI': 'WK Team', 'JULIANO': 'WK Team', 'VALMIR': 'EMC - Equipe Mourãoense de Ciclismo', 'MAIQUE': 'EMC - Equipe Mourãoense de Ciclismo', 'EDSON': 'EMC - Equipe Mourãoense de Ciclismo', 'VINICIUS': 'EMC - Equipe Mourãoense de Ciclismo', 'KLÉBER': 'EMC - Equipe Mourãoense de Ciclismo', 'RAUL': 'EMC - Equipe Mourãoense de Ciclismo', 'THIAGO BORGES': 'EMA - Equipe Mourãoense de Avulsos', 'DANILO': 'EMA - Equipe Mourãoense de Avulsos', 'ARIZINHO': 'EMA - Equipe Mourãoense de Avulsos', 'GIMENES': 'EMA - Equipe Mourãoense de Avulsos', 'EMANUEL': 'EMA - Equipe Mourãoense de Avulsos', 'ANDRÉ': 'EMA - Equipe Mourãoense de Avulsos', 'WALTER': 'EMA - Equipe Mourãoense de Avulsos', 'MAYKON': 'EMA - Equipe Mourãoense de Avulsos', 'LUCIANO': 'EMA - Equipe Mourãoense de Avulsos', 'LUCAS': 'Sem equipe', 'PEDROSO': 'Equipe Team HP', 'COUTO': 'EMC - Equipe Mourãoense de Ciclismo', 'VALENTINO': 'EMC - Equipe Mourãoense de Ciclismo', 'NETO': 'EMC - Equipe Mourãoense de Ciclismo', 'JEFINHO': 'EMA - Equipe Mourãoense de Avulsos', 'CANIBAL': 'Sem equipe', 'BETINHO': 'Sem equipe' };
         const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
         const monthlyData = {
-            agosto: { title: 'Agosto/2025', etapa1: [{pos:1,name:'MANDI',pts:15},{pos:2,name:'MAIQUE',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'ARIZINHO',pts:7},{pos:6,name:'GIMENES',pts:5},{pos:7,name:'EMANUEL',pts:3},{pos:8,name:'ANDRÉ',pts:1},{pos:9,name:'THIAGO BORGES',pts:1},{pos:10,name:'LUCIANO',pts:1}], etapa1_podium_img: null, etapa2: [{pos:1,name:'MANDI',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'VINICIUS',pts:11},{pos:4,name:'JULIANO',pts:9},{pos:5,name:'VALMIR',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'ARIZINHO',pts:3},{pos:8,name:'RAUL',pts:1},{pos:9,name:'DANILO',pts:1},{pos:10,name:'GIMENES',pts:1}], etapa2_podium_img: null, etapa3: [{pos:1,name:'WALTER',pts:15},{pos:2,name:'MAIQUE',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'ARIZINHO',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'MANDI',pts:3},{pos:8,name:'LUCIANO',pts:1},{pos:9,name:'GIMENES',pts:1},{pos:10,name:'DANILO',pts:1}], etapa3_podium_img: null, etapa4: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'WALTER',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'KLÉBER',pts:7},{pos:6,name:'VINICIUS',pts:5},{pos:7,name:'ARIZINHO',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'GIMENES',pts:1},{pos:10,name:'MAYKON',pts:1}], etapa4_podium_img: null },
-            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS',pts:15},{pos:2,name:'EDSON',pts:13},{pos:3,name:'JULIANO',pts:11},{pos:4,name:'GIMENES',pts:9},{pos:5,name:'PEDROSO',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'COUTO',pts:3},{pos:8,name:'KLÉBER',pts:1},{pos:9,name:'VALMIR',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE',pts:15},{pos:2,name:'VALMIR',pts:13},{pos:3,name:'NETO',pts:11},{pos:4,name:'LUCIANO',pts:9},{pos:5,name:'GIMENES',pts:7},{pos:6,name:'RAUL',pts:5},{pos:7,name:'KLÉBER',pts:3},{pos:8,name:'DANILO',pts:1},{pos:9,name:'PEDROSO',pts:1},{pos:10,name:'VALENTINO',pts:1}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [{pos:1,name:'WALTER',pts:15},{pos:2,name:'VINICIUS',pts:13},{pos:3,name:'MAIQUE',pts:11},{pos:4,name:'VALMIR',pts:9},{pos:5,name:'JULIANO',pts:7},{pos:6,name:'KLÉBER',pts:5},{pos:7,name:'LUCIANO',pts:3},{pos:8,name:'GIMENES',pts:1},{pos:9,name:'DANILO',pts:1},{pos:10,name:'JEFINHO',pts:1}], etapa3_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc18-09-2025.png', etapa4: [{pos:1,name:'MANDI'},{pos:2,name:'CANIBAL'},{pos:3,name:'MAIQUE'},{pos:4,name:'WALTER'},{pos:5,name:'VINICIUS'},{pos:6,name:'EDSON'},{pos:7,name:'VALMIR'},{pos:8,name:'BETINHO'},{pos:9,name:'DANILO'}], etapa4_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc26-09-2025.jpg', geral_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/geral-setembro.jpg' }
+            agosto: { title: 'Agosto/2025', etapa1: [{pos:1,name:'MANDI'},{pos:2,name:'MAIQUE'},{pos:3,name:'JULIANO'},{pos:4,name:'VALMIR'},{pos:5,name:'ARIZINHO'},{pos:6,name:'GIMENES'},{pos:7,name:'EMANUEL'},{pos:8,name:'ANDRÉ'},{pos:9,name:'THIAGO BORGES'},{pos:10,name:'LUCIANO'}], etapa1_podium_img: null, etapa2: [{pos:1,name:'MANDI'},{pos:2,name:'EDSON'},{pos:3,name:'VINICIUS'},{pos:4,name:'JULIANO'},{pos:5,name:'VALMIR'},{pos:6,name:'KLÉBER'},{pos:7,name:'ARIZINHO'},{pos:8,name:'RAUL'},{pos:9,name:'DANILO'},{pos:10,name:'GIMENES'}], etapa2_podium_img: null, etapa3: [{pos:1,name:'WALTER'},{pos:2,name:'MAIQUE'},{pos:3,name:'JULIANO'},{pos:4,name:'VALMIR'},{pos:5,name:'ARIZINHO'},{pos:6,name:'KLÉBER'},{pos:7,name:'MANDI'},{pos:8,name:'LUCIANO'},{pos:9,name:'GIMENES'},{pos:10,name:'DANILO'}], etapa3_podium_img: null, etapa4: [{pos:1,name:'MAIQUE'},{pos:2,name:'WALTER'},{pos:3,name:'JULIANO'},{pos:4,name:'VALMIR'},{pos:5,name:'KLÉBER'},{pos:6,name:'VINICIUS'},{pos:7,name:'ARIZINHO'},{pos:8,name:'DANILO'},{pos:9,name:'GIMENES'},{pos:10,name:'MAYKON'}], etapa4_podium_img: null },
+            setembro: { title: 'Setembro/2025', etapa1: [{pos:1,name:'VINICIUS'},{pos:2,name:'EDSON'},{pos:3,name:'JULIANO'},{pos:4,name:'GIMENES'},{pos:5,name:'PEDROSO'},{pos:6,name:'RAUL'},{pos:7,name:'COUTO'},{pos:8,name:'KLÉBER'},{pos:9,name:'VALMIR'},{pos:10,name:'VALENTINO'}], etapa1_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc04-09-2025.png', etapa2: [{pos:1,name:'MAIQUE'},{pos:2,name:'VALMIR'},{pos:3,name:'NETO'},{pos:4,name:'LUCIANO'},{pos:5,name:'GIMENES'},{pos:6,name:'RAUL'},{pos:7,name:'KLÉBER'},{pos:8,name:'DANILO'},{pos:9,name:'PEDROSO'},{pos:10,name:'VALENTINO'}], etapa2_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc11-09-2025.png', etapa3: [{pos:1,name:'WALTER'},{pos:2,name:'VINICIUS'},{pos:3,name:'MAIQUE'},{pos:4,name:'VALMIR'},{pos:5,name:'JULIANO'},{pos:6,name:'KLÉBER'},{pos:7,name:'LUCIANO'},{pos:8,name:'GIMENES'},{pos:9,name:'DANILO'},{pos:10,name:'JEFINHO'}], etapa3_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc18-09-2025.png', etapa4: [{pos:1,name:'MANDI'},{pos:2,name:'CANIBAL'},{pos:3,name:'MAIQUE'},{pos:4,name:'WALTER'},{pos:5,name:'VINICIUS'},{pos:6,name:'EDSON'},{pos:7,name:'VALMIR'},{pos:8,name:'BETINHO'},{pos:9,name:'DANILO'}], etapa4_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/rc26-09-2025.jpg', geral_podium_img: 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosetapas/geral-setembro.jpg' }
         };
         
         let allParticipantsData = [];
         let currentTab = 'geral';
 
-        // Funções da aplicação
         function processStageData(stageData) {
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
             let pointsIndex = 0;
@@ -533,7 +533,6 @@
                 `;
                 commentsListContainer.appendChild(commentEl);
 
-                // Fetch and render replies
                 const repliesListContainer = document.getElementById(`replies-list-${comment.id}`);
                 const repliesColRef = collection(db, `comments/${comment.id}/replies`);
                 const q = query(repliesColRef, orderBy("timestamp", "asc"));
@@ -566,7 +565,7 @@
             if (loadingOverlay) loadingOverlay.style.display = 'none';
             if (mainContainer) mainContainer.style.display = 'block';
 
-            document.querySelectorAll('[id$="-table-container"]').forEach(c => c.innerHTML = ''); // Limpa antes de renderizar
+            document.querySelectorAll('[id$="-table-container"]').forEach(c => c.innerHTML = ''); 
             document.querySelectorAll('[id$="-table-container"]').forEach(c => c.classList.add('hidden'));
             
             const containerToShow = document.getElementById(`${tab}-table-container`);
@@ -676,7 +675,6 @@
 
         async function deleteComment(commentId) {
             try {
-                // Delete all replies first
                 const repliesRef = collection(db, `comments/${commentId}/replies`);
                 const repliesSnapshot = await getDocs(repliesRef);
                 const batch = writeBatch(db);
@@ -685,7 +683,6 @@
                 });
                 await batch.commit();
 
-                // Delete the comment itself
                 const commentRef = doc(db, 'comments', commentId);
                 await deleteDoc(commentRef);
             } catch (error) {
@@ -703,7 +700,6 @@
                 console.error("Erro ao apagar resposta:", error);
             } finally {
                 hideDeleteConfirmation();
-                // Re-render comments for immediate visual feedback
                 const currentMonth = document.getElementById('month-select').value;
                 const currentTab = document.querySelector('.tab-button-active').id.replace('tab-','');
                 const stageId = currentTab === 'geral' ? `${currentMonth}_geral` : `${currentMonth}_${currentTab}`;

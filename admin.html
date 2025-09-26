@@ -351,10 +351,11 @@
         function renderMonthSelector() {
             const select = document.getElementById('month-select-admin');
             select.innerHTML = '';
-            Object.keys(monthlyData).sort().forEach(id => {
+            // Ordena as chaves (meses) em ordem decrescente antes de criar as opções
+            Object.keys(monthlyData).sort().reverse().forEach(id => {
                 select.add(new Option(monthlyData[id].title, id));
             });
-             if (select.options.length > 0) select.selectedIndex = select.options.length - 1;
+             if (select.options.length > 0) select.selectedIndex = 0; // Seleciona o primeiro (mais recente)
         }
 
         document.getElementById('month-select-admin').addEventListener('change', (e) => {
@@ -426,20 +427,52 @@
         }
         
         document.getElementById('new-month-btn').addEventListener('click', async () => {
-            const monthId = prompt("Insira um ID para o novo mês (ex: 2024_09):");
+            const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09 para Setembro de 2025):");
             if (!monthId) return;
-            const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2024):");
+
+            // Validação para garantir o formato correto, essencial para a ordenação
+            if (!/^\d{4}_\d{2}$/.test(monthId)) {
+                alert("Formato inválido! Por favor, utilize o formato AAAA_MM, como por exemplo '2025_09'. O uso de dois dígitos para o mês é obrigatório (01, 02, ..., 12).");
+                return;
+            }
+
+            // Verifica se o mês já existe para evitar sobrescrever
+            if (monthlyData[monthId]) {
+                alert("Este mês já existe! Selecione-o na lista para editar.");
+                return;
+            }
+
+            const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
             if (!monthTitle) return;
 
             try {
-                await setDoc(doc(db, 'results', monthId), { title: monthTitle, etapa1: [], etapa2: [], etapa3: [], etapa4: [] });
+                // Prepara o objeto com todos os campos esperados para evitar inconsistências
+                const newMonthData = { 
+                    title: monthTitle, 
+                    etapa1: [], 
+                    etapa2: [], 
+                    etapa3: [], 
+                    etapa4: [],
+                    geral_podium_img: '',
+                    etapa1_podium_img: '',
+                    etapa2_podium_img: '',
+                    etapa3_podium_img: '',
+                    etapa4_podium_img: ''
+                };
+
+                await setDoc(doc(db, 'results', monthId), newMonthData);
+                
                 alert('Novo mês criado com sucesso!');
-                await loadAllData();
+                
+                // Atualiza os dados localmente para refletir a mudança sem recarregar toda a página
+                monthlyData[monthId] = newMonthData;
+                renderMonthSelector();
                 document.getElementById('month-select-admin').value = monthId;
                 renderResultsForm(monthId);
+
             } catch (error) {
                 console.error("Erro ao criar novo mês:", error);
-                alert("Ocorreu um erro ao criar o novo mês.");
+                alert(`Ocorreu um erro ao criar o novo mês. Verifique a sua conexão e as permissões do Firebase. Detalhe do erro: ${error.message}`);
             }
         });
 

@@ -183,7 +183,7 @@
 
         .leaderboard-table tbody tr {
             border-bottom: 1px solid var(--border-color);
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color: 0.2s ease-in-out;
         }
         
         .leaderboard-table tbody tr:last-child {
@@ -261,8 +261,15 @@
 </head>
 <body class="antialiased">
     <div class="max-w-5xl mx-auto p-4 md:p-8">
-        <header class="text-center mb-10">
+        <header class="text-center mb-6">
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
+            <nav class="mt-4">
+                <ul class="flex justify-center gap-6 md:gap-8">
+                    <li><a href="index.html" class="font-semibold text-yellow-500 transition">Classificação</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking do Ano</a></li>
+                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+                </ul>
+            </nav>
         </header>
 
         <main>
@@ -285,12 +292,6 @@
 
                 <!-- Conteúdo Dinâmico -->
                 <div id="dynamic-content"></div>
-                
-                 <div class="text-center mt-8">
-                     <a href="ranking_geral.html" class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-full transition shadow-sm">
-                         Ver Ranking Anual
-                     </a>
-                 </div>
             </div>
         </main>
     
@@ -322,7 +323,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO E VARIÁVEIS GLOBAIS ---
         const ADMIN_USER_ID = "COLOQUE_O_SEU_USER_ID_AQUI"; 
@@ -345,7 +346,7 @@
         let commentsData = {};
         let monthlyData = {};
         let participantsData = {};
-        const sporadicRiders = ['CANIBAL'];
+        let sporadicRiders = [];
         
         let allParticipantsData = [];
         let currentTab = 'geral';
@@ -354,12 +355,17 @@
         function processStageData(stageData) {
             if (!stageData) return [];
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
-            let pointsIndex = 0;
+            let pointsIndex = 0; // Este índice conta a posição para atribuição de pontos (apenas para não esporádicos)
             return stageData.map(participant => {
-                if (sporadicRiders.includes(participant.name)) return { ...participant, pts: 0 };
-                const points = pointsDistribution[pointsIndex] || 0;
-                pointsIndex++;
-                return { ...participant, pts: points };
+                if (sporadicRiders.includes(participant.name)) {
+                    // Esporádicos recebem 0 pontos e não "consomem" uma posição na distribuição de pontos.
+                    return { ...participant, pts: 0 };
+                } else {
+                    // Não esporádicos recebem os pontos da sua posição efetiva na classificação.
+                    const points = pointsDistribution[pointsIndex] || 0;
+                    pointsIndex++; // O índice de pontos só avança para participantes que pontuam.
+                    return { ...participant, pts: points };
+                }
             });
         }
         
@@ -648,8 +654,10 @@
             for (let i = 1; i <= 4; i++) {
                 const stageKey = `etapa${i}`;
                 if (originalMonthData[stageKey]?.length > 0) {
-                    const result = originalMonthData[stageKey].find(res => res.name === name);
+                    const resultIndex = originalMonthData[stageKey].findIndex(res => res.name === name);
+                    const result = resultIndex !== -1 ? { ...originalMonthData[stageKey][resultIndex], pos: resultIndex + 1 } : null;
                     const processedResult = (monthData[stageKey] || []).find(res => res.name === name);
+                    
                     stagesHtml += `
                         <div class="bg-gray-100 p-2 rounded-md">
                             <p class="text-xs font-bold text-gray-500 uppercase">Etapa ${i}</p>
@@ -826,19 +834,29 @@
         
         async function loadInitialData() {
             try {
-                const [pSnap, rSnap] = await Promise.all([getDocs(collection(db, "participants")), getDocs(collection(db, "results"))]);
+                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                    getDocs(collection(db, "participants")), 
+                    getDocs(collection(db, "results")),
+                    getDoc(doc(db, "settings", "config"))
+                ]);
                 if (rSnap.empty) return false;
 
                 pSnap.forEach(doc => participantsData[doc.id] = doc.data());
                 rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
                 
+                if (settingsSnap.exists()) {
+                    sporadicRiders = settingsSnap.data().sporadicRiders || [];
+                }
+                
                 const monthSelect = document.getElementById('month-select');
                 monthSelect.innerHTML = '';
-                Object.keys(monthlyData).sort().forEach(id => {
+                Object.keys(monthlyData).sort().reverse().forEach(id => {
                     const option = new Option(monthlyData[id].title, id);
                     monthSelect.add(option);
                 });
-                if (monthSelect.options.length > 0) monthSelect.selectedIndex = monthSelect.options.length - 1;
+                if (monthSelect.options.length > 0) {
+                     monthSelect.selectedIndex = 0;
+                }
                 return true;
             } catch (e) {
                 console.error("Erro ao carregar dados iniciais:", e); throw e;

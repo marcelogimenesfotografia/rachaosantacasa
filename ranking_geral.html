@@ -4,7 +4,7 @@
     <!-- Metadados essenciais -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Anual - Rachão Santa Casa</title>
+    <title>Ranking Geral - Rachão Santa Casa</title>
     
     <!-- CDNs de Estilos e Fontes -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,7 +46,7 @@
             <nav class="mt-4">
                 <ul class="flex justify-center gap-6 md:gap-8">
                     <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
-                    <li><a href="ranking_geral.html" class="font-semibold text-yellow-500 transition">Ranking do Ano</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-yellow-500 transition">Ranking Geral</a></li>
                     <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
             </nav>
@@ -54,12 +54,12 @@
 
         <main>
             <div id="loading-overlay" class="text-center p-10 card">
-                <p class="text-lg font-semibold text-gray-500">A calcular o ranking anual...</p>
+                <p class="text-lg font-semibold text-gray-500">A calcular o ranking geral...</p>
             </div>
 
             <div id="ranking-container" class="hidden">
                  <div class="card">
-                    <h1 class="text-3xl font-bold text-center mb-6">Ranking Anual</h1>
+                    <h1 class="text-3xl font-bold text-center mb-6">Ranking Geral</h1>
                     <table class="leaderboard-table">
                         <thead>
                             <tr>
@@ -109,10 +109,10 @@
         function openModal(modalId) { document.getElementById(modalId).classList.add('is-open'); }
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         
-        async function calculateAnnualRanking() {
+        async function calculateLifetimeRanking() {
             const loadingOverlay = document.getElementById('loading-overlay');
             const rankingContainer = document.getElementById('ranking-container');
-
+            
             try {
                 // 1. Carregar todos os dados necessários
                 const [pSnap, rSnap, settingsSnap] = await Promise.all([
@@ -132,10 +132,10 @@
                 const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
 
                 // 2. Inicializar estrutura de dados para cada participante
-                const annualStats = {};
+                const lifetimeStats = {};
                 Object.keys(participantsData).forEach(name => {
                     if (!sporadicRiders.includes(name)) {
-                        annualStats[name] = {
+                        lifetimeStats[name] = {
                             totalPoints: 0,
                             top5Finishes: [0, 0, 0, 0, 0], // Índices 0-4 para posições 1-5
                             monthlyRanks: {}
@@ -158,16 +158,16 @@
                             const participantName = result.name;
                             const position = resultIndex + 1;
 
-                             if (annualStats[participantName]) {
+                             if (lifetimeStats[participantName]) {
                                 // Contabilizar top 5
                                 if (position <= 5) {
-                                    annualStats[participantName].top5Finishes[position - 1]++;
+                                    lifetimeStats[participantName].top5Finishes[position - 1]++;
                                 }
 
                                 // Atribuir pontos
                                 if (!sporadicRiders.includes(participantName)) {
                                     const points = pointsDistribution[pointsIndex] || 0;
-                                    annualStats[participantName].totalPoints += points;
+                                    lifetimeStats[participantName].totalPoints += points;
                                     
                                     if (!monthStandings[participantName]) monthStandings[participantName] = 0;
                                     monthStandings[participantName] += points;
@@ -178,11 +178,26 @@
                         });
                     }
                     
-                    // Calcular a posição geral do mês para cada participante
+                    const monthParticipants = new Set();
+                    for (let i = 1; i <= 4; i++) {
+                        const etapaKey = `etapa${i}`;
+                        (monthResults[etapaKey] || []).forEach(p => {
+                            if (!sporadicRiders.includes(p.name)) {
+                                monthParticipants.add(p.name);
+                            }
+                        });
+                    }
+
+                    monthParticipants.forEach(name => {
+                        if (monthStandings[name] === undefined) {
+                            monthStandings[name] = 0;
+                        }
+                    });
+
                     const sortedMonth = Object.keys(monthStandings).sort((a, b) => monthStandings[b] - monthStandings[a]);
                     sortedMonth.forEach((name, index) => {
-                        if (annualStats[name]) {
-                            annualStats[name].monthlyRanks[monthId] = {
+                        if (lifetimeStats[name]) {
+                            lifetimeStats[name].monthlyRanks[monthId] = {
                                 title: monthResults.title,
                                 pos: index + 1
                             };
@@ -190,11 +205,11 @@
                     });
                 }
                 
-                // 4. Converter para array e ordenar o ranking anual
-                const finalRanking = Object.keys(annualStats).map(name => ({
+                // 4. Converter para array e ordenar o ranking geral
+                const finalRanking = Object.keys(lifetimeStats).map(name => ({
                     name,
                     ...participantsData[name],
-                    ...annualStats[name]
+                    ...lifetimeStats[name]
                 })).sort((a, b) => b.totalPoints - a.totalPoints);
                 
                 // 5. Renderizar a tabela
@@ -204,7 +219,7 @@
                 rankingContainer.style.display = 'block';
 
             } catch (error) {
-                console.error("Erro ao calcular ranking anual:", error);
+                console.error("Erro ao calcular ranking geral:", error);
                 loadingOverlay.innerHTML = `<p class="text-lg font-semibold text-red-500">Ocorreu um erro ao carregar os dados.</p>`;
             }
         }
@@ -246,14 +261,24 @@
             });
 
             let monthlyRanksHtml = '';
-            Object.keys(participant.monthlyRanks).sort().reverse().forEach(monthId => {
-                 const rank = participant.monthlyRanks[monthId];
-                 monthlyRanksHtml += `
-                    <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
-                        <span>${rank.title}</span>
-                        <span class="font-bold">${rank.pos}º</span>
-                    </li>`;
-            });
+            const top10Finishes = Object.keys(participant.monthlyRanks)
+                .filter(monthId => participant.monthlyRanks[monthId].pos <= 10)
+                .sort()
+                .reverse()
+                .slice(0, 6);
+
+            if (top10Finishes.length > 0) {
+                top10Finishes.forEach(monthId => {
+                    const rank = participant.monthlyRanks[monthId];
+                    monthlyRanksHtml += `
+                       <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
+                           <span>${rank.title}</span>
+                           <span class="font-bold">${rank.pos}º</span>
+                       </li>`;
+                });
+            } else {
+                monthlyRanksHtml = `<li class="text-center text-gray-500">Nenhum resultado no Top 10 mensal.</li>`;
+            }
 
             modalContent.innerHTML = `
                 <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
@@ -261,20 +286,26 @@
                 <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
                 <p class="text-sm text-gray-600">${participant.team || 'Sem equipe'}</p>
                 
+                <div class="mt-4 w-full text-center border-t border-gray-200 pt-4">
+                    <h4 class="text-md font-bold text-gray-800 mb-1">Pontuação Total (Geral)</h4>
+                    <p class="text-3xl font-bold text-yellow-500">${participant.totalPoints}</p>
+                </div>
+                
                 <div class="mt-6 w-full text-left">
-                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Pódios (Top 5 em Etapas)</h4>
+                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Pódios - Top 5 (Etapas)</h4>
                     <div class="grid grid-cols-5 gap-2 text-center">${top5Html}</div>
                 </div>
 
                 <div class="mt-6 w-full text-left">
-                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Resultados Mensais (Geral)</h4>
-                    <ul class="space-y-1">${monthlyRanksHtml || '<li class="text-center text-gray-500">Nenhum resultado mensal.</li>'}</ul>
+                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Últimos Resultados (Top 10 Mensal)</h4>
+                    <ul class="space-y-1">${monthlyRanksHtml}</ul>
                 </div>
             `;
             openModal('details-modal');
         }
 
-        calculateAnnualRanking();
+        calculateLifetimeRanking();
     </script>
 </body>
 </html>
+

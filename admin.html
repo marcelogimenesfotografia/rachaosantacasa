@@ -121,7 +121,7 @@
                 <input type="hidden" id="edit-participant-id">
                 <div>
                     <label for="edit-participant-name" class="font-medium">Nome</label>
-                    <input id="edit-participant-name" type="text" class="input-field mt-1" required disabled>
+                    <input id="edit-participant-name" type="text" class="input-field mt-1" required>
                 </div>
                 <div>
                     <label for="edit-participant-team" class="font-medium">Equipa</label>
@@ -354,41 +354,103 @@
         
         document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('edit-participant-id').value;
+            const oldName = document.getElementById('edit-participant-id').value;
+            const newNameInput = document.getElementById('edit-participant-name');
+            const newName = newNameInput.value.trim().toUpperCase();
             const isSporadic = document.getElementById('edit-participant-sporadic').checked;
+
+            if (!newName) {
+                alert("O nome do participante não pode estar em branco.");
+                return;
+            }
+
+            if (newName !== oldName && participantsData[newName]) {
+                alert(`Já existe um participante com o nome "${newName}". Por favor, escolha outro nome.`);
+                return;
+            }
 
             const participantData = {
                 team: document.getElementById('edit-participant-team').value.trim(),
                 imageUrl: document.getElementById('edit-participant-image').value.trim()
             };
 
-            const settingsRef = doc(db, "settings", "config");
-            const participantRef = doc(db, 'participants', name);
+            if (newName === oldName) {
+                try {
+                    const settingsRef = doc(db, "settings", "config");
+                    const participantRef = doc(db, 'participants', oldName);
+                    
+                    await setDoc(participantRef, participantData, { merge: true });
 
-            try {
-                // Atualiza os dados do participante
-                await setDoc(participantRef, participantData, { merge: true });
-
-                // Atualiza a lista de esporádicos
-                if(isSporadic) {
-                    await updateDoc(settingsRef, { sporadicRiders: arrayUnion(name) });
-                } else {
-                    await updateDoc(settingsRef, { sporadicRiders: arrayRemove(name) });
-                }
-                
-                alert('Participante atualizado!');
-                closeModal('edit-participant-modal');
-                loadAllData();
-            } catch (error) {
-                // Se o doc 'settings' não existe e tentamos adicionar, ele cria
-                if (error.code === 'not-found' && isSporadic) {
-                    await setDoc(settingsRef, { sporadicRiders: [name] });
-                    alert('Participante atualizado e marcado como esporádico!');
+                    if(isSporadic) {
+                        await updateDoc(settingsRef, { sporadicRiders: arrayUnion(oldName) });
+                    } else {
+                        await updateDoc(settingsRef, { sporadicRiders: arrayRemove(oldName) });
+                    }
+                    
+                    alert('Participante atualizado!');
                     closeModal('edit-participant-modal');
                     loadAllData();
-                } else {
+                } catch (error) {
                     console.error("Erro ao atualizar participante:", error);
-                    alert('Ocorreu um erro.');
+                    alert('Ocorreu um erro ao atualizar.');
+                }
+            } else {
+                if (!confirm(`Tem a certeza que deseja renomear "${oldName}" para "${newName}"? Esta ação irá atualizar todos os registos de resultados.`)) {
+                    return;
+                }
+
+                try {
+                    const batch = writeBatch(db);
+
+                    batch.set(doc(db, 'participants', newName), participantData);
+                    batch.delete(doc(db, 'participants', oldName));
+
+                    const settingsRef = doc(db, "settings", "config");
+                    const wasSporadic = sporadicRiders.includes(oldName);
+
+                    if (isSporadic !== wasSporadic) {
+                        if (isSporadic) {
+                            batch.update(settingsRef, { sporadicRiders: arrayUnion(newName) });
+                        } else {
+                            batch.update(settingsRef, { sporadicRiders: arrayRemove(oldName) });
+                        }
+                    } else if (isSporadic && wasSporadic) {
+                        const updatedList = sporadicRiders.filter(name => name !== oldName);
+                        updatedList.push(newName);
+                        batch.update(settingsRef, { sporadicRiders: updatedList });
+                    }
+
+                    for (const monthId in monthlyData) {
+                        const monthDoc = monthlyData[monthId];
+                        let monthWasUpdated = false;
+                        
+                        for (let i = 1; i <= 4; i++) {
+                            const etapaKey = `etapa${i}`;
+                            if (monthDoc[etapaKey]) {
+                                monthDoc[etapaKey] = monthDoc[etapaKey].map(p => {
+                                    if (p.name === oldName) {
+                                        monthWasUpdated = true;
+                                        return { ...p, name: newName };
+                                    }
+                                    return p;
+                                });
+                            }
+                        }
+
+                        if (monthWasUpdated) {
+                            batch.set(doc(db, 'results', monthId), monthDoc);
+                        }
+                    }
+
+                    await batch.commit();
+
+                    alert(`Participante "${oldName}" foi renomeado para "${newName}" com sucesso!`);
+                    closeModal('edit-participant-modal');
+                    loadAllData();
+
+                } catch (error) {
+                    console.error("Erro ao renomear participante:", error);
+                    alert(`Ocorreu um erro complexo ao renomear. Verifique a consola. Detalhe: ${error.message}`);
                 }
             }
         });

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <!-- Metadados essenciais -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobre o Rachão - Rachão Santa Casa</title>
+    
+    <!-- CDNs de Estilos e Fontes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos Personalizados (mesmos de index.html) -->
+    <style>
+        :root {
+            --bg-color: #f4f4f5;
+            --card-bg-color: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
+        .card { background-color: var(--card-bg-color); border-radius: 1.5rem; padding: 2.5rem; border: 1px solid var(--border-color); box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05); }
+        .prose { max-width: 65ch; margin: auto; } /* Estilos para texto longo */
+        .prose h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }
+        .prose h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; }
+        .prose p { line-height: 1.75; margin-bottom: 1.25rem; color: var(--text-secondary); }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <header class="text-center mb-6">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
+            <nav class="mt-4">
+                <ul class="flex justify-center gap-6 md:gap-8">
+                    <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking do Ano</a></li>
+                    <li><a href="sobre.html" class="font-semibold text-yellow-500 transition">Sobre o Rachão</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <div class="card">
+                <article class="prose">
+                    <h1>Sobre o Rachão Santa Casa</h1>
+                    <p>
+                        Bem-vindo à página oficial do Rachão Santa Casa, o ponto de encontro dos ciclistas mais empenhados da região. O que começou como um treino amigável entre colegas transformou-se numa competição mensal que celebra a paixão pelo ciclismo, a superação e, acima de tudo, a amizade.
+                    </p>
+                    <h2>A Competição</h2>
+                    <p>
+                        Todos os meses, os nossos atletas enfrentam quatro etapas desafiadoras, acumulando pontos com base no seu desempenho. A competição é feroz, mas o respeito mútuo prevalece sempre. Aqui, cada sprint e cada subida contam para a classificação geral do mês e para o cobiçado título de campeão anual.
+                    </p>
+                    <h2>O Espírito</h2>
+                    <p>
+                        Mais do que uma competição, o Rachão Santa Casa é uma comunidade. Valorizamos o companheirismo, o apoio mútuo e a diversão. No final de cada etapa, o que realmente importa são as histórias partilhadas e os laços fortalecidos. Como gostamos de dizer: "Nós pedalamos forte, mas o que nos mantém juntos é a amizade."
+                    </p>
+                </article>
+            </div>
+        </main>
+        
+        <footer class="mt-12 pt-8 text-center text-gray-500 border-t border-gray-200">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-20 h-auto mx-auto mb-2 opacity-80">
+            <p class="text-sm font-semibold">Nós pedalamos forte, mas o que nos mantém juntos é a amizade.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,122 +1,97 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <!-- Define a codificação de caracteres e a responsividade -->
+    <!-- Metadados essenciais -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Título da página -->
-    <title>Ranking Geral Anual - Rachão Santa Casa</title>
-    <!-- Importa a biblioteca Tailwind CSS para estilização -->
+    <title>Ranking Anual - Rachão Santa Casa</title>
+    
+    <!-- CDNs de Estilos e Fontes -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Importa a biblioteca Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Define a fonte Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos Personalizados (mesmos de index.html) -->
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #FFFFFF;
-            color: #000000;
+        :root {
+            --bg-color: #f4f4f5;
+            --card-bg-color: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --accent-color: #eab308;
         }
-        .modal {
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: #ffffff;
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            text-align: center;
-            position: relative;
-            max-width: 90%;
-            width: 500px;
-            color: #000000;
-        }
-        .close-button {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            font-size: 2rem;
-            font-weight: bold;
-            cursor: pointer;
-            color: #000000;
-        }
-        .modal-image {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 1rem;
-            border: 3px solid #e5e7eb;
-        }
-        .profile-thumb-wrapper {
-            width: 75px;
-            height: 75px;
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-            border: 2px solid #e5e7eb;
-            background-color: #e5e7eb;
-        }
-        .profile-thumb {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
+        .card { background-color: var(--card-bg-color); border-radius: 1.5rem; padding: 2rem; border: 1px solid var(--border-color); box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05); margin-bottom: 2rem; }
+        .leaderboard-table { width: 100%; border-collapse: collapse; }
+        .leaderboard-table th, .leaderboard-table td { padding: 1rem; text-align: left; }
+        .leaderboard-table thead { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+        .leaderboard-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background-color: 0.2s ease-in-out; }
+        .leaderboard-table tbody tr:last-child { border-bottom: none; }
+        .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
+        .profile-thumb-wrapper { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
+        .modal { display: none; }
+        .modal.is-open { display: flex; }
+        .modal-content.card { max-width: 600px; width: 90%; text-align: center; position: relative; }
+        .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
     </style>
 </head>
-<body>
-    <div class="max-w-5xl mx-auto md:w-full p-4 md:p-8">
-        <header class="text-center mb-10">
-            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-xs mx-auto">
-             <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mt-4">Ranking Geral Anual 2025</h1>
-             <div class="text-center mt-6">
-                <a href="index.html" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition">
-                    Ver Classificação Mensal
-                </a>
-            </div>
+<body class="antialiased">
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <header class="text-center mb-6">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
+            <nav class="mt-4">
+                <ul class="flex justify-center gap-6 md:gap-8">
+                    <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-yellow-500 transition">Ranking do Ano</a></li>
+                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+                </ul>
+            </nav>
         </header>
 
-        <main id="main-container">
-             <div id="loading-overlay" class="text-center p-10">
-                <p class="text-lg font-semibold text-gray-600">Carregando ranking...</p>
+        <main>
+            <div id="loading-overlay" class="text-center p-10 card">
+                <p class="text-lg font-semibold text-gray-500">A calcular o ranking anual...</p>
             </div>
-            <div id="annual-ranking-container" style="display: none;"></div>
+
+            <div id="ranking-container" class="hidden">
+                 <div class="card">
+                    <h1 class="text-3xl font-bold text-center mb-6">Ranking Anual</h1>
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th class="w-12">#</th>
+                                <th>Participante</th>
+                                <th class="text-right">Pontos Totais</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-table-body">
+                            <!-- Os dados serão inseridos aqui via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </main>
     
-        <div id="details-modal" class="modal hidden">
-            <div class="modal-content">
-                <span class="close-button" onclick="closeModal()">&times;</span>
-                <img id="modal-image" class="modal-image mx-auto mb-4" src="" alt="Profile Picture">
-                <h3 id="modal-name" class="text-2xl font-bold text-gray-800"></h3>
-                <p id="modal-team" class="text-sm text-gray-600 mt-1"></p>
-                <div id="modal-podiums" class="flex justify-center gap-4 my-4 text-2xl"></div>
-                <div id="modal-monthly-summary" class="mt-4 w-full"></div>
+        <!-- Modal de Detalhes do Atleta -->
+        <div id="details-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+            <div id="modal-content-container" class="modal-content card">
+                <!-- Conteúdo injetado por JS -->
             </div>
         </div>
         
-        <footer class="mt-8 p-6 md:p-8 text-gray-600 text-center">
-            <div>
-                <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-24 h-auto mx-auto mb-2 opacity-80">
-                <p class="text-sm font-bold">A gente pedala forte, mas o que nos mantém juntos é a amizade.</p>
-            </div>
+        <footer class="mt-12 pt-8 text-center text-gray-500 border-t border-gray-200">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-20 h-auto mx-auto mb-2 opacity-80">
+            <p class="text-sm font-semibold">Nós pedalamos forte, mas o que nos mantém juntos é a amizade.</p>
         </footer>
     </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
@@ -126,235 +101,180 @@
             messagingSenderId: "28309536958",
             appId: "1:28309536958:web:eac51586cdabd82f691eef"
         };
+        const defaultProfileImageUrl = "https://placehold.co/120x120/EFEFEF/3A3A3A?text=Foto";
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const sporadicRiders = ['CANIBAL'];
-        const defaultProfileImageUrl = "https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/994380792726247885.jpg";
+        function openModal(modalId) { document.getElementById(modalId).classList.add('is-open'); }
+        window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         
-        let annualRankingData = [];
-        let participantsData = {};
-        let monthlyData = {};
+        async function calculateAnnualRanking() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const rankingContainer = document.getElementById('ranking-container');
 
-        function processStageData(stageData) {
-            if (!stageData) return [];
-            const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
-            let pointsIndex = 0;
-            return stageData.map(participant => {
-                if (sporadicRiders.includes(participant.name)) {
-                    return { ...participant, pts: 0 };
-                } else {
-                    const points = pointsDistribution[pointsIndex] || 0;
-                    pointsIndex++;
-                    return { ...participant, pts: points };
-                }
-            });
-        }
-        
-        function calculateAnnualRanking() {
-            const playerStats = {};
+            try {
+                // 1. Carregar todos os dados necessários
+                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                    getDocs(collection(db, "participants")),
+                    getDocs(collection(db, "results")),
+                    getDoc(doc(db, "settings", "config"))
+                ]);
 
-            Object.keys(participantsData).forEach(name => {
-                if (!sporadicRiders.includes(name)) {
-                    playerStats[name] = {
-                        name: name,
-                        totalPoints: 0,
-                        podiums: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-                        monthlyResults: {}
-                    };
-                }
-            });
+                const participantsData = {};
+                pSnap.forEach(doc => participantsData[doc.id] = doc.data());
 
-            const monthOrder = Object.keys(monthlyData).sort();
-
-            monthOrder.forEach(monthKey => {
-                const month = monthlyData[monthKey];
-                let monthPoints = {};
+                const monthlyData = {};
+                rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
                 
-                for (let i = 1; i <= 4; i++) {
-                    const stageKey = `etapa${i}`;
-                    if (month[stageKey] && month[stageKey].length > 0) {
-                        const processedStage = processStageData(month[stageKey]);
-                        
-                        processedStage.forEach(p => {
-                            if (playerStats[p.name]) {
-                                if (!monthPoints[p.name]) monthPoints[p.name] = 0;
-                                monthPoints[p.name] += p.pts;
-                                
-                                const originalResult = month[stageKey].find(orig => orig.name === p.name);
-                                if (originalResult && [1, 2, 3, 4, 5].includes(originalResult.pos)) {
-                                    playerStats[p.name].podiums[originalResult.pos]++;
+                const sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
+
+                const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
+
+                // 2. Inicializar estrutura de dados para cada participante
+                const annualStats = {};
+                Object.keys(participantsData).forEach(name => {
+                    if (!sporadicRiders.includes(name)) {
+                        annualStats[name] = {
+                            totalPoints: 0,
+                            top5Finishes: [0, 0, 0, 0, 0], // Índices 0-4 para posições 1-5
+                            monthlyRanks: {}
+                        };
+                    }
+                });
+
+                // 3. Processar cada mês
+                for (const monthId in monthlyData) {
+                    const monthResults = monthlyData[monthId];
+                    let monthStandings = {};
+
+                    // Processar cada etapa do mês
+                    for (let i = 1; i <= 4; i++) {
+                        const etapaKey = `etapa${i}`;
+                        const stageResults = monthResults[etapaKey] || [];
+                        let pointsIndex = 0;
+
+                        stageResults.forEach((result, resultIndex) => {
+                            const participantName = result.name;
+                            const position = resultIndex + 1;
+
+                             if (annualStats[participantName]) {
+                                // Contabilizar top 5
+                                if (position <= 5) {
+                                    annualStats[participantName].top5Finishes[position - 1]++;
+                                }
+
+                                // Atribuir pontos
+                                if (!sporadicRiders.includes(participantName)) {
+                                    const points = pointsDistribution[pointsIndex] || 0;
+                                    annualStats[participantName].totalPoints += points;
+                                    
+                                    if (!monthStandings[participantName]) monthStandings[participantName] = 0;
+                                    monthStandings[participantName] += points;
+
+                                    pointsIndex++;
                                 }
                             }
                         });
                     }
+                    
+                    // Calcular a posição geral do mês para cada participante
+                    const sortedMonth = Object.keys(monthStandings).sort((a, b) => monthStandings[b] - monthStandings[a]);
+                    sortedMonth.forEach((name, index) => {
+                        if (annualStats[name]) {
+                            annualStats[name].monthlyRanks[monthId] = {
+                                title: monthResults.title,
+                                pos: index + 1
+                            };
+                        }
+                    });
                 }
                 
-                const monthRank = Object.keys(monthPoints).map(name => ({ name, pts: monthPoints[name] }));
-                monthRank.sort((a,b) => b.pts - a.pts);
+                // 4. Converter para array e ordenar o ranking anual
+                const finalRanking = Object.keys(annualStats).map(name => ({
+                    name,
+                    ...participantsData[name],
+                    ...annualStats[name]
+                })).sort((a, b) => b.totalPoints - a.totalPoints);
+                
+                // 5. Renderizar a tabela
+                renderTable(finalRanking);
 
-                monthRank.forEach((player, index) => {
-                    if (playerStats[player.name]) {
-                        playerStats[player.name].totalPoints += player.pts;
-                        playerStats[player.name].monthlyResults[monthKey] = {
-                            pos: index + 1,
-                            pts: player.pts,
-                            monthName: month.title.split('/')[0]
-                        };
-                    }
-                });
-            });
+                loadingOverlay.style.display = 'none';
+                rankingContainer.style.display = 'block';
 
-            const finalRanking = Object.values(playerStats);
-            finalRanking.sort((a, b) => b.totalPoints - a.totalPoints);
-            return finalRanking.map((p, i) => ({ ...p, pos: i + 1 }));
+            } catch (error) {
+                console.error("Erro ao calcular ranking anual:", error);
+                loadingOverlay.innerHTML = `<p class="text-lg font-semibold text-red-500">Ocorreu um erro ao carregar os dados.</p>`;
+            }
         }
 
-        function createAnnualTable(data) {
-            const container = document.createElement('div');
-            const table = document.createElement('table');
-            table.className = 'w-full border-collapse overflow-hidden';
-            table.innerHTML = `
-                <thead class="bg-gray-100 text-gray-600 text-xs md:text-sm uppercase font-bold">
-                    <tr>
-                        <th class="p-4 text-left">#</th>
-                        <th class="p-4 text-left">Nome</th>
-                        <th class="p-4 text-right">Pontos Totais</th>
-                    </tr>
-                </thead>`;
-            
-            const tbody = document.createElement('tbody');
-            tbody.className = 'text-sm md:text-base';
-            data.forEach(item => {
-                const participantInfo = participantsData[item.name] || {};
+        function renderTable(rankingData) {
+            const tableBody = document.getElementById('ranking-table-body');
+            tableBody.innerHTML = '';
+            rankingData.forEach((p, index) => {
                 const row = document.createElement('tr');
-                row.className = 'border-b border-gray-200';
+                row.className = 'cursor-pointer';
                 row.innerHTML = `
-                    <td class="p-4">${item.pos}</td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-3 cursor-pointer" onclick="openStatsModal('${item.name}')">
-                            <div class="profile-thumb-wrapper flex-shrink-0">
-                                <img src="${participantInfo.imageUrl || defaultProfileImageUrl}" alt="Foto de ${item.name}" class="profile-thumb" onerror="this.onerror=null;this.src='${defaultProfileImageUrl}';">
-                            </div>
+                    <td class="font-semibold text-gray-400">${index + 1}</td>
+                    <td>
+                        <div class="flex items-center gap-4">
+                            <div class="profile-thumb-wrapper"><img src="${p.imageUrl || defaultProfileImageUrl}" class="profile-thumb" onerror="this.src='${defaultProfileImageUrl}'"></div>
                             <div>
-                                <span class="font-semibold text-gray-800 text-sm sm:text-base">${item.name}</span>
-                                <span class="text-xs text-gray-500 block">${participantInfo.team || ''}</span>
+                                <div class="font-semibold text-gray-800">${p.name}</div>
+                                <div class="text-sm text-gray-400">${p.team || ''}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="p-4 text-right text-black font-bold">${item.totalPoints}</td>`;
-                tbody.appendChild(row);
+                    <td class="text-right font-bold text-gray-800">${p.totalPoints}</td>
+                `;
+                row.addEventListener('click', () => renderModal(p));
+                tableBody.appendChild(row);
             });
-            table.appendChild(tbody);
-            container.appendChild(table);
-            return container;
         }
 
-        function openStatsModal(name) {
-            const participant = annualRankingData.find(p => p.name === name);
-            if (!participant) return;
+        function renderModal(participant) {
+            const modalContent = document.getElementById('modal-content-container');
             
-            const participantInfo = participantsData[participant.name] || {};
-            document.getElementById('modal-image').src = participantInfo.imageUrl || defaultProfileImageUrl;
-            document.getElementById('modal-name').textContent = participant.name;
-            document.getElementById('modal-team').textContent = participantInfo.team || 'Sem equipe';
-            
-            const podiumsContainer = document.getElementById('modal-podiums');
-            podiumsContainer.innerHTML = `
-                <div class="grid grid-cols-5 gap-x-2 sm:gap-x-4 w-full">
-                    <div class="text-center">
-                        <i class="fas fa-trophy text-yellow-400 text-2xl"></i>
-                        <p class="mt-1 font-bold text-gray-800">${participant.podiums[1]}</p>
-                        <p class="text-xs text-gray-500">1º Lugar</p>
-                    </div>
-                     <div class="text-center">
-                        <i class="fas fa-trophy text-gray-400 text-2xl"></i>
-                        <p class="mt-1 font-bold text-gray-800">${participant.podiums[2]}</p>
-                        <p class="text-xs text-gray-500">2º Lugar</p>
-                    </div>
-                     <div class="text-center">
-                        <i class="fas fa-trophy text-orange-400 text-2xl"></i>
-                        <p class="mt-1 font-bold text-gray-800">${participant.podiums[3]}</p>
-                        <p class="text-xs text-gray-500">3º Lugar</p>
-                    </div>
-                     <div class="text-center">
-                        <i class="fas fa-medal text-blue-400 text-2xl"></i>
-                        <p class="mt-1 font-bold text-gray-800">${participant.podiums[4]}</p>
-                        <p class="text-xs text-gray-500">4º Lugar</p>
-                    </div>
-                     <div class="text-center">
-                        <i class="fas fa-medal text-green-400 text-2xl"></i>
-                        <p class="mt-1 font-bold text-gray-800">${participant.podiums[5]}</p>
-                        <p class="text-xs text-gray-500">5º Lugar</p>
-                    </div>
+            let top5Html = '';
+            participant.top5Finishes.forEach((count, index) => {
+                top5Html += `
+                    <div class="bg-gray-100 p-2 rounded-md">
+                        <p class="text-xs font-bold text-gray-500 uppercase">${index + 1}º LUGAR</p>
+                        <p class="text-2xl font-bold text-gray-800">${count}x</p>
+                    </div>`;
+            });
+
+            let monthlyRanksHtml = '';
+            Object.keys(participant.monthlyRanks).sort().reverse().forEach(monthId => {
+                 const rank = participant.monthlyRanks[monthId];
+                 monthlyRanksHtml += `
+                    <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
+                        <span>${rank.title}</span>
+                        <span class="font-bold">${rank.pos}º</span>
+                    </li>`;
+            });
+
+            modalContent.innerHTML = `
+                <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
+                <img class="modal-image mx-auto" src="${participant.imageUrl || defaultProfileImageUrl}" alt="Foto de Perfil" onerror="this.src='${defaultProfileImageUrl}'">
+                <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
+                <p class="text-sm text-gray-600">${participant.team || 'Sem equipe'}</p>
+                
+                <div class="mt-6 w-full text-left">
+                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Pódios (Top 5 em Etapas)</h4>
+                    <div class="grid grid-cols-5 gap-2 text-center">${top5Html}</div>
+                </div>
+
+                <div class="mt-6 w-full text-left">
+                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Resultados Mensais (Geral)</h4>
+                    <ul class="space-y-1">${monthlyRanksHtml || '<li class="text-center text-gray-500">Nenhum resultado mensal.</li>'}</ul>
                 </div>
             `;
-
-            const monthlyContainer = document.getElementById('modal-monthly-summary');
-            monthlyContainer.innerHTML = '<h4 class="text-md font-bold text-gray-700 mt-4 mb-2 border-t pt-4">Resumo Mensal</h4>';
-            const monthlyList = document.createElement('div');
-            monthlyList.className = 'space-y-2';
-            
-            const monthOrder = Object.keys(monthlyData).sort();
-            monthOrder.forEach(monthKey => {
-                const res = participant.monthlyResults[monthKey];
-                if (res) {
-                    const monthDiv = document.createElement('div');
-                    monthDiv.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md text-sm';
-                    monthDiv.innerHTML = `
-                        <span class="font-bold text-gray-700">${res.monthName}</span>
-                        <span class="text-gray-600">Posição: <span class="font-bold text-black">${res.pos}º</span></span>
-                        <span class="text-gray-600">Pontos: <span class="font-bold text-black">${res.pts}</span></span>
-                    `;
-                    monthlyList.appendChild(monthDiv);
-                }
-            });
-
-            monthlyContainer.appendChild(monthlyList);
-
-            document.getElementById('details-modal').classList.remove('hidden');
+            openModal('details-modal');
         }
 
-        function closeModal() {
-            document.getElementById('details-modal').classList.add('hidden');
-        }
-        
-        window.openStatsModal = openStatsModal;
-        window.closeModal = closeModal;
-
-        async function loadInitialData() {
-            try {
-                const [participantsSnapshot, resultsSnapshot] = await Promise.all([
-                    getDocs(collection(db, "participants")),
-                    getDocs(collection(db, "results"))
-                ]);
-
-                participantsSnapshot.forEach(doc => {
-                    participantsData[doc.id] = doc.data();
-                });
-
-                resultsSnapshot.forEach(doc => {
-                    monthlyData[doc.id] = doc.data();
-                });
-
-                annualRankingData = calculateAnnualRanking();
-                const container = document.getElementById('annual-ranking-container');
-                container.appendChild(createAnnualTable(annualRankingData));
-
-                document.getElementById('loading-overlay').style.display = 'none';
-                document.getElementById('annual-ranking-container').style.display = 'block';
-
-            } catch (e) {
-                console.error("Erro ao carregar dados iniciais:", e);
-                document.getElementById('loading-overlay').innerHTML = '<p class="text-lg font-semibold text-red-600">Falha ao carregar dados do banco. A página pode não funcionar corretamente.</p>';
-            }
-        }
-        
-        window.onload = loadInitialData;
+        calculateAnnualRanking();
     </script>
 </body>
 </html>
-
-
-

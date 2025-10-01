@@ -105,6 +105,10 @@
                     <div id="results-form" class="space-y-6">
                         <!-- Formulários de resultados serão preenchidos aqui -->
                     </div>
+                    <div class="mt-6 border-t pt-6">
+                         <button id="add-stage-btn" class="btn btn-secondary w-full mb-4">Adicionar Nova Etapa</button>
+                         <button id="save-results-btn" class="btn btn-primary w-full">Guardar Alterações do Mês</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -181,7 +185,6 @@
             const password = document.getElementById('password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // O onAuthStateChanged tratará de mostrar o dashboard
             } catch (error) {
                 console.error("Erro de login:", error.code);
                 alert('Email ou palavra-passe incorreta!');
@@ -191,7 +194,6 @@
         logoutBtn.addEventListener('click', async () => {
             try {
                 await signOut(auth);
-                // O onAuthStateChanged tratará de mostrar a tela de login
             } catch (error) {
                 console.error("Erro ao sair:", error);
             }
@@ -208,12 +210,9 @@
             dashboardSection.style.display = 'none';
         }
         
-        // --- FUNÇÕES GLOBAIS ---
         function openModal(id) { document.getElementById(id).classList.add('is-open'); }
         window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
 
-
-        // --- CARREGAMENTO DE DADOS ---
         async function loadAllData() {
             try {
                 const [pSnap, rSnap, settingsSnap] = await Promise.all([
@@ -248,7 +247,6 @@
             }
         }
 
-        // --- GESTÃO DE EQUIPAS ---
         function renderTeamSelectors(newTeamToSelect = '') {
             const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team')];
             const sortedTeams = [...allTeams].sort();
@@ -287,8 +285,6 @@
         document.getElementById('participant-team').addEventListener('change', () => handleTeamSelection('participant-team'));
         document.getElementById('edit-participant-team').addEventListener('change', () => handleTeamSelection('edit-participant-team'));
 
-
-        // --- GESTÃO DE PARTICIPANTES ---
         function renderParticipants() {
             const list = document.getElementById('participants-list');
             list.innerHTML = '';
@@ -337,7 +333,7 @@
             if (!button) return;
             const name = button.dataset.name;
 
-            if (button.querySelector('.fa-edit')) { // Botão Editar
+            if (button.querySelector('.fa-edit')) { 
                 const data = participantsData[name];
                 document.getElementById('edit-participant-id').value = name;
                 document.getElementById('edit-participant-name').value = name;
@@ -345,7 +341,7 @@
                 document.getElementById('edit-participant-image').value = data.imageUrl || '';
                 document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(name);
                 openModal('edit-participant-modal');
-            } else if (button.querySelector('.fa-trash')) { // Botão Apagar
+            } else if (button.querySelector('.fa-trash')) {
                 if (confirm(`Tem a certeza que deseja apagar ${name}?`)) {
                     deleteParticipant(name);
                 }
@@ -360,13 +356,10 @@
             const isSporadic = document.getElementById('edit-participant-sporadic').checked;
 
             if (!newName) {
-                alert("O nome do participante não pode estar em branco.");
-                return;
+                alert("O nome do participante não pode estar em branco."); return;
             }
-
             if (newName !== oldName && participantsData[newName]) {
-                alert(`Já existe um participante com o nome "${newName}". Por favor, escolha outro nome.`);
-                return;
+                alert(`Já existe um participante com o nome "${newName}".`); return;
             }
 
             const participantData = {
@@ -380,232 +373,177 @@
                     const participantRef = doc(db, 'participants', oldName);
                     
                     await setDoc(participantRef, participantData, { merge: true });
-
-                    if(isSporadic) {
-                        await updateDoc(settingsRef, { sporadicRiders: arrayUnion(oldName) });
-                    } else {
-                        await updateDoc(settingsRef, { sporadicRiders: arrayRemove(oldName) });
-                    }
+                    if(isSporadic) { await updateDoc(settingsRef, { sporadicRiders: arrayUnion(oldName) }); } 
+                    else { await updateDoc(settingsRef, { sporadicRiders: arrayRemove(oldName) }); }
                     
                     alert('Participante atualizado!');
                     closeModal('edit-participant-modal');
                     loadAllData();
-                } catch (error) {
-                    console.error("Erro ao atualizar participante:", error);
-                    alert('Ocorreu um erro ao atualizar.');
-                }
+                } catch (error) { console.error("Erro ao atualizar:", error); alert('Ocorreu um erro.'); }
             } else {
-                if (!confirm(`Tem a certeza que deseja renomear "${oldName}" para "${newName}"? Esta ação irá atualizar todos os registos de resultados.`)) {
-                    return;
-                }
+                if (!confirm(`Renomear "${oldName}" para "${newName}"? Esta ação irá atualizar todos os registos de resultados.`)) return;
 
                 try {
                     const batch = writeBatch(db);
-
                     batch.set(doc(db, 'participants', newName), participantData);
                     batch.delete(doc(db, 'participants', oldName));
 
                     const settingsRef = doc(db, "settings", "config");
-                    const wasSporadic = sporadicRiders.includes(oldName);
-
-                    if (isSporadic !== wasSporadic) {
-                        if (isSporadic) {
-                            batch.update(settingsRef, { sporadicRiders: arrayUnion(newName) });
-                        } else {
-                            batch.update(settingsRef, { sporadicRiders: arrayRemove(oldName) });
-                        }
-                    } else if (isSporadic && wasSporadic) {
-                        const updatedList = sporadicRiders.filter(name => name !== oldName);
-                        updatedList.push(newName);
-                        batch.update(settingsRef, { sporadicRiders: updatedList });
+                    if (sporadicRiders.includes(oldName)) {
+                        batch.update(settingsRef, { sporadicRiders: arrayRemove(oldName) });
+                        if (isSporadic) batch.update(settingsRef, { sporadicRiders: arrayUnion(newName) });
+                    } else if (isSporadic) {
+                        batch.update(settingsRef, { sporadicRiders: arrayUnion(newName) });
                     }
 
                     for (const monthId in monthlyData) {
                         const monthDoc = monthlyData[monthId];
                         let monthWasUpdated = false;
-                        
-                        for (let i = 1; i <= 4; i++) {
-                            const etapaKey = `etapa${i}`;
-                            if (monthDoc[etapaKey]) {
-                                monthDoc[etapaKey] = monthDoc[etapaKey].map(p => {
-                                    if (p.name === oldName) {
-                                        monthWasUpdated = true;
-                                        return { ...p, name: newName };
-                                    }
-                                    return p;
-                                });
-                            }
-                        }
-
-                        if (monthWasUpdated) {
-                            batch.set(doc(db, 'results', monthId), monthDoc);
-                        }
+                        (monthDoc.stages || []).forEach(stage => {
+                            (stage.results || []).forEach(p => {
+                                if (p.name === oldName) {
+                                    p.name = newName;
+                                    monthWasUpdated = true;
+                                }
+                            });
+                        });
+                        if (monthWasUpdated) batch.set(doc(db, 'results', monthId), monthDoc);
                     }
-
                     await batch.commit();
-
-                    alert(`Participante "${oldName}" foi renomeado para "${newName}" com sucesso!`);
+                    alert(`Participante renomeado para "${newName}"!`);
                     closeModal('edit-participant-modal');
                     loadAllData();
-
-                } catch (error) {
-                    console.error("Erro ao renomear participante:", error);
-                    alert(`Ocorreu um erro complexo ao renomear. Verifique a consola. Detalhe: ${error.message}`);
-                }
+                } catch (error) { console.error("Erro ao renomear:", error); alert(`Erro: ${error.message}`); }
             }
         });
         
         async function deleteParticipant(name) {
             try {
                 await deleteDoc(doc(db, 'participants', name));
-                 // Também remove da lista de esporádicos se lá estiver
                 await updateDoc(doc(db, "settings", "config"), { sporadicRiders: arrayRemove(name) });
                 alert('Participante apagado com sucesso!');
                 loadAllData();
-            } catch (error) {
-                console.error("Erro ao apagar participante:", error);
-                alert('Ocorreu um erro.');
-            }
+            } catch (error) { console.error("Erro ao apagar:", error); alert('Ocorreu um erro.'); }
         }
         
-        // --- GESTÃO DE RESULTADOS ---
         function renderMonthSelector() {
             const select = document.getElementById('month-select-admin');
             select.innerHTML = '';
-            // Ordena as chaves (meses) em ordem decrescente antes de criar as opções
             Object.keys(monthlyData).sort().reverse().forEach(id => {
                 select.add(new Option(monthlyData[id].title, id));
             });
-             if (select.options.length > 0) select.selectedIndex = 0; // Seleciona o primeiro (mais recente)
+             if (select.options.length > 0) select.selectedIndex = 0;
         }
 
-        document.getElementById('month-select-admin').addEventListener('change', (e) => {
-            renderResultsForm(e.target.value);
-        });
+        document.getElementById('month-select-admin').addEventListener('change', (e) => renderResultsForm(e.target.value));
+
+        function createStageFormHTML(stage, index) {
+            const stageId = stage.id || `new_stage_${index}`;
+            return `
+                <div class="stage-form-group border-t-2 border-dashed pt-4" data-stage-id="${stageId}">
+                    <div class="flex justify-between items-center mb-2">
+                         <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
+                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
+                        <input type="date" class="input-field stage-date" value="${stage.date || ''}">
+                    </div>
+                    <label class="font-medium text-sm mt-3 block">Participantes (ordem de chegada, separados por vírgula)</label>
+                    <textarea class="input-field mt-1 h-24 stage-results">${(stage.results || []).map(p => p.name).join(', ')}</textarea>
+                    <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
+                    <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
+                </div>
+            `;
+        }
 
         function renderResultsForm(monthId) {
             const container = document.getElementById('results-form');
             if (!monthId || !monthlyData[monthId]) {
-                container.innerHTML = '<p>Selecione um mês para ver os resultados.</p>';
-                return;
+                container.innerHTML = '<p>Selecione um mês para ver os resultados.</p>'; return;
             }
             const data = monthlyData[monthId];
-            let formHTML = '';
-
-            for (let i = 1; i <= 4; i++) {
-                const etapaKey = `etapa${i}`;
-                const podiumKey = `${etapaKey}_podium_img`;
-                const participants = (data[etapaKey] || []).map(p => p.name).join(', ');
-                formHTML += `
-                    <div>
-                        <h3 class="font-bold text-lg mb-2">Etapa ${i}</h3>
-                        <label class="font-medium text-sm">Participantes (ordem de chegada, separados por vírgula)</label>
-                        <textarea id="${etapaKey}" class="input-field mt-1 h-24">${participants}</textarea>
-                         <label class="font-medium text-sm mt-2 block">URL da Foto do Pódio (Etapa ${i})</label>
-                        <input type="url" id="${podiumKey}" class="input-field mt-1" value="${data[podiumKey] || ''}">
-                    </div>
-                `;
-            }
-             formHTML += `
-                <div>
-                    <h3 class="font-bold text-lg mb-2">Geral do Mês</h3>
-                    <label class="font-medium text-sm mt-2 block">URL da Foto do Pódio (Geral)</label>
-                    <input type="url" id="geral_podium_img" class="input-field mt-1" value="${data.geral_podium_img || ''}">
-                </div>
-            `;
-            
-            formHTML += '<button id="save-results-btn" class="btn btn-primary w-full mt-4">Guardar Resultados do Mês</button>';
-            container.innerHTML = formHTML;
-            
-            document.getElementById('save-results-btn').addEventListener('click', () => saveMonthData(monthId));
+            const stages = data.stages || [];
+            container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
-        
-        async function saveMonthData(monthId) {
-            if (!monthId) return;
-            const docRef = doc(db, 'results', monthId);
-            const currentData = monthlyData[monthId];
-            const newData = { title: currentData.title };
-            
-            for (let i = 1; i <= 4; i++) {
-                const etapaKey = `etapa${i}`;
-                const podiumKey = `${etapaKey}_podium_img`;
-                const namesText = document.getElementById(etapaKey).value.trim();
-                newData[etapaKey] = namesText.split(',')
-                    .map(name => ({ name: name.trim().toUpperCase() }))
-                    .filter(p => p.name);
-                newData[podiumKey] = document.getElementById(podiumKey).value.trim();
+
+        document.getElementById('results-form').addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-stage-btn')) {
+                if (confirm('Tem a certeza que deseja remover esta etapa?')) {
+                    e.target.closest('.stage-form-group').remove();
+                }
             }
-             newData.geral_podium_img = document.getElementById('geral_podium_img').value.trim();
+        });
+
+        document.getElementById('add-stage-btn').addEventListener('click', () => {
+            const container = document.getElementById('results-form');
+            const newIndex = container.querySelectorAll('.stage-form-group').length;
+            const newStageHTML = createStageFormHTML({ id: `new_stage_${Date.now()}`}, newIndex);
+            
+            if(newIndex === 0 && container.querySelector('p')) container.innerHTML = ''; 
+            container.insertAdjacentHTML('beforeend', newStageHTML);
+        });
+        
+        document.getElementById('save-results-btn').addEventListener('click', async () => {
+            const monthId = document.getElementById('month-select-admin').value;
+            if (!monthId) return;
+
+            const docRef = doc(db, 'results', monthId);
+            const newStages = [];
+            
+            document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
+                const stage = {
+                    id: group.dataset.stageId,
+                    name: group.querySelector('.stage-name').value.trim(),
+                    date: group.querySelector('.stage-date').value,
+                    podium_img: group.querySelector('.stage-podium-img').value.trim(),
+                    results: group.querySelector('.stage-results').value.trim().split(',')
+                        .map(name => ({ name: name.trim().toUpperCase() }))
+                        .filter(p => p.name)
+                };
+                newStages.push(stage);
+            });
             
             try {
-                await setDoc(docRef, newData);
+                await updateDoc(docRef, { stages: newStages });
                 alert('Resultados guardados com sucesso!');
                 loadAllData();
             } catch (error) {
                 console.error("Erro ao guardar resultados:", error);
                 alert("Ocorreu um erro ao guardar os resultados.");
             }
-        }
+        });
         
         document.getElementById('new-month-btn').addEventListener('click', async () => {
-            const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09 para Setembro de 2025):");
-            if (!monthId) return;
-
-            // Validação para garantir o formato correto, essencial para a ordenação
-            if (!/^\d{4}_\d{2}$/.test(monthId)) {
-                alert("Formato inválido! Por favor, utilize o formato AAAA_MM, como por exemplo '2025_09'. O uso de dois dígitos para o mês é obrigatório (01, 02, ..., 12).");
-                return;
+            const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
+            if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
+                alert("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); return;
             }
-
-            // Verifica se o mês já existe para evitar sobrescrever
             if (monthlyData[monthId]) {
-                alert("Este mês já existe! Selecione-o na lista para editar.");
-                return;
+                alert("Este mês já existe!"); return;
             }
 
             const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
             if (!monthTitle) return;
 
             try {
-                // Prepara o objeto com todos os campos esperados para evitar inconsistências
-                const newMonthData = { 
-                    title: monthTitle, 
-                    etapa1: [], 
-                    etapa2: [], 
-                    etapa3: [], 
-                    etapa4: [],
-                    geral_podium_img: '',
-                    etapa1_podium_img: '',
-                    etapa2_podium_img: '',
-                    etapa3_podium_img: '',
-                    etapa4_podium_img: ''
-                };
-
+                const newMonthData = { title: monthTitle, stages: [] };
                 await setDoc(doc(db, 'results', monthId), newMonthData);
+                alert('Novo mês criado!');
                 
-                alert('Novo mês criado com sucesso!');
-                
-                // Atualiza os dados localmente para refletir a mudança sem recarregar toda a página
                 monthlyData[monthId] = newMonthData;
                 renderMonthSelector();
                 document.getElementById('month-select-admin').value = monthId;
                 renderResultsForm(monthId);
 
             } catch (error) {
-                console.error("Erro ao criar novo mês:", error);
-                alert(`Ocorreu um erro ao criar o novo mês. Verifique a sua conexão e as permissões do Firebase. Detalhe do erro: ${error.message}`);
+                console.error("Erro ao criar mês:", error);
+                alert(`Erro: ${error.message}`);
             }
         });
 
-        // --- INICIALIZAÇÃO E GESTÃO DE ESTADO DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // O utilizador está autenticado, mostra o painel
-                showDashboard();
-            } else {
-                // O utilizador não está autenticado, mostra o formulário de login
-                showLogin();
-            }
+            if (user) { showDashboard(); } else { showLogin(); }
         });
     </script>
 </body>

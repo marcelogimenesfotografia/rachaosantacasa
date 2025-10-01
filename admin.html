@@ -227,7 +227,6 @@
                 monthlyData = {};
                 rSnap.forEach(doc => {
                     let data = doc.data();
-                    // Converte dados antigos (etapa1, etapa2) para o novo formato (stages) em memória
                     if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
                         const migratedStages = [];
                         for (let i = 1; i <= 4; i++) {
@@ -237,6 +236,8 @@
                                     id: `${etapaKey}_${doc.id}`,
                                     name: `Etapa ${i}`,
                                     date: '',
+                                    type: '',
+                                    durationDistance: '',
                                     podium_img: data[`${etapaKey}_podium_img`] || '',
                                     results: data[etapaKey]
                                 });
@@ -469,6 +470,15 @@
                         <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
                         <input type="date" class="input-field stage-date" value="${stage.date || ''}">
                     </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <select class="input-field stage-type">
+                            <option value="">Selecione o tipo</option>
+                            <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
+                            <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
+                            <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
+                        </select>
+                        <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
+                    </div>
                     <label class="font-medium text-sm mt-3 block">Participantes (ordem de chegada, separados por vírgula)</label>
                     <textarea class="input-field mt-1 h-24 stage-results">${(stage.results || []).map(p => p.name).join(', ')}</textarea>
                     <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
@@ -516,10 +526,19 @@
                     id: group.dataset.stageId,
                     name: group.querySelector('.stage-name').value.trim(),
                     date: group.querySelector('.stage-date').value,
+                    type: group.querySelector('.stage-type').value,
+                    durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
                     podium_img: group.querySelector('.stage-podium-img').value.trim(),
                     results: group.querySelector('.stage-results').value.trim().split(',')
-                        .map(name => ({ name: name.trim().toUpperCase() }))
-                        .filter(p => p.name)
+                        .map(nameStr => {
+                            const name = nameStr.trim().toUpperCase();
+                            if (!name) return null;
+                            return { 
+                                name: name,
+                                team: participantsData[name]?.team || '' 
+                            };
+                        })
+                        .filter(p => p)
                 };
                 newStages.push(stage);
             });
@@ -547,9 +566,16 @@
             if (!monthTitle) return;
 
             try {
-                const newMonthData = { title: monthTitle, stages: [] };
+                const newStages = [];
+                for (let i = 1; i <= 4; i++) {
+                    newStages.push({
+                        id: `etapa_${i}_${Date.now()}`, name: `Etapa ${i}`, date: '',
+                        type: '', durationDistance: '', podium_img: '', results: []
+                    });
+                }
+                const newMonthData = { title: monthTitle, stages: newStages };
                 await setDoc(doc(db, 'results', monthId), newMonthData);
-                alert('Novo mês criado!');
+                alert('Novo mês criado com 4 etapas!');
                 
                 monthlyData[monthId] = newMonthData;
                 renderMonthSelector();

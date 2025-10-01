@@ -227,18 +227,14 @@
                 monthlyData = {};
                 rSnap.forEach(doc => {
                     let data = doc.data();
-                    // Converte dados antigos (etapa1, etapa2) para o novo formato (stages) em memória
                     if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
                         const migratedStages = [];
                         for (let i = 1; i <= 4; i++) {
                             const etapaKey = `etapa${i}`;
                             if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
                                 migratedStages.push({
-                                    id: `${etapaKey}_${doc.id}`,
-                                    name: `Etapa ${i}`,
-                                    date: '',
-                                    type: '',
-                                    durationDistance: '',
+                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: '',
+                                    type: '', durationDistance: '',
                                     podium_img: data[`${etapaKey}_podium_img`] || '',
                                     results: data[etapaKey]
                                 });
@@ -451,10 +447,18 @@
         function renderMonthSelector() {
             const select = document.getElementById('month-select-admin');
             select.innerHTML = '';
-            Object.keys(monthlyData).sort().reverse().forEach(id => {
-                select.add(new Option(monthlyData[id].title, id));
+            const allMonthIds = new Set(Object.keys(monthlyData));
+            const currentDate = new Date();
+            const currentMonthId = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            allMonthIds.add(currentMonthId);
+
+            const sortedMonths = [...allMonthIds].sort().reverse();
+            
+            sortedMonths.forEach(id => {
+                const title = monthlyData[id] ? monthlyData[id].title : `${id.split('_')[1]}/${id.split('_')[0]} (Novo)`;
+                select.add(new Option(title, id));
             });
-             if (select.options.length > 0) select.selectedIndex = 0;
+            select.value = currentMonthId;
         }
 
         document.getElementById('month-select-admin').addEventListener('change', (e) => renderResultsForm(e.target.value));
@@ -491,7 +495,7 @@
         function renderResultsForm(monthId) {
             const container = document.getElementById('results-form');
             if (!monthId || !monthlyData[monthId]) {
-                container.innerHTML = '<p>Selecione um mês para ver os resultados.</p>'; return;
+                container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
             }
             const data = monthlyData[monthId];
             const stages = data.stages || [];
@@ -553,6 +557,18 @@
                 alert("Ocorreu um erro ao guardar os resultados.");
             }
         });
+
+        function getThursdays(year, month) {
+            const thursdays = [];
+            const date = new Date(year, month - 1, 1);
+            while (date.getMonth() === month - 1) {
+                if (date.getDay() === 4) { // Thursday
+                    thursdays.push(new Date(date.getTime()));
+                }
+                date.setDate(date.getDate() + 1);
+            }
+            return thursdays.map(d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+        }
         
         document.getElementById('new-month-btn').addEventListener('click', async () => {
             const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
@@ -567,16 +583,22 @@
             if (!monthTitle) return;
 
             try {
-                const newStages = [];
-                for (let i = 1; i <= 4; i++) {
-                    newStages.push({
-                        id: `etapa_${i}_${Date.now()}`, name: `Etapa ${i}`, date: '',
-                        type: '', durationDistance: '', podium_img: '', results: []
-                    });
-                }
+                const [year, month] = monthId.split('_').map(Number);
+                const thursdays = getThursdays(year, month);
+                
+                const newStages = thursdays.map((thursdayDate, index) => ({
+                    id: `etapa_${index + 1}_${Date.now()}`,
+                    name: `Etapa ${index + 1}`,
+                    date: thursdayDate,
+                    type: 'Circuito',
+                    durationDistance: '55 min + 1 volta',
+                    podium_img: '',
+                    results: []
+                }));
+
                 const newMonthData = { title: monthTitle, stages: newStages };
                 await setDoc(doc(db, 'results', monthId), newMonthData);
-                alert('Novo mês criado com 4 etapas!');
+                alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
                 
                 monthlyData[monthId] = newMonthData;
                 renderMonthSelector();

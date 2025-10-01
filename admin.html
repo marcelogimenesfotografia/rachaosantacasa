@@ -96,7 +96,13 @@
             <!-- Coluna da Direita: Resultados -->
             <div class="lg:col-span-2">
                 <div class="card">
-                    <h2 class="text-xl font-bold mb-4">Gerir Resultados</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Gerir Resultados</h2>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                            <span class="font-medium">Mês Concluído (exibir pódio)</span>
+                        </label>
+                    </div>
                     <div class="flex flex-wrap gap-4 items-center mb-6">
                         <select id="month-select-admin" class="input-field flex-grow"></select>
                         <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
@@ -233,8 +239,11 @@
                             const etapaKey = `etapa${i}`;
                             if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
                                 migratedStages.push({
-                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: '',
-                                    type: '', durationDistance: '',
+                                    id: `${etapaKey}_${doc.id}`,
+                                    name: `Etapa ${i}`,
+                                    date: '',
+                                    type: '',
+                                    durationDistance: '',
                                     podium_img: data[`${etapaKey}_podium_img`] || '',
                                     results: data[etapaKey]
                                 });
@@ -495,9 +504,11 @@
         function renderResultsForm(monthId) {
             const container = document.getElementById('results-form');
             if (!monthId || !monthlyData[monthId]) {
+                document.getElementById('month-completed-checkbox').checked = false;
                 container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
             }
             const data = monthlyData[monthId];
+            document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
             const stages = data.stages || [];
             container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
@@ -524,6 +535,7 @@
             if (!monthId) return;
 
             const docRef = doc(db, 'results', monthId);
+            const isCompleted = document.getElementById('month-completed-checkbox').checked;
             const newStages = [];
             
             document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
@@ -549,7 +561,7 @@
             });
             
             try {
-                await updateDoc(docRef, { stages: newStages });
+                await updateDoc(docRef, { stages: newStages, isCompleted: isCompleted });
                 alert('Resultados guardados com sucesso!');
                 loadAllData();
             } catch (error) {
@@ -596,7 +608,7 @@
                     results: []
                 }));
 
-                const newMonthData = { title: monthTitle, stages: newStages };
+                const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false };
                 await setDoc(doc(db, 'results', monthId), newMonthData);
                 alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
                 

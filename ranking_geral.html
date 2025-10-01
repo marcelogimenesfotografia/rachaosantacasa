@@ -101,7 +101,6 @@
             messagingSenderId: "28309536958",
             appId: "1:28309536958:web:eac51586cdabd82f691eef"
         };
-        const defaultProfileImageUrl = "https://placehold.co/120x120/EFEFEF/3A3A3A?text=Foto";
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -117,7 +116,6 @@
         async function calculateLifetimeRanking() {
             const loadingOverlay = document.getElementById('loading-overlay');
             const rankingContainer = document.getElementById('ranking-container');
-            const currentYear = new Date().getFullYear().toString();
             
             try {
                 // 1. Carregar todos os dados necessários
@@ -136,31 +134,25 @@
                 const sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
                 const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
 
-                // 2. Inicializar estrutura de dados para cada participante
                 const lifetimeStats = {};
                 Object.keys(participantsData).forEach(name => {
                     if (!sporadicRiders.includes(name)) {
                         lifetimeStats[name] = {
                             totalPoints: 0,
-                            currentYearPoints: 0,
-                            top5Finishes: [0, 0, 0, 0, 0], // Índices 0-4 para posições 1-5
+                            top5Finishes: [0, 0, 0, 0, 0],
                             monthlyRanks: {}
                         };
                     }
                 });
 
-                // 3. Processar cada mês
                 for (const monthId in monthlyData) {
                     const monthResults = monthlyData[monthId];
                     let monthStandings = {};
 
                     const stages = monthResults.stages || [];
-                    // Fallback for old data structure
                     if (stages.length === 0 && (monthResults.etapa1 || monthResults.etapa2)) {
                         for(let i = 1; i <= 4; i++) {
-                            if(monthResults[`etapa${i}`]) {
-                                stages.push({ results: monthResults[`etapa${i}`] });
-                            }
+                            if(monthResults[`etapa${i}`]) stages.push({ results: monthResults[`etapa${i}`] });
                         }
                     }
 
@@ -178,10 +170,6 @@
                                 if (!sporadicRiders.includes(participantName)) {
                                     const points = pointsDistribution[pointsIndex] || 0;
                                     lifetimeStats[participantName].totalPoints += points;
-
-                                    if (monthId.startsWith(currentYear)) {
-                                        lifetimeStats[participantName].currentYearPoints += points;
-                                    }
                                     
                                     if (!monthStandings[participantName]) monthStandings[participantName] = 0;
                                     monthStandings[participantName] += points;
@@ -218,14 +206,12 @@
                     });
                 }
                 
-                // 4. Converter para array e ordenar o ranking geral
                 const finalRanking = Object.keys(lifetimeStats).map(name => ({
                     name,
                     ...participantsData[name],
                     ...lifetimeStats[name]
                 })).sort((a, b) => b.totalPoints - a.totalPoints);
                 
-                // 5. Renderizar a tabela
                 renderTable(finalRanking);
 
                 loadingOverlay.style.display = 'none';
@@ -263,7 +249,6 @@
 
         function renderModal(participant) {
             const modalContent = document.getElementById('modal-content-container');
-            const currentYear = new Date().getFullYear().toString();
             
             let top5Html = '';
             participant.top5Finishes.forEach((count, index) => {
@@ -275,13 +260,14 @@
             });
 
             let monthlyRanksHtml = '';
-            const currentYearRanks = Object.keys(participant.monthlyRanks)
-                .filter(monthId => monthId.startsWith(currentYear))
+            const top10Finishes = Object.keys(participant.monthlyRanks)
+                .filter(monthId => participant.monthlyRanks[monthId].pos <= 10)
                 .sort()
-                .reverse();
+                .reverse()
+                .slice(0, 6);
 
-            if (currentYearRanks.length > 0) {
-                currentYearRanks.forEach(monthId => {
+            if (top10Finishes.length > 0) {
+                top10Finishes.forEach(monthId => {
                     const rank = participant.monthlyRanks[monthId];
                     monthlyRanksHtml += `
                        <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
@@ -290,7 +276,7 @@
                        </li>`;
                 });
             } else {
-                monthlyRanksHtml = `<li class="text-center text-gray-500">Nenhum resultado em ${currentYear}.</li>`;
+                monthlyRanksHtml = `<li class="text-center text-gray-500">Nenhum resultado no Top 10 mensal.</li>`;
             }
 
             modalContent.innerHTML = `
@@ -298,7 +284,6 @@
                 <img class="modal-image mx-auto" src="${participant.imageUrl || getPlaceholderImageUrl(participant.name)}" alt="Foto de Perfil">
                 <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
                 <p class="text-sm text-gray-600">${participant.team || 'Sem equipe'}</p>
-                <p class="font-semibold text-gray-800 mt-2">Pontuação (${currentYear}): ${participant.currentYearPoints}</p>
                 
                 <div class="mt-4 w-full text-center border-t border-gray-200 pt-4">
                     <h4 class="text-md font-bold text-gray-800 mb-1">Pontuação Total (Geral)</h4>
@@ -311,7 +296,7 @@
                 </div>
 
                 <div class="mt-6 w-full text-left">
-                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Posição Mensal (${currentYear})</h4>
+                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Últimos Resultados (Top 10 Mensal)</h4>
                     <ul class="space-y-1">${monthlyRanksHtml}</ul>
                 </div>
             `;

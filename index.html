@@ -216,7 +216,7 @@
         }
         
         function getProcessedMonthData(monthId) {
-            const data = JSON.parse(JSON.stringify(monthlyData[monthId]));
+            const data = monthlyData[monthId] ? JSON.parse(JSON.stringify(monthlyData[monthId])) : { stages: [] };
             if (data.stages && Array.isArray(data.stages)) {
                 data.stages.forEach(stage => {
                     stage.results = processStageData(stage.results);
@@ -267,8 +267,6 @@
         }
 
         function renderContent(monthId, tab) {
-            if (!userId || !monthlyData[monthId]) return;
-
             renderTabs(monthId);
 
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -278,7 +276,7 @@
             document.getElementById(tab)?.classList.add('active');
 
             const monthData = getProcessedMonthData(monthId);
-            const originalMonthData = monthlyData[monthId];
+            const originalMonthData = monthlyData[monthId] || { stages: [] };
             const dynamicContentContainer = document.getElementById('dynamic-content');
             dynamicContentContainer.innerHTML = '';
             
@@ -472,8 +470,7 @@
         }
 
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
-        window.openModal = openModal;
-
+        
         function setupEventListeners() {
             document.getElementById('tabs-container').addEventListener('click', (e) => {
                 const button = e.target.closest('.tab-button');

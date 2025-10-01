@@ -227,6 +227,7 @@
                 monthlyData = {};
                 rSnap.forEach(doc => {
                     let data = doc.data();
+                    // Converte dados antigos (etapa1, etapa2) para o novo formato (stages) em memória
                     if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
                         const migratedStages = [];
                         for (let i = 1; i <= 4; i++) {

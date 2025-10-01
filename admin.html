@@ -225,7 +225,27 @@
                 pSnap.forEach(doc => participantsData[doc.id] = doc.data());
                 
                 monthlyData = {};
-                rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
+                rSnap.forEach(doc => {
+                    let data = doc.data();
+                    // Converte dados antigos (etapa1, etapa2) para o novo formato (stages) em memória
+                    if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
+                        const migratedStages = [];
+                        for (let i = 1; i <= 4; i++) {
+                            const etapaKey = `etapa${i}`;
+                            if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
+                                migratedStages.push({
+                                    id: `${etapaKey}_${doc.id}`,
+                                    name: `Etapa ${i}`,
+                                    date: '',
+                                    podium_img: data[`${etapaKey}_podium_img`] || '',
+                                    results: data[etapaKey]
+                                });
+                            }
+                        }
+                        data.stages = migratedStages;
+                    }
+                    monthlyData[doc.id] = data;
+                });
 
                 sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
                 

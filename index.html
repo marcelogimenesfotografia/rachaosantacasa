@@ -267,6 +267,8 @@
         }
 
         function renderContent(monthId, tab) {
+            if (!userId) { return; }
+
             renderTabs(monthId);
 
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -320,18 +322,20 @@
                 return card;
             }
 
-            if(currentStage) {
+            if(currentStage && currentStage.name) {
+                const date = currentStage.date ? new Date(currentStage.date + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                const details = [date, currentStage.type, currentStage.durationDistance].filter(Boolean).join(' | ');
                 card.innerHTML += `<div class="text-center mb-4">
                     <h2 class="text-2xl font-bold">${currentStage.name}</h2>
-                    <p class="text-sm text-gray-500">${currentStage.date} | ${currentStage.type} | ${currentStage.durationDistance}</p>
+                    <p class="text-sm text-gray-500">${details}</p>
                 </div>`;
             }
 
-            if (isOverall && data.length >= 3) {
+            if (isOverall && data.length >= 3 && (monthData.isCompleted || false)) {
                 card.appendChild(createPodium(data.slice(0, 3)));
             }
 
-            const tableStartIndex = (isOverall && data.length >= 3) ? 3 : 0;
+            const tableStartIndex = (isOverall && data.length >= 3 && (monthData.isCompleted || false)) ? 3 : 0;
             card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
 
             const podiumImageUrl = currentStage?.podium_img;
@@ -582,36 +586,6 @@
             finally { closeModal('delete-confirmation-modal'); }
         }
 
-        // --- INICIALIZAÇÃO DA APLICAÇÃO ---
-        async function setupDataListeners() {
-            if (!userId) return;
-            const reRender = () => {
-                const monthSelect = document.getElementById('month-select');
-                if (monthSelect.value) {
-                    renderContent(monthSelect.value, currentTab);
-                }
-            }
-            onSnapshot(collection(db, 'likes'), (snapshot) => {
-                snapshot.docChanges().forEach(change => likesData[change.doc.id] = change.doc.data());
-                reRender();
-            });
-            onSnapshot(collection(db, 'comments'), (snapshot) => {
-                snapshot.docChanges().forEach(change => {
-                    const comment = { id: change.doc.id, ...change.doc.data() };
-                    const { stageId } = comment;
-                    if (!commentsData[stageId]) commentsData[stageId] = [];
-                    const index = commentsData[stageId].findIndex(c => c.id === comment.id);
-                    if (change.type === "removed") {
-                        if (index > -1) commentsData[stageId].splice(index, 1);
-                    } else {
-                        if (index > -1) commentsData[stageId][index] = comment;
-                        else commentsData[stageId].push(comment);
-                    }
-                });
-                reRender();
-            });
-        }
-        
         async function loadInitialData() {
             try {
                 const [pSnap, rSnap, settingsSnap] = await Promise.all([
@@ -667,9 +641,10 @@
                 console.error("Erro ao carregar dados iniciais:", e); throw e;
             }
         }
-
-        async function runApplication() {
-            const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // --- INICIALIZAÇÃO DA APLICAÇÃO ---
+        document.addEventListener('DOMContentLoaded', async () => {
+             const loadingOverlay = document.getElementById('loading-overlay');
             const showError = (msg) => loadingOverlay.innerHTML = `<p class="text-lg font-semibold text-red-500">${msg}</p>`;
             
             try {
@@ -690,9 +665,7 @@
                 console.error("Erro na inicialização:", error);
                 showError("Falha ao carregar dados.");
             }
-        }
-
-        runApplication();
+        });
     </script>
 </body>
 </html>

@@ -313,12 +313,25 @@
             const stageIndex = isOverall ? -1 : parseInt(tab.replace('tab-stage-', ''));
             const currentStage = isOverall ? null : monthData.stages[stageIndex];
 
+            if (isOverall) {
+                const titleEl = document.createElement('div');
+                titleEl.className = 'text-center mb-4';
+                let titleText = 'Classificação Geral';
+                if (!monthData.isCompleted) {
+                    titleText += ' (em andamento)';
+                }
+                titleEl.innerHTML = `<h2 class="text-2xl font-bold">${titleText}</h2>`;
+                card.appendChild(titleEl);
+            }
+
             if(!hasData && !isOverall) {
-                card.innerHTML = `<p class="text-center text-gray-400">Etapa não realizada.</p>`;
+                card.innerHTML += `<p class="text-center text-gray-400">Etapa não realizada.</p>`;
                 return card;
             }
             if (!hasData && isOverall) {
-                card.innerHTML = `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
+                if (card.innerHTML === '') { // Only add message if card is empty
+                    card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
+                }
                 return card;
             }
 
@@ -647,6 +660,35 @@
              const loadingOverlay = document.getElementById('loading-overlay');
             const showError = (msg) => loadingOverlay.innerHTML = `<p class="text-lg font-semibold text-red-500">${msg}</p>`;
             
+            async function setupDataListeners() {
+                if (!userId) return;
+                const reRender = () => {
+                    const monthSelect = document.getElementById('month-select');
+                    if (monthSelect.value) {
+                        renderContent(monthSelect.value, currentTab);
+                    }
+                }
+                onSnapshot(collection(db, 'likes'), (snapshot) => {
+                    snapshot.docChanges().forEach(change => likesData[change.doc.id] = change.doc.data());
+                    reRender();
+                });
+                onSnapshot(collection(db, 'comments'), (snapshot) => {
+                    snapshot.docChanges().forEach(change => {
+                        const comment = { id: change.doc.id, ...change.doc.data() };
+                        const { stageId } = comment;
+                        if (!commentsData[stageId]) commentsData[stageId] = [];
+                        const index = commentsData[stageId].findIndex(c => c.id === comment.id);
+                        if (change.type === "removed") {
+                            if (index > -1) commentsData[stageId].splice(index, 1);
+                        } else {
+                            if (index > -1) commentsData[stageId][index] = comment;
+                            else commentsData[stageId].push(comment);
+                        }
+                    });
+                    reRender();
+                });
+            }
+
             try {
                 setupEventListeners();
                 const userCredential = await signInAnonymously(auth);

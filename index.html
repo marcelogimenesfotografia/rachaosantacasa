@@ -15,52 +15,39 @@
     
     <!-- Estilos Personalizados -->
     <style>
-        /* * DESIGN SYSTEM: GOOGLE-INSPIRED LAYOUT
-         * Foco em clareza, cards, tipografia e hierarquia visual.
-         */
-
-        /* Variáveis de Cor (Tema Claro) */
         :root {
-            --bg-color: #f4f4f5; /* Cinza claro */
+            --bg-color: #f4f4f5;
             --card-bg-color: #ffffff;
             --border-color: rgba(0, 0, 0, 0.1);
-            --text-primary: #1f2937; /* Cinza escuro */
-            --text-secondary: #6b7280; /* Cinza médio */
-            --accent-color: #eab308; /* Amarelo/Dourado */
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --accent-color: #eab308;
             --gold: #FFD700;
             --silver: #C0C0C0;
             --bronze: #CD7F32;
         }
-
-        /* Estilos Globais */
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
         }
-
-        /* Estrutura de Card */
         .card {
             background-color: var(--card-bg-color);
-            border-radius: 1rem; /* 16px */
-            padding: 1.5rem; /* 24px */
+            border-radius: 1rem;
+            padding: 1.5rem;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
-            margin-bottom: 2rem; /* 32px */
+            margin-bottom: 1.5rem;
         }
-        
-        /* Filtros e Abas */
         .filter-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             gap: 1.5rem;
-             /* margin-bottom is now handled by .card */
         }
-
         #month-select {
-            background-color: var(--bg-color); /* Fundo um pouco diferente para se destacar do card */
+            background-color: var(--bg-color);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             border-radius: 9999px;
@@ -71,17 +58,12 @@
             appearance: none;
             cursor: pointer;
         }
-
-        #month-select option {
-            background-color: #ffffff;
-            color: var(--text-primary);
-        }
-
         .tabs {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
         }
-        
         .tab-button {
             padding: 0.5rem 1rem;
             font-weight: 600;
@@ -92,15 +74,8 @@
             background-color: transparent;
             position: relative;
         }
-
-        .tab-button:hover {
-            color: var(--text-primary);
-        }
-
-        .tab-button.active {
-            color: var(--accent-color);
-        }
-
+        .tab-button:hover { color: var(--text-primary); }
+        .tab-button.active { color: var(--accent-color); }
         .tab-button.active::after {
             content: '';
             position: absolute;
@@ -112,151 +87,35 @@
             background-color: var(--accent-color);
             border-radius: 50%;
         }
-
-        /* Pódio Visual */
-        .podium-container {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 1rem;
-            padding: 2rem 0;
-            text-align: center;
-        }
-
-        .podium-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 33.33%;
-        }
-
-        .podium-rank {
-            font-size: 2.5rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-
+        .podium-container { display: flex; justify-content: center; align-items: flex-end; gap: 1rem; padding: 2rem 0; text-align: center; }
+        .podium-step { display: flex; flex-direction: column; align-items: center; width: 33.33%; }
+        .podium-rank { font-size: 2.5rem; font-weight: 700; line-height: 1; }
         .podium-rank-1 { color: var(--gold); order: 2; transform: translateY(-20px); }
         .podium-rank-2 { color: var(--silver); order: 1; }
         .podium-rank-3 { color: var(--bronze); order: 3; }
-
-        .podium-image {
-            border-radius: 50%;
-            object-fit: cover;
-            margin-top: 0.5rem;
-            border: 4px solid;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
+        .podium-image { border-radius: 50%; object-fit: cover; margin-top: 0.5rem; border: 4px solid; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .podium-image-1 { width: 140px; height: 140px; border-color: var(--gold); }
         .podium-image-2 { width: 110px; height: 110px; border-color: var(--silver); }
         .podium-image-3 { width: 110px; height: 110px; border-color: var(--bronze); }
-
-        .podium-name {
-            font-weight: 600;
-            margin-top: 1rem;
-            color: var(--text-primary);
-        }
-
-        .podium-points {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-
-        /* Tabela de Classificação */
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .leaderboard-table th, .leaderboard-table td {
-            padding: 1rem;
-            text-align: left;
-        }
-
-        .leaderboard-table thead {
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .leaderboard-table tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: background-color: 0.2s ease-in-out;
-        }
-        
-        .leaderboard-table tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        .leaderboard-table tbody tr:hover {
-            background-color: #f9fafb;
-        }
-
-        .profile-thumb-wrapper {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-            border: 2px solid var(--border-color);
-        }
-
-        .profile-thumb {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-
-        /* Modal */
-        .modal { display: none; /* Alterado para ser controlado por JS */ }
-        .modal.is-open { display: flex; }
-        .modal-content.card {
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-            position: relative; /* Garante que o botão de fechar fique posicionado em relação ao modal */
-        }
-        .modal-image {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 1rem;
-            border: 3px solid var(--border-color);
-        }
-
-        /* Interações: Curtidas e Comentários */
-        .interaction-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background-color: #f9fafb;
-            color: var(--text-secondary);
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-weight: 500;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-        }
+        .podium-name { font-weight: 600; margin-top: 1rem; color: var(--text-primary); }
+        .podium-points { font-size: 0.875rem; color: var(--text-secondary); }
+        .leaderboard-table { width: 100%; border-collapse: collapse; }
+        .leaderboard-table th, .leaderboard-table td { padding: 1rem; text-align: left; }
+        .leaderboard-table thead { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+        .leaderboard-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background-color: 0.2s ease-in-out; }
+        .leaderboard-table tbody tr:last-child { border-bottom: none; }
+        .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
+        .profile-thumb-wrapper { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
+        .modal { display: none; } .modal.is-open { display: flex; }
+        .modal-content.card { max-width: 500px; width: 90%; text-align: center; position: relative; }
+        .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
+        .interaction-button { display: inline-flex; align-items: center; gap: 0.5rem; background-color: #f9fafb; color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 500; transition: all 0.2s; cursor: pointer; border: 1px solid var(--border-color); }
         .interaction-button:hover { background-color: #f4f4f5; color: var(--text-primary); }
         .interaction-button .fa-heart.liked { color: #ef4444; }
-
-        .comment-input {
-            background-color: #f9fafb; /* Cinza muito claro */
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            width: 100%;
-        }
+        .comment-input { background-color: #f9fafb; border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 0.75rem; padding: 0.75rem 1rem; width: 100%; }
         .comment-input:focus { outline: none; border-color: var(--accent-color); }
-        
-        .comment-box {
-            background-color: #f9fafb; /* Cinza muito claro */
-            padding: 1rem;
-            border-radius: 1rem;
-        }
+        .comment-box { background-color: #f9fafb; padding: 1rem; border-radius: 1rem; }
     </style>
 </head>
 <body class="antialiased">
@@ -266,7 +125,7 @@
             <nav class="mt-4">
                 <ul class="flex justify-center gap-6 md:gap-8">
                     <li><a href="index.html" class="font-semibold text-yellow-500 transition">Classificação</a></li>
-                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking do Ano</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
                     <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
             </nav>
@@ -278,31 +137,20 @@
             </div>
 
             <div id="content-wrapper" class="hidden">
-                <!-- Filtros -->
                 <div class="filter-container card">
                     <select id="month-select"></select>
                     <div id="tabs-container" class="tabs">
                         <button id="tab-geral" class="tab-button active">Geral</button>
-                        <button id="tab-etapa1" class="tab-button">Etapa 1</button>
-                        <button id="tab-etapa2" class="tab-button">Etapa 2</button>
-                        <button id="tab-etapa3" class="tab-button">Etapa 3</button>
-                        <button id="tab-etapa4" class="tab-button">Etapa 4</button>
                     </div>
                 </div>
-
-                <!-- Conteúdo Dinâmico -->
                 <div id="dynamic-content"></div>
             </div>
         </main>
     
-        <!-- Modal de Detalhes -->
         <div id="details-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
-            <div id="modal-content-container" class="modal-content card">
-                <!-- Conteúdo injetado por JS -->
-            </div>
+            <div id="modal-content-container" class="modal-content card"></div>
         </div>
         
-        <!-- Modal de Confirmação de Exclusão -->
         <div id="delete-confirmation-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
             <div class="modal-content card max-w-sm">
                 <h3 class="text-lg font-bold mb-4">Confirmar Exclusão</h3>
@@ -325,8 +173,6 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO E VARIÁVEIS GLOBAIS ---
-        const ADMIN_USER_ID = "COLOQUE_O_SEU_USER_ID_AQUI"; 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
             authDomain: "rachaosc.firebaseapp.com",
@@ -346,28 +192,24 @@
         let monthlyData = {};
         let participantsData = {};
         let sporadicRiders = [];
-        
         let allParticipantsData = [];
-        let currentTab = 'geral';
+        let currentTab = 'tab-geral';
 
         function getPlaceholderImageUrl(name) {
             const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
             return `https://placehold.co/200x200/e5e7eb/000000?text=${firstLetter}`;
         }
 
-        // --- LÓGICA DE PROCESSAMENTO DE DADOS ---
         function processStageData(stageData) {
             if (!stageData) return [];
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
-            let pointsIndex = 0; // Este índice conta a posição para atribuição de pontos (apenas para não esporádicos)
+            let pointsIndex = 0;
             return stageData.map(participant => {
                 if (sporadicRiders.includes(participant.name)) {
-                    // Esporádicos recebem 0 pontos e não "consomem" uma posição na distribuição de pontos.
                     return { ...participant, pts: 0 };
                 } else {
-                    // Não esporádicos recebem os pontos da sua posição efetiva na classificação.
                     const points = pointsDistribution[pointsIndex] || 0;
-                    pointsIndex++; // O índice de pontos só avança para participantes que pontuam.
+                    pointsIndex++;
                     return { ...participant, pts: points };
                 }
             });
@@ -375,25 +217,26 @@
         
         function getProcessedMonthData(monthId) {
             const data = JSON.parse(JSON.stringify(monthlyData[monthId]));
-            ['etapa1', 'etapa2', 'etapa3', 'etapa4'].forEach(etapa => {
-                if(data[etapa]) data[etapa] = processStageData(data[etapa]);
-            });
+            if (data.stages && Array.isArray(data.stages)) {
+                data.stages.forEach(stage => {
+                    stage.results = processStageData(stage.results);
+                });
+            }
             return data;
         }
 
-        function calculateOverall(etapas) {
-            const allParticipants = new Set(Object.values(etapas).flat().map(p => p.name));
+        function calculateOverall(stages = []) {
+            const allParticipants = new Set();
+            stages.forEach(stage => (stage.results || []).forEach(p => allParticipants.add(p.name)));
+            
             const overallData = Array.from(allParticipants).map(name => {
                 if (sporadicRiders.includes(name)) return null;
-                const points = {};
                 let totalPoints = 0;
-                for (let i = 1; i <= 4; i++) {
-                    const etapaKey = `etapa${i}`;
-                    const p = (etapas[etapaKey] || []).find(p => p.name === name) || { pts: 0 };
-                    points[`pts_etapa_${i}`] = p.pts;
-                    totalPoints += p.pts;
-                }
-                return { name, ...points, pts: totalPoints };
+                stages.forEach((stage) => {
+                    const participantResult = (stage.results || []).find(p => p.name === name);
+                    totalPoints += participantResult ? participantResult.pts : 0;
+                });
+                return { name, pts: totalPoints };
             }).filter(Boolean);
             
             overallData.sort((a, b) => b.pts - a.pts);
@@ -407,17 +250,32 @@
             });
         }
         
-        // --- RENDERIZAÇÃO DINÂMICA DO CONTEÚDO ---
+        function renderTabs(monthId) {
+            const tabsContainer = document.getElementById('tabs-container');
+            tabsContainer.innerHTML = '<button id="tab-geral" class="tab-button">Geral</button>';
+            
+            const month = monthlyData[monthId];
+            if (month && month.stages) {
+                month.stages.forEach((stage, index) => {
+                    const button = document.createElement('button');
+                    button.id = `tab-stage-${index}`;
+                    button.className = 'tab-button';
+                    button.textContent = stage.name || `Etapa ${index + 1}`;
+                    tabsContainer.appendChild(button);
+                });
+            }
+        }
+
         function renderContent(monthId, tab) {
             if (!userId || !monthlyData[monthId]) return;
 
-            const contentWrapper = document.getElementById('content-wrapper');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            loadingOverlay.classList.add('hidden');
-            contentWrapper.classList.remove('hidden');
+            renderTabs(monthId);
+
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('content-wrapper').classList.remove('hidden');
 
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${tab}`)?.classList.add('active');
+            document.getElementById(tab)?.classList.add('active');
 
             const monthData = getProcessedMonthData(monthId);
             const originalMonthData = monthlyData[monthId];
@@ -426,49 +284,59 @@
             
             let dataToShow;
             let isOverall = false;
-            let stageId = `${monthId}_${tab}`;
             
-            if (tab === 'geral') {
-                const overall = calculateOverall({etapa1: monthData.etapa1, etapa2: monthData.etapa2, etapa3: monthData.etapa3, etapa4: monthData.etapa4});
+            if (tab === 'tab-geral') {
+                isOverall = true;
+                const overall = calculateOverall(monthData.stages);
                 allParticipantsData = getParticipantData(overall);
                 dataToShow = allParticipantsData;
-                isOverall = true;
             } else {
-                const stageData = originalMonthData[tab] ? originalMonthData[tab].map((p, index) => {
-                    const processed = (monthData[tab] || []).find(proc => proc.name === p.name);
+                const stageIndex = parseInt(tab.replace('tab-stage-', ''));
+                const stageData = (originalMonthData.stages[stageIndex]?.results || []).map((p, index) => {
+                    const processed = (monthData.stages[stageIndex]?.results || []).find(proc => proc.name === p.name);
                     const info = participantsData[p.name] || {};
                     return { ...p, pos: index + 1, pts: processed ? processed.pts : 0, ...info, image: info.imageUrl || getPlaceholderImageUrl(p.name) };
-                }) : [];
+                });
                 dataToShow = stageData;
             }
 
-            dynamicContentContainer.appendChild(createContentCard(monthData.title, dataToShow, isOverall, monthId, tab));
+            dynamicContentContainer.appendChild(createContentCard(monthData, dataToShow, isOverall, monthId, tab));
+            const stageId = `${monthId}_${isOverall ? 'geral' : tab.replace('tab-','')}`;
             renderCommentsAndReplies(stageId);
         }
         
-        function createContentCard(title, data, isOverall, monthId, tab) {
+        function createContentCard(monthData, data, isOverall, monthId, tab) {
             const card = document.createElement('div');
             card.className = 'card';
             
             const hasData = data && data.length > 0;
-            const stageId = `${monthId}_${tab}`;
+            const stageIndex = isOverall ? -1 : parseInt(tab.replace('tab-stage-', ''));
+            const currentStage = isOverall ? null : monthData.stages[stageIndex];
 
-            // Pódio
-            const hasAllStages = ['etapa1', 'etapa2', 'etapa3', 'etapa4'].every(e => monthlyData[monthId][e]?.length > 0);
-            if (isOverall && hasData && data.length >= 3 && hasAllStages) {
+            if(!hasData && !isOverall) {
+                card.innerHTML = `<p class="text-center text-gray-400">Etapa não realizada.</p>`;
+                return card;
+            }
+            if (!hasData && isOverall) {
+                card.innerHTML = `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
+                return card;
+            }
+
+            if(currentStage) {
+                card.innerHTML += `<div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold">${currentStage.name}</h2>
+                    <p class="text-sm text-gray-500">${currentStage.date} | ${currentStage.type} | ${currentStage.durationDistance}</p>
+                </div>`;
+            }
+
+            if (isOverall && data.length >= 3) {
                 card.appendChild(createPodium(data.slice(0, 3)));
             }
 
-            // Tabela
-            if (hasData) {
-                const tableStartIndex = (isOverall && hasAllStages && data.length >= 3) ? 3 : 0;
-                card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
-            } else {
-                card.innerHTML = `<p class="text-center text-gray-400">Nenhum dado para esta etapa.</p>`;
-            }
+            const tableStartIndex = (isOverall && data.length >= 3) ? 3 : 0;
+            card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
 
-            // Interações
-            const podiumImageUrl = monthlyData[monthId][`${tab}_podium_img`];
+            const podiumImageUrl = currentStage?.podium_img;
             if(podiumImageUrl) {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';
@@ -477,7 +345,8 @@
             }
             
             if (hasData || podiumImageUrl) {
-                card.appendChild(createInteractionsSection(stageId, monthId, tab));
+                const stageId = `${monthId}_${isOverall ? 'geral' : currentStage.id}`;
+                card.appendChild(createInteractionsSection(stageId));
             }
             
             return card;
@@ -486,7 +355,7 @@
         function createPodium(podiumData) {
             const container = document.createElement('div');
             container.className = 'podium-container mb-8';
-            podiumData.forEach((p, index) => {
+            podiumData.forEach((p) => {
                 const rank = p.pos;
                 const step = document.createElement('div');
                 step.className = `podium-step podium-rank-${rank}`;
@@ -505,16 +374,7 @@
         function createTable(data, isOverall) {
             const table = document.createElement('table');
             table.className = 'leaderboard-table';
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th class="w-12">#</th>
-                        <th>Participante</th>
-                        <th class="text-right">Pts</th>
-                        ${isOverall ? '<th class="text-right hidden md:table-cell">Etapas</th>' : ''}
-                    </tr>
-                </thead>
-            `;
+            table.innerHTML = `<thead><tr><th class="w-12">#</th><th>Participante</th><th class="text-right">Pts</th></tr></thead>`;
             const tbody = document.createElement('tbody');
             data.forEach(p => {
                 const isSporadic = !isOverall && sporadicRiders.includes(p.name);
@@ -532,7 +392,6 @@
                         </div>
                     </td>
                     <td class="text-right font-bold text-gray-800">${isSporadic ? '-' : p.pts}</td>
-                    ${isOverall ? `<td class="text-right text-sm text-gray-500 hidden md:table-cell">(${p.pts_etapa_1}|${p.pts_etapa_2}|${p.pts_etapa_3}|${p.pts_etapa_4})</td>` : ''}
                 `;
                 row.addEventListener('click', () => openModal(p.name));
                 tbody.appendChild(row);
@@ -541,81 +400,34 @@
             return table;
         }
 
-        function createInteractionsSection(stageId, monthId, tab) {
+        function createInteractionsSection(stageId) {
             const container = document.createElement('div');
             container.id = `interactions-${stageId}`;
             container.className = 'mt-8 pt-6 border-t border-gray-200';
-            
             const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
             const userHasLiked = userId && likeInfo.likedBy.includes(userId);
-
-            container.innerHTML = `
-                <div class="flex justify-center mb-6">
-                    <button class="interaction-button" onclick="toggleLike('${monthId}', '${tab}')">
-                        <i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i>
-                        <span>${likeInfo.count}</span>
-                    </button>
-                </div>
-                <div id="comments-section-${stageId}"></div>
-            `;
+            container.innerHTML = `<div class="flex justify-center mb-6"><button class="interaction-button" onclick="toggleLike('${stageId}')"><i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i><span>${likeInfo.count}</span></button></div><div id="comments-section-${stageId}"></div>`;
             return container;
         }
 
         function renderCommentsAndReplies(stageId) {
             const container = document.getElementById(`comments-section-${stageId}`);
             if(!container) return;
-            
             const savedName = localStorage.getItem('commenterName') || '';
-
-            container.innerHTML = `
-                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Comentários</h3>
-                <form onsubmit="handleCommentSubmit(event, '${stageId}')" class="mb-6 space-y-3 max-w-lg mx-auto">
-                    <input type="text" name="name" placeholder="Seu nome" required class="comment-input" value="${savedName}">
-                    <textarea name="comment" placeholder="Deixe seu comentário..." required rows="3" class="comment-input"></textarea>
-                    <button type="submit" class="w-full bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition">Publicar</button>
-                </form>
-                <div id="comments-list-${stageId}" class="space-y-4 max-w-lg mx-auto"></div>
-            `;
-            
+            container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Comentários</h3><form onsubmit="handleCommentSubmit(event, '${stageId}')" class="mb-6 space-y-3 max-w-lg mx-auto"><input type="text" name="name" placeholder="Seu nome" required class="comment-input" value="${savedName}"><textarea name="comment" placeholder="Deixe seu comentário..." required rows="3" class="comment-input"></textarea><button type="submit" class="w-full bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition">Publicar</button></form><div id="comments-list-${stageId}" class="space-y-4 max-w-lg mx-auto"></div>`;
             const listContainer = document.getElementById(`comments-list-${stageId}`);
             const stageComments = commentsData[stageId] || [];
             stageComments.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-
-            if (stageComments.length === 0) {
-                listContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum comentário ainda. Seja o primeiro!</p>`;
-            } else {
-                stageComments.forEach(comment => listContainer.appendChild(createCommentElement(comment, savedName)));
-            }
+            if (stageComments.length === 0) { listContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum comentário ainda.</p>`; } 
+            else { stageComments.forEach(comment => listContainer.appendChild(createCommentElement(comment, savedName))); }
         }
         
         function createCommentElement(comment, savedName) {
             const el = document.createElement('div');
             el.className = 'comment-box';
-            
             const userHasLiked = userId && (comment.likedBy || []).includes(userId);
             const canDelete = userId === comment.authorId || userId === ADMIN_USER_ID;
-
-            el.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <p class="font-bold text-gray-800">${comment.name}</p>
-                    ${canDelete ? `<button onclick="showDeleteConfirmation('comment', '${comment.id}')" class="text-gray-500 hover:text-red-500 text-sm"><i class="fas fa-trash-alt"></i></button>` : ''}
-                </div>
-                <p class="text-gray-600 mt-1 whitespace-pre-wrap">${comment.text}</p>
-                <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                    <button onclick="toggleCommentLike('${comment.id}')" class="interaction-button text-xs py-1 px-2 ${userHasLiked ? 'liked' : ''}">
-                        <i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i> <span>${comment.likes || 0}</span>
-                    </button>
-                    <button onclick="toggleReplyForm('${comment.id}')" class="font-semibold hover:underline">Responder</button>
-                </div>
-                <div id="reply-form-container-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-gray-300">
-                    <form onsubmit="handleReplySubmit(event, '${comment.id}')" class="space-y-2">
-                        <input type="text" name="name" placeholder="Seu nome" required class="comment-input text-sm" value="${savedName}">
-                        <textarea name="reply" placeholder="Escreva sua resposta..." required rows="2" class="comment-input text-sm"></textarea>
-                        <button type="submit" class="bg-gray-700 text-white font-bold py-1 px-3 text-xs rounded-lg hover:bg-gray-600">Enviar</button>
-                    </form>
-                </div>
-                <div id="replies-list-${comment.id}" class="mt-4 pl-4 border-l-2 border-gray-200 space-y-3"></div>
-            `;
+            el.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-gray-800">${comment.name}</p>${canDelete ? `<button onclick="showDeleteConfirmation('comment', '${comment.id}')" class="text-gray-500 hover:text-red-500 text-sm"><i class="fas fa-trash-alt"></i></button>` : ''}</div><p class="text-gray-600 mt-1 whitespace-pre-wrap">${comment.text}</p><div class="flex items-center gap-4 mt-3 text-xs text-gray-500"><button onclick="toggleCommentLike('${comment.id}')" class="interaction-button text-xs py-1 px-2 ${userHasLiked ? 'liked' : ''}"><i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i> <span>${comment.likes || 0}</span></button><button onclick="toggleReplyForm('${comment.id}')" class="font-semibold hover:underline">Responder</button></div><div id="reply-form-container-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-gray-300"><form onsubmit="handleReplySubmit(event, '${comment.id}')" class="space-y-2"><input type="text" name="name" placeholder="Seu nome" required class="comment-input text-sm" value="${savedName}"><textarea name="reply" placeholder="Escreva sua resposta..." required rows="2" class="comment-input text-sm"></textarea><button type="submit" class="bg-gray-700 text-white font-bold py-1 px-3 text-xs rounded-lg hover:bg-gray-600">Enviar</button></form></div><div id="replies-list-${comment.id}" class="mt-4 pl-4 border-l-2 border-gray-200 space-y-3"></div>`;
             loadReplies(comment.id);
             return el;
         }
@@ -623,7 +435,6 @@
         async function loadReplies(commentId) {
             const repliesContainer = document.getElementById(`replies-list-${commentId}`);
             if (!repliesContainer) return;
-
             const q = query(collection(db, `comments/${commentId}/replies`), orderBy("timestamp", "asc"));
             const snapshot = await getDocs(q);
             repliesContainer.innerHTML = '';
@@ -632,19 +443,11 @@
                 const canDelete = userId === reply.authorId || userId === ADMIN_USER_ID;
                 const replyEl = document.createElement('div');
                 replyEl.className = 'text-sm bg-gray-100 p-3 rounded-md';
-                replyEl.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <p class="font-bold text-gray-800">${reply.name}</p>
-                        ${canDelete ? `<button onclick="showDeleteConfirmation('reply', '${commentId}', '${reply.id}')" class="text-gray-500 hover:text-red-500 text-xs"><i class="fas fa-trash-alt"></i></button>` : ''}
-                    </div>
-                    <p class="text-gray-600 whitespace-pre-wrap">${reply.text}</p>
-                `;
+                replyEl.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-gray-800">${reply.name}</p>${canDelete ? `<button onclick="showDeleteConfirmation('reply', '${commentId}', '${reply.id}')" class="text-gray-500 hover:text-red-500 text-xs"><i class="fas fa-trash-alt"></i></button>` : ''}</div><p class="text-gray-600 whitespace-pre-wrap">${reply.text}</p>`;
                 repliesContainer.appendChild(replyEl);
             });
         }
 
-
-        // --- MODAIS E INTERAÇÕES ---
         function openModal(name) {
             const p = allParticipantsData.find(p => p.name === name);
             if (!p) return;
@@ -655,56 +458,39 @@
             const originalMonthData = monthlyData[currentMonthId];
 
             let stagesHtml = '';
-            for (let i = 1; i <= 4; i++) {
-                const stageKey = `etapa${i}`;
-                if (originalMonthData[stageKey]?.length > 0) {
-                    const resultIndex = originalMonthData[stageKey].findIndex(res => res.name === name);
-                    const result = resultIndex !== -1 ? { ...originalMonthData[stageKey][resultIndex], pos: resultIndex + 1 } : null;
-                    const processedResult = (monthData[stageKey] || []).find(res => res.name === name);
-                    
-                    stagesHtml += `
-                        <div class="bg-gray-100 p-2 rounded-md">
-                            <p class="text-xs font-bold text-gray-500 uppercase">Etapa ${i}</p>
-                            ${result ? `
-                                <p class="text-xl font-bold text-gray-800">${sporadicRiders.includes(result.name) ? `*${result.pos}º` : `${result.pos}º`}</p>
-                                <p class="text-xs text-gray-500">(${(processedResult || {pts:0}).pts} pts)</p>
-                            ` : `<p class="text-xl font-bold text-gray-400">-</p>`}
-                        </div>`;
-                }
-            }
+            (originalMonthData.stages || []).forEach((stage, index) => {
+                const resultIndex = (stage.results || []).findIndex(res => res.name === name);
+                const result = resultIndex !== -1 ? { ...stage.results[resultIndex], pos: resultIndex + 1 } : null;
+                const processedStage = (monthData.stages || [])[index];
+                const processedResult = (processedStage?.results || []).find(res => res.name === name);
 
-            modalContent.innerHTML = `
-                <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
-                <img id="modal-image" class="modal-image mx-auto" src="${p.image}" alt="Foto de Perfil">
-                <h3 class="text-2xl font-bold text-gray-900">${p.name}</h3>
-                <p class="text-sm text-gray-600">Posição Geral: ${p.pos}º (${p.pts} pts)</p>
-                <p class="text-sm text-gray-600 mt-1">${p.team || 'Sem equipe'}</p>
-                <div class="mt-6 w-full">
-                    <h4 class="text-md font-bold text-gray-800 mb-2 border-t border-gray-200 pt-4">Resumo de ${monthData.title.split('/')[0]}</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${stagesHtml}</div>
-                </div>
-            `;
+                stagesHtml += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${stage.name || `Etapa ${index+1}`}</p>${result ? `<p class="text-xl font-bold text-gray-800">${sporadicRiders.includes(result.name) ? `*${result.pos}º` : `${result.pos}º`}</p><p class="text-xs text-gray-500">(${(processedResult || {pts:0}).pts} pts)</p>` : `<p class="text-xl font-bold text-gray-400">-</p>`}</div>`;
+            });
+
+            modalContent.innerHTML = `<span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span><img id="modal-image" class="modal-image mx-auto" src="${p.image}" alt="Foto de Perfil"><h3 class="text-2xl font-bold text-gray-900">${p.name}</h3><p class="text-sm text-gray-600">Posição Geral: ${p.pos}º (${p.pts} pts)</p><p class="text-sm text-gray-600 mt-1">${p.team || 'Sem equipe'}</p><div class="mt-6 w-full"><h4 class="text-md font-bold text-gray-800 mb-2 border-t border-gray-200 pt-4">Resumo de ${monthData.title.split('/')[0]}</h4><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${stagesHtml}</div></div>`;
             document.getElementById('details-modal').classList.add('is-open');
         }
 
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         window.openModal = openModal;
 
-        // --- HANDLERS DE EVENTOS E AÇÕES ---
         function setupEventListeners() {
             document.getElementById('tabs-container').addEventListener('click', (e) => {
-                if (e.target.classList.contains('tab-button')) {
-                    currentTab = e.target.id.replace('tab-', '');
+                const button = e.target.closest('.tab-button');
+                if (button) {
+                    currentTab = button.id;
                     renderContent(document.getElementById('month-select').value, currentTab);
                 }
             });
-            document.getElementById('month-select').addEventListener('change', (e) => renderContent(e.target.value, currentTab));
+            document.getElementById('month-select').addEventListener('change', (e) => {
+                currentTab = 'tab-geral';
+                renderContent(e.target.value, currentTab);
+            });
             document.getElementById('cancel-delete-btn').addEventListener('click', () => closeModal('delete-confirmation-modal'));
         }
 
-        window.toggleLike = async function(monthId, tab) {
+        window.toggleLike = async function(stageId) {
             if (!userId) return;
-            const stageId = `${monthId}_${tab}`;
             const likeRef = doc(db, 'likes', stageId);
             try {
                 await runTransaction(db, async (t) => {
@@ -728,9 +514,7 @@
             if (!name.value.trim() || !comment.value.trim() || !userId) return;
             localStorage.setItem('commenterName', name.value);
             try {
-                await addDoc(collection(db, 'comments'), {
-                    stageId, name: name.value, text: comment.value, likes: 0, likedBy: [], timestamp: serverTimestamp(), authorId: userId
-                });
+                await addDoc(collection(db, 'comments'), { stageId, name: name.value, text: comment.value, likes: 0, likedBy: [], timestamp: serverTimestamp(), authorId: userId });
                 comment.value = '';
             } catch (error) { console.error("Erro ao adicionar comentário:", error); }
         }
@@ -765,9 +549,7 @@
             if (!name.value.trim() || !reply.value.trim() || !userId) return;
             localStorage.setItem('commenterName', name.value);
             try {
-                await addDoc(collection(db, `comments/${commentId}/replies`), {
-                    name: name.value, text: reply.value, timestamp: serverTimestamp(), authorId: userId
-                });
+                await addDoc(collection(db, `comments/${commentId}/replies`), { name: name.value, text: reply.value, timestamp: serverTimestamp(), authorId: userId });
                 reply.value = '';
                 toggleReplyForm(commentId);
                 loadReplies(commentId);
@@ -812,19 +594,16 @@
                     renderContent(monthSelect.value, currentTab);
                 }
             }
-
             onSnapshot(collection(db, 'likes'), (snapshot) => {
                 snapshot.docChanges().forEach(change => likesData[change.doc.id] = change.doc.data());
                 reRender();
             });
-
             onSnapshot(collection(db, 'comments'), (snapshot) => {
                 snapshot.docChanges().forEach(change => {
                     const comment = { id: change.doc.id, ...change.doc.data() };
                     const { stageId } = comment;
                     if (!commentsData[stageId]) commentsData[stageId] = [];
                     const index = commentsData[stageId].findIndex(c => c.id === comment.id);
-
                     if (change.type === "removed") {
                         if (index > -1) commentsData[stageId].splice(index, 1);
                     } else {
@@ -846,7 +625,26 @@
                 if (rSnap.empty) return false;
 
                 pSnap.forEach(doc => participantsData[doc.id] = doc.data());
-                rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
+                
+                rSnap.forEach(doc => {
+                    let data = doc.data();
+                    if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
+                        const migratedStages = [];
+                        for (let i = 1; i <= 4; i++) {
+                            const etapaKey = `etapa${i}`;
+                            if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
+                                migratedStages.push({
+                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: '',
+                                    type: '', durationDistance: '',
+                                    podium_img: data[`${etapaKey}_podium_img`] || '',
+                                    results: data[etapaKey]
+                                });
+                            }
+                        }
+                        data.stages = migratedStages;
+                    }
+                    monthlyData[doc.id] = data;
+                });
                 
                 if (settingsSnap.exists()) {
                     sporadicRiders = settingsSnap.data().sporadicRiders || [];
@@ -854,12 +652,18 @@
                 
                 const monthSelect = document.getElementById('month-select');
                 monthSelect.innerHTML = '';
-                Object.keys(monthlyData).sort().reverse().forEach(id => {
-                    const option = new Option(monthlyData[id].title, id);
-                    monthSelect.add(option);
-                });
+                const sortedMonths = Object.keys(monthlyData).sort().reverse();
+                sortedMonths.forEach(id => monthSelect.add(new Option(monthlyData[id].title, id)));
+                
                 if (monthSelect.options.length > 0) {
-                     monthSelect.selectedIndex = 0;
+                    const currentDate = new Date();
+                    const currentMonthId = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                    const currentMonthOption = Array.from(monthSelect.options).find(opt => opt.value === currentMonthId);
+                    if (currentMonthOption) {
+                        monthSelect.value = currentMonthId;
+                    } else {
+                        monthSelect.selectedIndex = 0;
+                    }
                 }
                 return true;
             } catch (e) {
@@ -875,7 +679,6 @@
                 setupEventListeners();
                 const userCredential = await signInAnonymously(auth);
                 userId = userCredential.user.uid;
-                console.log(`User ID: ${userId}`);
                 
                 if (await loadInitialData()) {
                     const initialMonth = document.getElementById('month-select').value;
@@ -884,11 +687,11 @@
                     }
                     setupDataListeners();
                 } else {
-                    showError("Nenhum dado encontrado. Verifique as coleções 'results' e 'participants'.");
+                    showError("Nenhum dado encontrado.");
                 }
             } catch (error) {
                 console.error("Erro na inicialização:", error);
-                showError("Falha ao carregar dados. Verifique a conexão e as regras do Firebase.");
+                showError("Falha ao carregar dados.");
             }
         }
 

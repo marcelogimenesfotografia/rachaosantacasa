@@ -191,6 +191,7 @@
         let commentsData = {};
         let monthlyData = {};
         let participantsData = {};
+        let nameToIdMap = {};
         let sporadicRiders = [];
         let allParticipantsData = [];
         let currentTab = 'tab-geral';
@@ -205,7 +206,8 @@
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
             let pointsIndex = 0;
             return stageData.map(participant => {
-                if (sporadicRiders.includes(participant.name)) {
+                const participantId = participant.id || nameToIdMap[participant.name.toUpperCase()];
+                if (sporadicRiders.includes(participantId)) {
                     return { ...participant, pts: 0 };
                 } else {
                     const points = pointsDistribution[pointsIndex] || 0;
@@ -226,18 +228,23 @@
         }
 
         function calculateOverall(stages = []) {
-            const allParticipants = new Set();
-            stages.forEach(stage => (stage.results || []).forEach(p => allParticipants.add(p.name)));
-            
-            const overallData = Array.from(allParticipants).map(name => {
-                if (sporadicRiders.includes(name)) return null;
-                let totalPoints = 0;
-                stages.forEach((stage) => {
-                    const participantResult = (stage.results || []).find(p => p.name === name);
-                    totalPoints += participantResult ? participantResult.pts : 0;
+            const participantPoints = {};
+            stages.forEach(stage => {
+                (stage.results || []).forEach(p => {
+                    const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
+                     if (participantId && !sporadicRiders.includes(participantId)) {
+                        if (!participantPoints[participantId]) {
+                            participantPoints[participantId] = 0;
+                        }
+                        participantPoints[participantId] += p.pts;
+                    }
                 });
-                return { name, pts: totalPoints };
-            }).filter(Boolean);
+            });
+
+            const overallData = Object.keys(participantPoints).map(id => ({
+                id: id,
+                pts: participantPoints[id]
+            }));
             
             overallData.sort((a, b) => b.pts - a.pts);
             return overallData.map((item, index) => ({ ...item, pos: index + 1 }));
@@ -245,8 +252,8 @@
 
         function getParticipantData(overallData) {
             return overallData.map(p => {
-                const info = participantsData[p.name] || {};
-                return { ...p, ...info, image: info.imageUrl || getPlaceholderImageUrl(p.name) };
+                const info = participantsData[p.id] || { name: 'Desconhecido' };
+                return { ...p, ...info, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
             });
         }
         
@@ -257,11 +264,13 @@
             const month = monthlyData[monthId];
             if (month && month.stages) {
                 month.stages.forEach((stage, index) => {
-                    const button = document.createElement('button');
-                    button.id = `tab-stage-${index}`;
-                    button.className = 'tab-button';
-                    button.textContent = stage.name || `Etapa ${index + 1}`;
-                    tabsContainer.appendChild(button);
+                    if (stage.name) {
+                        const button = document.createElement('button');
+                        button.id = `tab-stage-${index}`;
+                        button.className = 'tab-button';
+                        button.textContent = stage.name;
+                        tabsContainer.appendChild(button);
+                    }
                 });
             }
         }
@@ -293,9 +302,10 @@
             } else {
                 const stageIndex = parseInt(tab.replace('tab-stage-', ''));
                 const stageData = (originalMonthData.stages[stageIndex]?.results || []).map((p, index) => {
-                    const processed = (monthData.stages[stageIndex]?.results || []).find(proc => proc.name === p.name);
-                    const info = participantsData[p.name] || {};
-                    return { ...p, pos: index + 1, pts: processed ? processed.pts : 0, ...info, image: info.imageUrl || getPlaceholderImageUrl(p.name) };
+                    const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
+                    const processed = (monthData.stages[stageIndex]?.results || []).find(proc => (proc.id || nameToIdMap[proc.name.toUpperCase()]) === participantId);
+                    const info = participantsData[participantId] || { name: p.name };
+                    return { ...p, id: participantId, pos: index + 1, pts: processed ? processed.pts : 0, ...info, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
                 });
                 dataToShow = stageData;
             }
@@ -325,11 +335,14 @@
             }
 
             if(!hasData && !isOverall) {
-                card.innerHTML += `<p class="text-center text-gray-400">Etapa não realizada.</p>`;
+                const stageInfo = monthlyData[monthId]?.stages[stageIndex] || {};
+                const date = stageInfo.date ? new Date(stageInfo.date + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                const details = [date, stageInfo.type, stageInfo.durationDistance].filter(Boolean).join(' | ');
+                card.innerHTML += `<div class="text-center mb-4"><h2 class="text-2xl font-bold">${stageInfo.name || 'Etapa'}</h2><p class="text-sm text-gray-500">${details}</p></div><p class="text-center text-gray-400">Etapa não realizada.</p>`;
                 return card;
             }
             if (!hasData && isOverall) {
-                if (card.innerHTML === '') { // Only add message if card is empty
+                if (!card.querySelector('h2')) {
                     card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
                 }
                 return card;
@@ -380,7 +393,7 @@
                     <div class="podium-name">${p.name}</div>
                     <div class="podium-points">${p.pts} pts</div>
                 `;
-                step.addEventListener('click', () => openModal(p.name));
+                step.addEventListener('click', () => openModal(p.id));
                 container.appendChild(step);
             });
             return container;
@@ -392,7 +405,7 @@
             table.innerHTML = `<thead><tr><th class="w-12">#</th><th>Participante</th><th class="text-right">Pts</th></tr></thead>`;
             const tbody = document.createElement('tbody');
             data.forEach(p => {
-                const isSporadic = !isOverall && sporadicRiders.includes(p.name);
+                const isSporadic = !isOverall && sporadicRiders.includes(p.id);
                 const row = document.createElement('tr');
                 row.className = 'cursor-pointer';
                 row.innerHTML = `
@@ -408,7 +421,7 @@
                     </td>
                     <td class="text-right font-bold text-gray-800">${isSporadic ? '-' : p.pts}</td>
                 `;
-                row.addEventListener('click', () => openModal(p.name));
+                row.addEventListener('click', () => openModal(p.id));
                 tbody.appendChild(row);
             });
             table.appendChild(tbody);
@@ -463,23 +476,23 @@
             });
         }
 
-        function openModal(name) {
-            const p = allParticipantsData.find(p => p.name === name);
+        function openModal(participantId) {
+            const p = allParticipantsData.find(p => p.id === participantId);
             if (!p) return;
 
             const modalContent = document.getElementById('modal-content-container');
             const currentMonthId = document.getElementById('month-select').value;
             const monthData = getProcessedMonthData(currentMonthId);
-            const originalMonthData = monthlyData[currentMonthId];
+            const originalMonthData = monthlyData[currentMonthId] || { stages: [] };
 
             let stagesHtml = '';
             (originalMonthData.stages || []).forEach((stage, index) => {
-                const resultIndex = (stage.results || []).findIndex(res => res.name === name);
+                const resultIndex = (stage.results || []).findIndex(res => (res.id || nameToIdMap[res.name.toUpperCase()]) === p.id);
                 const result = resultIndex !== -1 ? { ...stage.results[resultIndex], pos: resultIndex + 1 } : null;
                 const processedStage = (monthData.stages || [])[index];
-                const processedResult = (processedStage?.results || []).find(res => res.name === name);
+                const processedResult = (processedStage?.results || []).find(res => (res.id || nameToIdMap[res.name.toUpperCase()]) === p.id);
 
-                stagesHtml += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${stage.name || `Etapa ${index+1}`}</p>${result ? `<p class="text-xl font-bold text-gray-800">${sporadicRiders.includes(result.name) ? `*${result.pos}º` : `${result.pos}º`}</p><p class="text-xs text-gray-500">(${(processedResult || {pts:0}).pts} pts)</p>` : `<p class="text-xl font-bold text-gray-400">-</p>`}</div>`;
+                stagesHtml += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${stage.name || `Etapa ${index+1}`}</p>${result ? `<p class="text-xl font-bold text-gray-800">${sporadicRiders.includes(p.id) ? `*${result.pos}º` : `${result.pos}º`}</p><p class="text-xs text-gray-500">(${(processedResult || {pts:0}).pts} pts)</p>` : `<p class="text-xl font-bold text-gray-400">-</p>`}</div>`;
             });
 
             modalContent.innerHTML = `<span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span><img id="modal-image" class="modal-image mx-auto" src="${p.image}" alt="Foto de Perfil"><h3 class="text-2xl font-bold text-gray-900">${p.name}</h3><p class="text-sm text-gray-600">Posição Geral: ${p.pos}º (${p.pts} pts)</p><p class="text-sm text-gray-600 mt-1">${p.team || 'Sem equipe'}</p><div class="mt-6 w-full"><h4 class="text-md font-bold text-gray-800 mb-2 border-t border-gray-200 pt-4">Resumo de ${monthData.title.split('/')[0]}</h4><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${stagesHtml}</div></div>`;
@@ -598,7 +611,36 @@
             } catch (error) { console.error("Erro ao apagar resposta:", error); }
             finally { closeModal('delete-confirmation-modal'); }
         }
-
+        
+        async function setupDataListeners() {
+            if (!userId) return;
+            const reRender = () => {
+                const monthSelect = document.getElementById('month-select');
+                if (monthSelect.value) {
+                    renderContent(monthSelect.value, currentTab);
+                }
+            }
+            onSnapshot(collection(db, 'likes'), (snapshot) => {
+                snapshot.docChanges().forEach(change => likesData[change.doc.id] = change.doc.data());
+                reRender();
+            });
+            onSnapshot(collection(db, 'comments'), (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    const comment = { id: change.doc.id, ...change.doc.data() };
+                    const { stageId } = comment;
+                    if (!commentsData[stageId]) commentsData[stageId] = [];
+                    const index = commentsData[stageId].findIndex(c => c.id === comment.id);
+                    if (change.type === "removed") {
+                        if (index > -1) commentsData[stageId].splice(index, 1);
+                    } else {
+                        if (index > -1) commentsData[stageId][index] = comment;
+                        else commentsData[stageId].push(comment);
+                    }
+                });
+                reRender();
+            });
+        }
+        
         async function loadInitialData() {
             try {
                 const [pSnap, rSnap, settingsSnap] = await Promise.all([
@@ -608,7 +650,13 @@
                 ]);
                 if (rSnap.empty) return false;
 
-                pSnap.forEach(doc => participantsData[doc.id] = doc.data());
+                pSnap.forEach(doc => {
+                    const data = doc.data();
+                    if(data.name) {
+                        participantsData[doc.id] = data;
+                        nameToIdMap[data.name.toUpperCase()] = doc.id;
+                    }
+                });
                 
                 rSnap.forEach(doc => {
                     let data = doc.data();
@@ -621,7 +669,7 @@
                                     id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: '',
                                     type: '', durationDistance: '',
                                     podium_img: data[`${etapaKey}_podium_img`] || '',
-                                    results: data[etapaKey]
+                                    results: data[etapaKey].map(r => ({ ...r, id: nameToIdMap[r.name.toUpperCase()] }))
                                 });
                             }
                         }
@@ -655,40 +703,10 @@
             }
         }
         
-        // --- INICIALIZAÇÃO DA APLICAÇÃO ---
-        document.addEventListener('DOMContentLoaded', async () => {
-             const loadingOverlay = document.getElementById('loading-overlay');
+        async function runApplication() {
+            const loadingOverlay = document.getElementById('loading-overlay');
             const showError = (msg) => loadingOverlay.innerHTML = `<p class="text-lg font-semibold text-red-500">${msg}</p>`;
             
-            async function setupDataListeners() {
-                if (!userId) return;
-                const reRender = () => {
-                    const monthSelect = document.getElementById('month-select');
-                    if (monthSelect.value) {
-                        renderContent(monthSelect.value, currentTab);
-                    }
-                }
-                onSnapshot(collection(db, 'likes'), (snapshot) => {
-                    snapshot.docChanges().forEach(change => likesData[change.doc.id] = change.doc.data());
-                    reRender();
-                });
-                onSnapshot(collection(db, 'comments'), (snapshot) => {
-                    snapshot.docChanges().forEach(change => {
-                        const comment = { id: change.doc.id, ...change.doc.data() };
-                        const { stageId } = comment;
-                        if (!commentsData[stageId]) commentsData[stageId] = [];
-                        const index = commentsData[stageId].findIndex(c => c.id === comment.id);
-                        if (change.type === "removed") {
-                            if (index > -1) commentsData[stageId].splice(index, 1);
-                        } else {
-                            if (index > -1) commentsData[stageId][index] = comment;
-                            else commentsData[stageId].push(comment);
-                        }
-                    });
-                    reRender();
-                });
-            }
-
             try {
                 setupEventListeners();
                 const userCredential = await signInAnonymously(auth);
@@ -707,7 +725,9 @@
                 console.error("Erro na inicialização:", error);
                 showError("Falha ao carregar dados.");
             }
-        });
+        }
+        
+        runApplication();
     </script>
 </body>
 </html>

@@ -464,74 +464,6 @@
 
         document.getElementById('month-select-admin').addEventListener('change', (e) => renderResultsForm(e.target.value));
 
-        function createStageFormHTML(stage, index) {
-            const stageId = stage.id || `new_stage_${index}`;
-            const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
-
-            const availableParticipants = Object.entries(participantsData)
-                .filter(([id, _]) => !stageResultsIds.includes(id))
-                .sort((a, b) => a[1].name.localeCompare(b[1].name));
-
-            const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
-                <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
-                    <span>${p.name}</span>
-                    <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
-                </div>
-            `).join('');
-            
-            const classifiedParticipantsHtml = stageResultsIds.map(id => {
-                const p = participantsData[id];
-                if (!p) return '';
-                return `
-                    <div class="participant-item classified-participant" data-id="${id}">
-                        <span>${p.name}</span>
-                        <div class="space-x-2">
-                            <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
-                            <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
-                            <button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="stage-form-group border-t-2 border-dashed pt-6" data-stage-id="${stageId}">
-                    <div class="flex justify-between items-center mb-2">
-                         <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
-                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
-                        <input type="date" class="input-field stage-date" value="${stage.date || ''}">
-                    </div>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                        <select class="input-field stage-type">
-                            <option value="">Selecione o tipo</option>
-                            <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
-                            <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
-                            <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
-                        </select>
-                        <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                        <div>
-                            <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
-                            <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
-                            <div class="participant-list available-list">${availableParticipantsHtml}</div>
-                        </div>
-                        <div>
-                            <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
-                            <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
-                        </div>
-                    </div>
-
-                    <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
-                    <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
-                </div>
-            `;
-        }
-
         function renderResultsForm(monthId) {
             const container = document.getElementById('results-form');
             if (!monthId || !monthlyData[monthId]) {
@@ -548,72 +480,17 @@
                         migratedStages.push({
                             id: `${etapaKey}_${monthId}`, name: `Etapa ${i}`, date: '', type: '', durationDistance: '',
                             podium_img: data[`${etapaKey}_podium_img`] || '',
-                            results: data[etapaKey].map(p => ({ id: nameToIdMap[p.name.toUpperCase()], name: p.name }))
+                            results: data[etapaKey]
                         });
                     }
                 }
                 data.stages = migratedStages;
             }
 
-
             document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
             const stages = data.stages || [];
-            container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
+            container.innerHTML = stages.map((stage, i) => createStageFormHTML(stage, i)).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
-
-        document.getElementById('results-form').addEventListener('input', (e) => {
-            if (e.target.classList.contains('filter-available-participants')) {
-                const filterText = e.target.value.toLowerCase();
-                const availableList = e.target.nextElementSibling;
-                availableList.querySelectorAll('.available-participant').forEach(item => {
-                    item.style.display = item.dataset.name.includes(filterText) ? 'flex' : 'none';
-                });
-            }
-        });
-
-        document.getElementById('results-form').addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-
-            const participantItem = button.closest('.participant-item');
-            
-            if (button.classList.contains('add-participant-to-stage-btn')) {
-                const classifiedList = participantItem.closest('.grid').querySelector('.classified-list');
-                const pId = participantItem.dataset.id;
-                const pName = participantsData[pId].name;
-
-                const newItem = document.createElement('div');
-                newItem.className = 'participant-item classified-participant';
-                newItem.dataset.id = pId;
-                newItem.innerHTML = `<span>${pName}</span><div class="space-x-2"><button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button><button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button><button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button></div>`;
-                classifiedList.appendChild(newItem);
-                participantItem.remove();
-            } else if (button.classList.contains('remove-participant-from-stage-btn')) {
-                const availableList = participantItem.closest('.grid').querySelector('.available-list');
-                const pId = participantItem.dataset.id;
-                const pName = participantsData[pId].name;
-
-                const newItem = document.createElement('div');
-                newItem.className = 'participant-item available-participant';
-                newItem.dataset.id = pId;
-                newItem.dataset.name = pName.toLowerCase();
-                newItem.innerHTML = `<span>${pName}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
-                availableList.appendChild(newItem);
-                participantItem.remove();
-            } else if(button.classList.contains('move-up-btn')) {
-                if(participantItem.previousElementSibling) {
-                    participantItem.parentElement.insertBefore(participantItem, participantItem.previousElementSibling);
-                }
-            } else if(button.classList.contains('move-down-btn')) {
-                if(participantItem.nextElementSibling) {
-                    participantItem.parentElement.insertBefore(participantItem.nextElementSibling, participantItem);
-                }
-            } else if (button.classList.contains('remove-stage-btn')) {
-                if (confirm('Tem a certeza que deseja remover esta etapa?')) {
-                    button.closest('.stage-form-group').remove();
-                }
-            }
-        });
 
         document.getElementById('add-stage-btn').addEventListener('click', () => {
             const container = document.getElementById('results-form');
@@ -645,7 +522,7 @@
                     type: group.querySelector('.stage-type').value,
                     durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
                     podium_img: group.querySelector('.stage-podium-img').value.trim(),
-                    results: classifiedIds.map(id => ({ id }))
+                    results: classifiedIds.map(id => ({ id: id }))
                 };
                 newStages.push(stage);
             });
@@ -720,6 +597,75 @@
                 alert(`Erro: ${error.message}`);
             }
         });
+        
+        // This makes the function available globally for the inline event handlers
+        window.createStageFormHTML = function(stage, index) {
+            const stageId = stage.id || `new_stage_${index}`;
+            const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
+
+            const availableParticipants = Object.entries(participantsData)
+                .filter(([id, _]) => !stageResultsIds.includes(id))
+                .sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+            const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
+                <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
+                    <span>${p.name}</span>
+                    <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
+                </div>
+            `).join('');
+            
+            const classifiedParticipantsHtml = stageResultsIds.map((id, idx) => {
+                const p = participantsData[id];
+                if (!p) return '';
+                return `
+                    <div class="participant-item classified-participant" data-id="${id}">
+                        <span>${idx + 1}. ${p.name}</span>
+                        <div class="space-x-2">
+                            <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
+                            <button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="stage-form-group border-t-2 border-dashed pt-6" data-stage-id="${stageId}">
+                    <div class="flex justify-between items-center mb-2">
+                         <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
+                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
+                        <input type="date" class="input-field stage-date" value="${stage.date || ''}">
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <select class="input-field stage-type">
+                            <option value="">Selecione o tipo</option>
+                            <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
+                            <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
+                            <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
+                        </select>
+                        <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
+                            <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
+                            <div class="participant-list available-list">${availableParticipantsHtml}</div>
+                        </div>
+                        <div>
+                            <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
+                            <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
+                        </div>
+                    </div>
+
+                    <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
+                    <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
+                </div>
+            `;
+        }
 
         onAuthStateChanged(auth, (user) => {
             if (user) { showDashboard(); } else { showLogin(); }

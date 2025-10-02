@@ -363,8 +363,9 @@
 
             const tableStartIndex = (isOverall && data.length >= 3 && (monthData.isCompleted || false)) ? 3 : 0;
             card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
-
-            const podiumImageUrl = currentStage?.podium_img;
+            
+            const podiumImageUrl = isOverall ? monthData.geral_podium_img : currentStage?.podium_img;
+            
             if(podiumImageUrl) {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';
@@ -373,7 +374,7 @@
             }
             
             if (hasData || podiumImageUrl) {
-                const stageId = `${monthId}_${isOverall ? 'geral' : currentStage.id}`;
+                const stageId = `${monthId}_${isOverall ? 'geral' : (currentStage?.id || tab.replace('tab-',''))}`;
                 card.appendChild(createInteractionsSection(stageId));
             }
             

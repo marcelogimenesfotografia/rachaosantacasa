@@ -118,7 +118,6 @@
             const rankingContainer = document.getElementById('ranking-container');
             
             try {
-                // 1. Carregar todos os dados necessários
                 const [pSnap, rSnap, settingsSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
@@ -126,19 +125,31 @@
                 ]);
 
                 const participantsData = {};
-                pSnap.forEach(doc => participantsData[doc.id] = doc.data());
+                const nameToIdMap = {};
+                pSnap.forEach(doc => {
+                    const data = doc.data();
+                    if(data.name) {
+                        participantsData[doc.id] = data;
+                        nameToIdMap[data.name.toUpperCase()] = doc.id;
+                    }
+                });
 
                 const monthlyData = {};
                 rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
+
+                const latestYearWithData = Object.keys(monthlyData).length > 0
+                    ? [...new Set(Object.keys(monthlyData).map(id => id.split('_')[0]))].sort().reverse()[0]
+                    : new Date().getFullYear().toString();
                 
                 const sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
                 const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
 
                 const lifetimeStats = {};
-                Object.keys(participantsData).forEach(name => {
-                    if (!sporadicRiders.includes(name)) {
-                        lifetimeStats[name] = {
+                Object.keys(participantsData).forEach(id => {
+                    if (!sporadicRiders.includes(id)) {
+                        lifetimeStats[id] = {
                             totalPoints: 0,
+                            latestYearPoints: 0,
                             top5Finishes: [0, 0, 0, 0, 0],
                             monthlyRanks: {}
                         };
@@ -149,9 +160,9 @@
                     const monthResults = monthlyData[monthId];
                     let monthStandings = {};
 
-                    const stages = monthResults.stages || [];
+                    let stages = monthResults.stages || [];
                     if (stages.length === 0 && (monthResults.etapa1 || monthResults.etapa2)) {
-                        for(let i = 1; i <= 4; i++) {
+                         for(let i = 1; i <= 4; i++) {
                             if(monthResults[`etapa${i}`]) stages.push({ results: monthResults[`etapa${i}`] });
                         }
                     }
@@ -159,20 +170,24 @@
                     stages.forEach(stage => {
                         let pointsIndex = 0;
                         (stage.results || []).forEach((result, resultIndex) => {
-                            const participantName = result.name;
+                            const participantId = result.id || nameToIdMap[result.name.toUpperCase()];
                             const position = resultIndex + 1;
 
-                             if (lifetimeStats[participantName]) {
+                             if (lifetimeStats[participantId]) {
                                 if (position <= 5) {
-                                    lifetimeStats[participantName].top5Finishes[position - 1]++;
+                                    lifetimeStats[participantId].top5Finishes[position - 1]++;
                                 }
 
-                                if (!sporadicRiders.includes(participantName)) {
+                                if (!sporadicRiders.includes(participantId)) {
                                     const points = pointsDistribution[pointsIndex] || 0;
-                                    lifetimeStats[participantName].totalPoints += points;
+                                    lifetimeStats[participantId].totalPoints += points;
+
+                                    if (monthId.startsWith(latestYearWithData)) {
+                                        lifetimeStats[participantId].latestYearPoints += points;
+                                    }
                                     
-                                    if (!monthStandings[participantName]) monthStandings[participantName] = 0;
-                                    monthStandings[participantName] += points;
+                                    if (!monthStandings[participantId]) monthStandings[participantId] = 0;
+                                    monthStandings[participantId] += points;
 
                                     pointsIndex++;
                                 }
@@ -183,22 +198,23 @@
                     const monthParticipants = new Set();
                     stages.forEach(stage => {
                         (stage.results || []).forEach(p => {
-                            if (!sporadicRiders.includes(p.name)) {
-                                monthParticipants.add(p.name);
+                            const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
+                            if (participantId && !sporadicRiders.includes(participantId)) {
+                                monthParticipants.add(participantId);
                             }
                         });
                     });
 
-                    monthParticipants.forEach(name => {
-                        if (monthStandings[name] === undefined) {
-                            monthStandings[name] = 0;
+                    monthParticipants.forEach(id => {
+                        if (monthStandings[id] === undefined) {
+                            monthStandings[id] = 0;
                         }
                     });
 
                     const sortedMonth = Object.keys(monthStandings).sort((a, b) => monthStandings[b] - monthStandings[a]);
-                    sortedMonth.forEach((name, index) => {
-                        if (lifetimeStats[name]) {
-                            lifetimeStats[name].monthlyRanks[monthId] = {
+                    sortedMonth.forEach((id, index) => {
+                        if (lifetimeStats[id]) {
+                            lifetimeStats[id].monthlyRanks[monthId] = {
                                 title: monthResults.title,
                                 pos: index + 1
                             };
@@ -206,13 +222,13 @@
                     });
                 }
                 
-                const finalRanking = Object.keys(lifetimeStats).map(name => ({
-                    name,
-                    ...participantsData[name],
-                    ...lifetimeStats[name]
+                const finalRanking = Object.keys(lifetimeStats).map(id => ({
+                    id,
+                    ...participantsData[id],
+                    ...lifetimeStats[id]
                 })).sort((a, b) => b.totalPoints - a.totalPoints);
                 
-                renderTable(finalRanking);
+                renderTable(finalRanking, latestYearWithData);
 
                 loadingOverlay.style.display = 'none';
                 rankingContainer.style.display = 'block';
@@ -223,7 +239,7 @@
             }
         }
 
-        function renderTable(rankingData) {
+        function renderTable(rankingData, latestYearWithData) {
             const tableBody = document.getElementById('ranking-table-body');
             tableBody.innerHTML = '';
             rankingData.forEach((p, index) => {
@@ -242,38 +258,30 @@
                     </td>
                     <td class="text-right font-bold text-gray-800">${p.totalPoints}</td>
                 `;
-                row.addEventListener('click', () => renderModal(p));
+                row.addEventListener('click', () => renderModal(p, latestYearWithData));
                 tableBody.appendChild(row);
             });
         }
 
-        function renderModal(participant) {
+        function renderModal(participant, yearToDisplay) {
             const modalContent = document.getElementById('modal-content-container');
             
             let top5Html = '';
             participant.top5Finishes.forEach((count, index) => {
-                top5Html += `
-                    <div class="bg-gray-100 p-2 rounded-md">
-                        <p class="text-xs font-bold text-gray-500 uppercase">${index + 1}º LUGAR</p>
-                        <p class="text-2xl font-bold text-gray-800">${count}x</p>
-                    </div>`;
+                top5Html += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${index + 1}º LUGAR</p><p class="text-2xl font-bold text-gray-800">${count}x</p></div>`;
             });
 
             let monthlyRanksHtml = '';
-            const top10Finishes = Object.keys(participant.monthlyRanks)
+            const recentTop10Finishes = Object.keys(participant.monthlyRanks)
                 .filter(monthId => participant.monthlyRanks[monthId].pos <= 10)
                 .sort()
                 .reverse()
                 .slice(0, 6);
 
-            if (top10Finishes.length > 0) {
-                top10Finishes.forEach(monthId => {
+            if (recentTop10Finishes.length > 0) {
+                recentTop10Finishes.forEach(monthId => {
                     const rank = participant.monthlyRanks[monthId];
-                    monthlyRanksHtml += `
-                       <li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
-                           <span>${rank.title}</span>
-                           <span class="font-bold">${rank.pos}º</span>
-                       </li>`;
+                    monthlyRanksHtml += `<li class="flex justify-between items-center p-2 rounded-md hover:bg-gray-100"><span>${rank.title}</span><span class="font-bold">${rank.pos}º</span></li>`;
                 });
             } else {
                 monthlyRanksHtml = `<li class="text-center text-gray-500">Nenhum resultado no Top 10 mensal.</li>`;
@@ -284,6 +292,7 @@
                 <img class="modal-image mx-auto" src="${participant.imageUrl || getPlaceholderImageUrl(participant.name)}" alt="Foto de Perfil">
                 <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
                 <p class="text-sm text-gray-600">${participant.team || 'Sem equipe'}</p>
+                <p class="font-semibold text-gray-800 mt-2">Pontuação (${yearToDisplay}): ${participant.latestYearPoints}</p>
                 
                 <div class="mt-4 w-full text-center border-t border-gray-200 pt-4">
                     <h4 class="text-md font-bold text-gray-800 mb-1">Pontuação Total (Geral)</h4>

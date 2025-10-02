@@ -120,13 +120,7 @@
             <!-- Coluna da Direita: Resultados -->
             <div class="lg:col-span-2">
                 <div class="card">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold">Gerir Resultados</h2>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                            <span class="font-medium">Mês Concluído (exibir pódio)</span>
-                        </label>
-                    </div>
+                    <h2 class="text-xl font-bold mb-4">Gerir Resultados</h2>
                     <div class="flex flex-wrap gap-4 items-center mb-6">
                         <select id="month-select-admin" class="input-field flex-grow"></select>
                         <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
@@ -137,6 +131,18 @@
                     </div>
                     <div class="mt-6 border-t pt-6">
                          <button id="add-stage-btn" class="btn btn-secondary w-full mb-4">Adicionar Nova Etapa</button>
+                         <div class="space-y-4 my-4">
+                             <div>
+                                 <label class="flex items-center gap-2 cursor-pointer">
+                                     <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                                     <span class="font-medium">Mês Concluído (exibir pódio)</span>
+                                 </label>
+                             </div>
+                             <div>
+                                 <label for="geral_podium_img" class="font-medium text-sm">URL da Foto da Classificação Geral</label>
+                                 <input type="url" id="geral_podium_img" class="input-field mt-1" placeholder="https://...">
+                             </div>
+                         </div>
                          <button id="save-results-btn" class="btn btn-primary w-full">Guardar Alterações do Mês</button>
                     </div>
                 </div>
@@ -657,6 +663,7 @@
             }
 
             document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
+            document.getElementById('geral_podium_img').value = data.geral_podium_img || '';
             const stages = data.stages || [];
             container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
@@ -748,8 +755,90 @@
             container.insertAdjacentHTML('beforeend', newStageHTML);
         });
         
-        document.getElementById('save-results-btn').addEventListener('click', async () => { /* ... */ });
-        document.getElementById('new-month-btn').addEventListener('click', async () => { /* ... */ });
+        document.getElementById('save-results-btn').addEventListener('click', async () => {
+            const monthId = document.getElementById('month-select-admin').value;
+            if (!monthId) return;
+
+            const docRef = doc(db, 'results', monthId);
+            const isCompleted = document.getElementById('month-completed-checkbox').checked;
+            const geralPodiumImg = document.getElementById('geral_podium_img').value.trim();
+            const newStages = [];
+            
+            document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
+                const classifiedIds = [];
+                group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
+                    classifiedIds.push(item.dataset.id);
+                });
+
+                const stage = {
+                    id: group.dataset.stageId,
+                    name: group.querySelector('.stage-name').value.trim(),
+                    date: group.querySelector('.stage-date').value,
+                    type: group.querySelector('.stage-type').value,
+                    durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
+                    podium_img: group.querySelector('.stage-podium-img').value.trim(),
+                    results: classifiedIds.map(id => ({ id }))
+                };
+                newStages.push(stage);
+            });
+            
+            try {
+                const dataToSave = { 
+                    title: monthlyData[monthId]?.title || `${monthId.split('_')[1]}/${monthId.split('_')[0]}`, 
+                    stages: newStages, 
+                    isCompleted: isCompleted,
+                    geral_podium_img: geralPodiumImg
+                };
+
+                await setDoc(docRef, dataToSave, { merge: true });
+                alert('Resultados guardados com sucesso!');
+                loadAllData();
+            } catch (error) {
+                console.error("Erro ao guardar resultados:", error);
+                alert("Ocorreu um erro ao guardar os resultados.");
+            }
+        });
+        
+        document.getElementById('new-month-btn').addEventListener('click', async () => {
+            const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
+            if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
+                alert("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); return;
+            }
+            if (monthlyData[monthId]) {
+                alert("Este mês já existe!"); return;
+            }
+
+            const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
+            if (!monthTitle) return;
+
+            try {
+                const [year, month] = monthId.split('_').map(Number);
+                const thursdays = getThursdays(year, month);
+                
+                const newStages = thursdays.map((thursdayDate, index) => ({
+                    id: `etapa_${index + 1}_${Date.now()}`,
+                    name: `Etapa ${index + 1}`,
+                    date: thursdayDate,
+                    type: 'Circuito',
+                    durationDistance: '55 min + 1 volta',
+                    podium_img: '',
+                    results: []
+                }));
+
+                const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
+                await setDoc(doc(db, 'results', monthId), newMonthData);
+                alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
+                
+                monthlyData[monthId] = newMonthData;
+                renderMonthSelector();
+                document.getElementById('month-select-admin').value = monthId;
+                renderResultsForm(monthId);
+
+            } catch (error) {
+                console.error("Erro ao criar mês:", error);
+                alert(`Erro: ${error.message}`);
+            }
+        });
 
         onAuthStateChanged(auth, (user) => {
             if (user) { showDashboard(); } else { showLogin(); }

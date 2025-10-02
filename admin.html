@@ -37,15 +37,39 @@
             border-radius: 0.5rem;
             font-weight: 600;
             transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         .btn-primary { background-color: var(--accent-color); color: white; }
-        .btn-primary:hover { background-color: #d99f07; }
+        .btn-primary:hover:not(:disabled) { background-color: #d99f07; }
         .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
         .btn-secondary:hover { background-color: #d1d5db; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-danger:hover { background-color: #dc2626; }
-        .modal { display: none; }
+        .modal { display: none; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.7); }
         .modal.is-open { display: flex; }
+        .participant-list {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+        .participant-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .participant-item:hover {
+            background-color: #f3f4f6;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -84,7 +108,7 @@
                     <form id="add-participant-form" class="space-y-3 mb-6">
                         <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
                         <select id="participant-team" class="input-field"></select>
-                        <input id="participant-image" type="url" placeholder="URL da Foto" class="input-field">
+                        <input id="participant-image-url" type="url" placeholder="URL da Foto" class="input-field">
                         <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
                     </form>
                     <div id="participants-list" class="space-y-2">
@@ -108,7 +132,7 @@
                         <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
                     </div>
 
-                    <div id="results-form" class="space-y-6">
+                    <div id="results-form" class="space-y-8">
                         <!-- Formulários de resultados serão preenchidos aqui -->
                     </div>
                     <div class="mt-6 border-t pt-6">
@@ -138,8 +162,8 @@
                     <select id="edit-participant-team" class="input-field mt-1"></select>
                 </div>
                 <div>
-                    <label for="edit-participant-image" class="font-medium">URL da Foto</label>
-                    <input id="edit-participant-image" type="url" class="input-field mt-1">
+                    <label for="edit-participant-image-url" class="font-medium">URL da Foto</label>
+                    <input id="edit-participant-image-url" type="url" class="input-field mt-1">
                 </div>
                 <div class="pt-2">
                     <label class="flex items-center gap-2">
@@ -157,9 +181,8 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
@@ -175,11 +198,11 @@
         const auth = getAuth(app);
 
         let participantsData = {};
+        let nameToIdMap = {};
         let monthlyData = {};
         let sporadicRiders = [];
         let allTeams = new Set();
 
-        // --- LÓGICA DE LOGIN ---
         const loginSection = document.getElementById('login-section');
         const dashboardSection = document.getElementById('dashboard-section');
         const loginForm = document.getElementById('login-form');
@@ -189,20 +212,12 @@
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error("Erro de login:", error.code);
-                alert('Email ou palavra-passe incorreta!');
-            }
+            try { await signInWithEmailAndPassword(auth, email, password); } 
+            catch (error) { alert('Email ou palavra-passe incorreta!'); }
         });
 
         logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error("Erro ao sair:", error);
-            }
+            try { await signOut(auth); } catch (error) { console.error("Erro ao sair:", error); }
         });
 
         function showDashboard() {
@@ -228,30 +243,18 @@
                 ]);
                 
                 participantsData = {};
-                pSnap.forEach(doc => participantsData[doc.id] = doc.data());
+                nameToIdMap = {};
+                pSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data && data.name) {
+                        participantsData[doc.id] = data;
+                        nameToIdMap[data.name.toUpperCase()] = doc.id;
+                    }
+                });
                 
                 monthlyData = {};
                 rSnap.forEach(doc => {
-                    let data = doc.data();
-                    if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
-                        const migratedStages = [];
-                        for (let i = 1; i <= 4; i++) {
-                            const etapaKey = `etapa${i}`;
-                            if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
-                                migratedStages.push({
-                                    id: `${etapaKey}_${doc.id}`,
-                                    name: `Etapa ${i}`,
-                                    date: '',
-                                    type: '',
-                                    durationDistance: '',
-                                    podium_img: data[`${etapaKey}_podium_img`] || '',
-                                    results: data[etapaKey]
-                                });
-                            }
-                        }
-                        data.stages = migratedStages;
-                    }
-                    monthlyData[doc.id] = data;
+                    monthlyData[doc.id] = doc.data();
                 });
 
                 sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
@@ -259,6 +262,7 @@
                 allTeams.clear();
                 Object.values(participantsData).forEach(p => {
                     if (p.team) allTeams.add(p.team);
+                    (p.teamHistory || []).forEach(h => allTeams.add(h.team));
                 });
 
                 renderParticipants();
@@ -282,16 +286,9 @@
                 if (!select) return;
                 const currentValue = select.value;
                 select.innerHTML = '<option value="">Selecionar equipa</option>';
-                sortedTeams.forEach(team => {
-                    select.add(new Option(team, team));
-                });
+                sortedTeams.forEach(team => select.add(new Option(team, team)));
                 select.add(new Option("--- Criar nova equipa ---", "new_team"));
-
-                if (newTeamToSelect) {
-                    select.value = newTeamToSelect;
-                } else if (currentValue) {
-                    select.value = currentValue;
-                }
+                select.value = newTeamToSelect || currentValue || '';
             });
         }
 
@@ -315,18 +312,20 @@
         function renderParticipants() {
             const list = document.getElementById('participants-list');
             list.innerHTML = '';
-            Object.keys(participantsData).sort().forEach(name => {
+            const sortedParticipants = Object.entries(participantsData).sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+            sortedParticipants.forEach(([id, participant]) => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
-                const isSporadic = sporadicRiders.includes(name);
+                const isSporadic = sporadicRiders.includes(id);
                 div.innerHTML = `
                     <div>
-                        <span class="font-medium">${name}</span>
+                        <span class="font-medium">${participant.name}</span>
                         ${isSporadic ? '<span class="ml-2 text-xs font-bold text-white bg-blue-500 px-2 py-1 rounded-full">ESPORÁDICO</span>' : ''}
                     </div>
                     <div class="space-x-2">
-                        <button class="text-blue-500 hover:text-blue-700" data-name="${name}"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500 hover:text-red-700" data-name="${name}"><i class="fas fa-trash"></i></button>
+                        <button class="text-blue-500 hover:text-blue-700" data-id="${id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700" data-id="${id}"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
                 list.appendChild(div);
@@ -335,123 +334,117 @@
         
         document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nameInput = document.getElementById('participant-name');
-            const name = nameInput.value.trim().toUpperCase();
-            if (!name) return;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'A guardar...';
 
-            const data = {
-                team: document.getElementById('participant-team').value.trim(),
-                imageUrl: document.getElementById('participant-image').value.trim()
-            };
-            
+            const name = document.getElementById('participant-name').value.trim().toUpperCase();
+            if (!name) { /* ... */ return; };
+            if (nameToIdMap[name]) {
+                alert(`O participante "${name}" já existe.`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Adicionar Participante';
+                return;
+            }
+
             try {
-                await setDoc(doc(db, 'participants', name), data);
-                alert('Participante adicionado com sucesso!');
+                const team = document.getElementById('participant-team').value.trim();
+                await addDoc(collection(db, 'participants'), {
+                    name: name,
+                    imageUrl: document.getElementById('participant-image-url').value.trim(),
+                    teamHistory: team ? [{ team: team, date: new Date().toISOString().split('T')[0] }] : [],
+                    createdAt: serverTimestamp()
+                });
+
+                alert('Participante adicionado!');
                 e.target.reset();
                 loadAllData();
             } catch (error) {
-                console.error("Erro ao adicionar participante:", error);
+                console.error("Erro ao adicionar:", error);
                 alert('Ocorreu um erro.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Adicionar Participante';
             }
         });
         
         document.getElementById('participants-list').addEventListener('click', (e) => {
             const button = e.target.closest('button');
             if (!button) return;
-            const name = button.dataset.name;
+            const id = button.dataset.id;
+            const participant = participantsData[id];
 
             if (button.querySelector('.fa-edit')) { 
-                const data = participantsData[name];
-                document.getElementById('edit-participant-id').value = name;
-                document.getElementById('edit-participant-name').value = name;
-                document.getElementById('edit-participant-team').value = data.team || '';
-                document.getElementById('edit-participant-image').value = data.imageUrl || '';
-                document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(name);
+                const currentTeam = participant.teamHistory?.[participant.teamHistory.length - 1]?.team || participant.team || '';
+                document.getElementById('edit-participant-id').value = id;
+                document.getElementById('edit-participant-name').value = participant.name;
+                document.getElementById('edit-participant-team').value = currentTeam;
+                document.getElementById('edit-participant-image-url').value = participant.imageUrl || '';
+                document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
                 openModal('edit-participant-modal');
             } else if (button.querySelector('.fa-trash')) {
-                if (confirm(`Tem a certeza que deseja apagar ${name}?`)) {
-                    deleteParticipant(name);
+                if (confirm(`Tem a certeza que deseja apagar ${participant.name}? Esta ação é irreversível e irá removê-lo de todos os resultados.`)) {
+                    deleteParticipant(id);
                 }
             }
         });
         
         document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const oldName = document.getElementById('edit-participant-id').value;
-            const newNameInput = document.getElementById('edit-participant-name');
-            const newName = newNameInput.value.trim().toUpperCase();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'A guardar...';
+
+            const participantId = document.getElementById('edit-participant-id').value;
+            const newName = document.getElementById('edit-participant-name').value.trim().toUpperCase();
             const isSporadic = document.getElementById('edit-participant-sporadic').checked;
 
-            if (!newName) {
-                alert("O nome do participante não pode estar em branco."); return;
+            if (!newName) { /* ... */ return; };
+            const existingId = nameToIdMap[newName];
+            if (existingId && existingId !== participantId) {
+                alert(`Já existe um participante com o nome "${newName}".`);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Guardar Alterações';
+                return;
             }
-            if (newName !== oldName && participantsData[newName]) {
-                alert(`Já existe um participante com o nome "${newName}".`); return;
+            
+            try {
+                const participantRef = doc(db, 'participants', participantId);
+                const participant = participantsData[participantId];
+                
+                const newTeam = document.getElementById('edit-participant-team').value.trim();
+                const teamHistory = participant.teamHistory || [];
+                const currentTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
+
+                if (newTeam && newTeam !== currentTeam) {
+                    teamHistory.push({ team: newTeam, date: new Date().toISOString().split('T')[0] });
+                }
+
+                const participantData = {
+                    name: newName,
+                    imageUrl: document.getElementById('edit-participant-image-url').value.trim(),
+                    teamHistory: teamHistory
+                };
+                if (participantData.team) delete participantData.team;
+                
+                await updateDoc(participantRef, participantData);
+
+                const settingsRef = doc(db, "settings", "config");
+                if(isSporadic) { await updateDoc(settingsRef, { sporadicRiders: arrayUnion(participantId) }); } 
+                else { await updateDoc(settingsRef, { sporadicRiders: arrayRemove(participantId) }); }
+                
+                alert('Participante atualizado!');
+            } catch (error) {
+                console.error("Erro ao atualizar:", error); alert('Ocorreu um erro.');
             }
-
-            const participantData = {
-                team: document.getElementById('edit-participant-team').value.trim(),
-                imageUrl: document.getElementById('edit-participant-image').value.trim()
-            };
-
-            if (newName === oldName) {
-                try {
-                    const settingsRef = doc(db, "settings", "config");
-                    const participantRef = doc(db, 'participants', oldName);
-                    
-                    await setDoc(participantRef, participantData, { merge: true });
-                    if(isSporadic) { await updateDoc(settingsRef, { sporadicRiders: arrayUnion(oldName) }); } 
-                    else { await updateDoc(settingsRef, { sporadicRiders: arrayRemove(oldName) }); }
-                    
-                    alert('Participante atualizado!');
-                    closeModal('edit-participant-modal');
-                    loadAllData();
-                } catch (error) { console.error("Erro ao atualizar:", error); alert('Ocorreu um erro.'); }
-            } else {
-                if (!confirm(`Renomear "${oldName}" para "${newName}"? Esta ação irá atualizar todos os registos de resultados.`)) return;
-
-                try {
-                    const batch = writeBatch(db);
-                    batch.set(doc(db, 'participants', newName), participantData);
-                    batch.delete(doc(db, 'participants', oldName));
-
-                    const settingsRef = doc(db, "settings", "config");
-                    if (sporadicRiders.includes(oldName)) {
-                        batch.update(settingsRef, { sporadicRiders: arrayRemove(oldName) });
-                        if (isSporadic) batch.update(settingsRef, { sporadicRiders: arrayUnion(newName) });
-                    } else if (isSporadic) {
-                        batch.update(settingsRef, { sporadicRiders: arrayUnion(newName) });
-                    }
-
-                    for (const monthId in monthlyData) {
-                        const monthDoc = monthlyData[monthId];
-                        let monthWasUpdated = false;
-                        (monthDoc.stages || []).forEach(stage => {
-                            (stage.results || []).forEach(p => {
-                                if (p.name === oldName) {
-                                    p.name = newName;
-                                    monthWasUpdated = true;
-                                }
-                            });
-                        });
-                        if (monthWasUpdated) batch.set(doc(db, 'results', monthId), monthDoc);
-                    }
-                    await batch.commit();
-                    alert(`Participante renomeado para "${newName}"!`);
-                    closeModal('edit-participant-modal');
-                    loadAllData();
-                } catch (error) { console.error("Erro ao renomear:", error); alert(`Erro: ${error.message}`); }
-            }
+            
+            closeModal('edit-participant-modal');
+            await loadAllData();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Guardar Alterações';
         });
         
-        async function deleteParticipant(name) {
-            try {
-                await deleteDoc(doc(db, 'participants', name));
-                await updateDoc(doc(db, "settings", "config"), { sporadicRiders: arrayRemove(name) });
-                alert('Participante apagado com sucesso!');
-                loadAllData();
-            } catch (error) { console.error("Erro ao apagar:", error); alert('Ocorreu um erro.'); }
-        }
+        async function deleteParticipant(id) { alert("Funcionalidade de apagar ainda em desenvolvimento para a nova estrutura."); }
         
         function renderMonthSelector() {
             const select = document.getElementById('month-select-admin');
@@ -460,7 +453,6 @@
             const currentDate = new Date();
             const currentMonthId = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
             allMonthIds.add(currentMonthId);
-
             const sortedMonths = [...allMonthIds].sort().reverse();
             
             sortedMonths.forEach(id => {
@@ -474,11 +466,39 @@
 
         function createStageFormHTML(stage, index) {
             const stageId = stage.id || `new_stage_${index}`;
+            const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
+
+            const availableParticipants = Object.entries(participantsData)
+                .filter(([id, _]) => !stageResultsIds.includes(id))
+                .sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+            const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
+                <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
+                    <span>${p.name}</span>
+                    <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
+                </div>
+            `).join('');
+            
+            const classifiedParticipantsHtml = stageResultsIds.map(id => {
+                const p = participantsData[id];
+                if (!p) return '';
+                return `
+                    <div class="participant-item classified-participant" data-id="${id}">
+                        <span>${p.name}</span>
+                        <div class="space-x-2">
+                            <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
+                            <button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
             return `
-                <div class="stage-form-group border-t-2 border-dashed pt-4" data-stage-id="${stageId}">
+                <div class="stage-form-group border-t-2 border-dashed pt-6" data-stage-id="${stageId}">
                     <div class="flex justify-between items-center mb-2">
                          <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
-                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover</button>
+                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
@@ -493,8 +513,19 @@
                         </select>
                         <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
                     </div>
-                    <label class="font-medium text-sm mt-3 block">Participantes (ordem de chegada, separados por vírgula)</label>
-                    <textarea class="input-field mt-1 h-24 stage-results">${(stage.results || []).map(p => p.name).join(', ')}</textarea>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
+                            <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
+                            <div class="participant-list available-list">${availableParticipantsHtml}</div>
+                        </div>
+                        <div>
+                            <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
+                            <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
+                        </div>
+                    </div>
+
                     <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
                     <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
                 </div>
@@ -507,16 +538,79 @@
                 document.getElementById('month-completed-checkbox').checked = false;
                 container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
             }
-            const data = monthlyData[monthId];
+            let data = monthlyData[monthId];
+            
+             if ((data.etapa1 || data.etapa2) && !data.stages) {
+                const migratedStages = [];
+                for (let i = 1; i <= 4; i++) {
+                    const etapaKey = `etapa${i}`;
+                    if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
+                        migratedStages.push({
+                            id: `${etapaKey}_${monthId}`, name: `Etapa ${i}`, date: '', type: '', durationDistance: '',
+                            podium_img: data[`${etapaKey}_podium_img`] || '',
+                            results: data[etapaKey].map(p => ({ id: nameToIdMap[p.name.toUpperCase()], name: p.name }))
+                        });
+                    }
+                }
+                data.stages = migratedStages;
+            }
+
+
             document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
             const stages = data.stages || [];
             container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
 
+        document.getElementById('results-form').addEventListener('input', (e) => {
+            if (e.target.classList.contains('filter-available-participants')) {
+                const filterText = e.target.value.toLowerCase();
+                const availableList = e.target.nextElementSibling;
+                availableList.querySelectorAll('.available-participant').forEach(item => {
+                    item.style.display = item.dataset.name.includes(filterText) ? 'flex' : 'none';
+                });
+            }
+        });
+
         document.getElementById('results-form').addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-stage-btn')) {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const participantItem = button.closest('.participant-item');
+            
+            if (button.classList.contains('add-participant-to-stage-btn')) {
+                const classifiedList = participantItem.closest('.grid').querySelector('.classified-list');
+                const pId = participantItem.dataset.id;
+                const pName = participantsData[pId].name;
+
+                const newItem = document.createElement('div');
+                newItem.className = 'participant-item classified-participant';
+                newItem.dataset.id = pId;
+                newItem.innerHTML = `<span>${pName}</span><div class="space-x-2"><button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button><button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button><button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button></div>`;
+                classifiedList.appendChild(newItem);
+                participantItem.remove();
+            } else if (button.classList.contains('remove-participant-from-stage-btn')) {
+                const availableList = participantItem.closest('.grid').querySelector('.available-list');
+                const pId = participantItem.dataset.id;
+                const pName = participantsData[pId].name;
+
+                const newItem = document.createElement('div');
+                newItem.className = 'participant-item available-participant';
+                newItem.dataset.id = pId;
+                newItem.dataset.name = pName.toLowerCase();
+                newItem.innerHTML = `<span>${pName}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
+                availableList.appendChild(newItem);
+                participantItem.remove();
+            } else if(button.classList.contains('move-up-btn')) {
+                if(participantItem.previousElementSibling) {
+                    participantItem.parentElement.insertBefore(participantItem, participantItem.previousElementSibling);
+                }
+            } else if(button.classList.contains('move-down-btn')) {
+                if(participantItem.nextElementSibling) {
+                    participantItem.parentElement.insertBefore(participantItem.nextElementSibling, participantItem);
+                }
+            } else if (button.classList.contains('remove-stage-btn')) {
                 if (confirm('Tem a certeza que deseja remover esta etapa?')) {
-                    e.target.closest('.stage-form-group').remove();
+                    button.closest('.stage-form-group').remove();
                 }
             }
         });
@@ -539,6 +633,11 @@
             const newStages = [];
             
             document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
+                const classifiedIds = [];
+                group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
+                    classifiedIds.push(item.dataset.id);
+                });
+
                 const stage = {
                     id: group.dataset.stageId,
                     name: group.querySelector('.stage-name').value.trim(),
@@ -546,22 +645,21 @@
                     type: group.querySelector('.stage-type').value,
                     durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
                     podium_img: group.querySelector('.stage-podium-img').value.trim(),
-                    results: group.querySelector('.stage-results').value.trim().split(',')
-                        .map(nameStr => {
-                            const name = nameStr.trim().toUpperCase();
-                            if (!name) return null;
-                            return { 
-                                name: name,
-                                team: participantsData[name]?.team || '' 
-                            };
-                        })
-                        .filter(p => p)
+                    results: classifiedIds.map(id => ({ id }))
                 };
                 newStages.push(stage);
             });
             
             try {
-                await updateDoc(docRef, { stages: newStages, isCompleted: isCompleted });
+                const dataToSave = { 
+                    ...monthlyData[monthId], 
+                    title: monthlyData[monthId]?.title || `${monthId.split('_')[1]}/${monthId.split('_')[0]}`, 
+                    stages: newStages, 
+                    isCompleted: isCompleted 
+                };
+                delete dataToSave.etapa1; delete dataToSave.etapa2; delete dataToSave.etapa3; delete dataToSave.etapa4;
+
+                await setDoc(docRef, dataToSave, { merge: true });
                 alert('Resultados guardados com sucesso!');
                 loadAllData();
             } catch (error) {

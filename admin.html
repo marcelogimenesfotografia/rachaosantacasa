@@ -178,6 +178,31 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal para Opções de Exclusão -->
+    <div id="delete-options-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+        <div class="card w-full max-w-lg">
+            <h2 class="text-xl font-bold mb-2">Como deseja remover <span id="delete-participant-name" class="text-yellow-600"></span>?</h2>
+            <p class="text-gray-600 mb-6">Pode desativar o participante para o remover das listas, mas manter o seu histórico, ou excluí-lo permanentemente.</p>
+            
+            <div class="space-y-4">
+                <div class="p-4 border rounded-lg">
+                    <h3 class="font-semibold">Desativar Participante (Recomendado)</h3>
+                    <p class="text-sm text-gray-500 mb-3">O participante será removido das listas de seleção, mas o seu nome e resultados históricos continuarão a aparecer nas classificações antigas.</p>
+                    <button id="deactivate-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white w-full">Desativar</button>
+                </div>
+                <div class="p-4 border rounded-lg border-red-200 bg-red-50">
+                     <h3 class="font-semibold text-red-700">Excluir Permanente</h3>
+                    <p class="text-sm text-gray-500 mb-3">O participante e todo o seu histórico de resultados serão apagados para sempre. Esta ação não pode ser desfeita.</p>
+                    <button id="hard-delete-btn" class="btn bg-red-600 hover:bg-red-700 text-white w-full">Excluir Permanente</button>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                 <button id="cancel-delete-options-btn" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -375,9 +400,9 @@
             const button = e.target.closest('button');
             if (!button) return;
             const id = button.dataset.id;
-            const participant = participantsData[id];
-
+            
             if (button.querySelector('.fa-edit')) { 
+                const participant = participantsData[id];
                 const currentTeam = participant.teamHistory?.[participant.teamHistory.length - 1]?.team || participant.team || '';
                 document.getElementById('edit-participant-id').value = id;
                 document.getElementById('edit-participant-name').value = participant.name;
@@ -386,7 +411,7 @@
                 document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
                 openModal('edit-participant-modal');
             } else if (button.querySelector('.fa-trash')) {
-                deleteParticipant(id);
+                openDeleteOptionsModal(id);
             }
         });
         
@@ -444,65 +469,81 @@
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'Guardar Alterações';
         });
-        
-        async function deleteParticipant(id) {
-             if (!id) return;
-            const participantName = participantsData[id]?.name || 'Este participante';
-        
-            if (confirm(`Deseja remover "${participantName}" da lista de participantes ativos? O seu histórico será mantido.`)) {
-                if (confirm(`CONFIRMAÇÃO FINAL: Deseja apagar PERMANENTEMENTE "${participantName}" e TODO o seu histórico de resultados? Esta ação é irreversível.\n\nClique em 'OK' para apagar tudo.\nClique em 'Cancelar' para apenas desativá-lo (recomendado).`)) {
-                    // HARD DELETE
-                     const submitBtn = document.querySelector(`button[data-id="${id}"] i.fa-trash`).closest('button');
-                    if(submitBtn) submitBtn.disabled = true;
-                    try {
-                        const batch = writeBatch(db);
-                        batch.delete(doc(db, 'participants', id));
-                        batch.update(doc(db, "settings", "config"), { sporadicRiders: arrayRemove(id) });
-                        for (const monthId in monthlyData) {
-                            const monthDoc = JSON.parse(JSON.stringify(monthlyData[monthId])); 
-                            let monthWasUpdated = false;
-                            
-                            const stages = monthDoc.stages || [];
-                            if (stages.length > 0) {
-                                 stages.forEach(stage => {
-                                    const originalCount = stage.results?.length || 0;
-                                    if(stage.results) {
-                                        stage.results = stage.results.filter(p => (p.id || nameToIdMap[p.name?.toUpperCase()]) !== id);
-                                        if (stage.results.length < originalCount) monthWasUpdated = true;
-                                    }
-                                });
-                            } else { 
-                                for(let i = 1; i <= 4; i++) {
-                                    const etapaKey = `etapa${i}`;
-                                    if(monthDoc[etapaKey]) {
-                                       const originalCount = monthDoc[etapaKey].length;
-                                       monthDoc[etapaKey] = monthDoc[etapaKey].filter(p => (p.id || nameToIdMap[p.name.toUpperCase()]) !== id);
-                                       if(monthDoc[etapaKey].length < originalCount) monthWasUpdated = true;
-                                    }
-                                }
-                            }
-                            if (monthWasUpdated) batch.set(doc(db, 'results', monthId), monthDoc);
-                        }
-                        await batch.commit();
-                        alert(`Participante "${participantName}" e todo o seu histórico foram apagados com sucesso!`);
-                    } catch (error) {
-                        console.error("Erro ao apagar participante:", error);
-                        alert(`Ocorreu um erro ao apagar o participante. Detalhe: ${error.message}`);
-                    } finally {
-                         if(submitBtn) submitBtn.disabled = false;
-                    }
 
-                } else {
-                    // SOFT DELETE (Deactivate)
-                    try {
-                        await updateDoc(doc(db, 'participants', id), { isActive: false });
-                        alert(`Participante "${participantName}" foi desativado. O seu nome não aparecerá mais nas listas, mas o seu histórico foi mantido.`);
-                    } catch (error) {
-                        console.error("Erro ao desativar participante:", error);
-                        alert('Ocorreu um erro ao desativar o participante.');
+        function openDeleteOptionsModal(id) {
+            const participantName = participantsData[id]?.name;
+            if (!participantName) return;
+
+            document.getElementById('delete-participant-name').textContent = participantName;
+            
+            const deactivateBtn = document.getElementById('deactivate-btn');
+            const hardDeleteBtn = document.getElementById('hard-delete-btn');
+            const cancelBtn = document.getElementById('cancel-delete-options-btn');
+
+            deactivateBtn.onclick = () => deactivateParticipant(id);
+            hardDeleteBtn.onclick = () => hardDeleteParticipant(id);
+            cancelBtn.onclick = () => closeModal('delete-options-modal');
+            
+            openModal('delete-options-modal');
+        }
+
+        async function deactivateParticipant(id) {
+            const participantName = participantsData[id]?.name;
+            try {
+                await updateDoc(doc(db, 'participants', id), { isActive: false });
+                alert(`Participante "${participantName}" foi desativado com sucesso.`);
+            } catch (error) {
+                console.error("Erro ao desativar participante:", error);
+                alert('Ocorreu um erro ao desativar o participante.');
+            } finally {
+                closeModal('delete-options-modal');
+                loadAllData();
+            }
+        }
+
+        async function hardDeleteParticipant(id) {
+            const participantName = participantsData[id]?.name;
+            if (!confirm(`CONFIRMAÇÃO FINAL: Deseja apagar PERMANENTEMENTE "${participantName}" e TODO o seu histórico de resultados? Esta ação é irreversível.`)) {
+                return;
+            }
+            
+            try {
+                const batch = writeBatch(db);
+                batch.delete(doc(db, 'participants', id));
+                batch.update(doc(db, "settings", "config"), { sporadicRiders: arrayRemove(id) });
+                for (const monthId in monthlyData) {
+                    const monthDoc = JSON.parse(JSON.stringify(monthlyData[monthId])); 
+                    let monthWasUpdated = false;
+                    
+                    const stages = monthDoc.stages || [];
+                    if (stages.length > 0) {
+                         stages.forEach(stage => {
+                            const originalCount = stage.results?.length || 0;
+                            if(stage.results) {
+                                stage.results = stage.results.filter(p => (p.id || nameToIdMap[p.name?.toUpperCase()]) !== id);
+                                if (stage.results.length < originalCount) monthWasUpdated = true;
+                            }
+                        });
+                    } else { 
+                        for(let i = 1; i <= 4; i++) {
+                            const etapaKey = `etapa${i}`;
+                            if(monthDoc[etapaKey]) {
+                               const originalCount = monthDoc[etapaKey].length;
+                               monthDoc[etapaKey] = monthDoc[etapaKey].filter(p => (p.id || nameToIdMap[p.name.toUpperCase()]) !== id);
+                               if(monthDoc[etapaKey].length < originalCount) monthWasUpdated = true;
+                            }
+                        }
                     }
+                    if (monthWasUpdated) batch.set(doc(db, 'results', monthId), monthDoc);
                 }
-                await loadAllData();
+                await batch.commit();
+                alert(`Participante "${participantName}" e todo o seu histórico foram apagados com sucesso!`);
+            } catch (error) {
+                console.error("Erro ao apagar participante:", error);
+                alert(`Ocorreu um erro ao apagar o participante. Detalhe: ${error.message}`);
+            } finally {
+                 closeModal('delete-options-modal');
+                 loadAllData();
             }
         }
         
@@ -619,7 +660,7 @@
             const stages = data.stages || [];
             container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
-        
+
         function getThursdays(year, month) {
             const thursdays = [];
             const date = new Date(year, month - 1, 1);

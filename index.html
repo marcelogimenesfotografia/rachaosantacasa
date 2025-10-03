@@ -201,6 +201,7 @@
         let sporadicRiders = [];
         let allParticipantsData = [];
         let currentTab = 'tab-geral';
+        let imageBaseUrl = '';
 
         function getPlaceholderImageUrl(name) {
             const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
@@ -210,7 +211,7 @@
         function getTeamForDate(participantData, dateStr = null) {
             const history = participantData.teamHistory || [];
             if (!history.length) {
-                return participantData.team || ''; // Fallback for very old data structure
+                return participantData.team || ''; 
             }
 
             const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -284,7 +285,8 @@
             return overallData.map(p => {
                 const info = participantsData[p.id] || { name: 'Desconhecido' };
                 const team = getTeamForDate(info);
-                return { ...p, ...info, team, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
+                const imageUrl = info.imageUrl ? `${imageBaseUrl}${info.imageUrl}` : getPlaceholderImageUrl(info.name);
+                return { ...p, ...info, team, image: imageUrl };
             });
         }
         
@@ -338,7 +340,8 @@
                     const processed = (monthData.stages[stageIndex]?.results || []).find(proc => (proc.id || nameToIdMap[proc.name.toUpperCase()]) === participantId);
                     const info = participantsData[participantId] || { name: p.name };
                     const team = getTeamForDate(info, stageInfo.date);
-                    return { ...p, id: participantId, pos: index + 1, pts: processed ? processed.pts : 0, ...info, team, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
+                    const imageUrl = info.imageUrl ? `${imageBaseUrl}${info.imageUrl}` : getPlaceholderImageUrl(info.name);
+                    return { ...p, id: participantId, pos: index + 1, pts: processed ? processed.pts : 0, ...info, team, image: imageUrl };
                 });
                 dataToShow = stageData;
             }
@@ -550,6 +553,102 @@
             document.getElementById('cancel-delete-btn').addEventListener('click', () => closeModal('delete-confirmation-modal'));
         }
 
+        window.toggleLike = async function(stageId) {
+            if (!userId) return;
+            const likeRef = doc(db, 'likes', stageId);
+            try {
+                await runTransaction(db, async (t) => {
+                    const docSnap = await t.get(likeRef);
+                    let { count = 0, likedBy = [] } = docSnap.data() || {};
+                    if (likedBy.includes(userId)) {
+                        count = Math.max(0, count - 1);
+                        likedBy = likedBy.filter(id => id !== userId);
+                    } else {
+                        count++;
+                        likedBy.push(userId);
+                    }
+                    t.set(likeRef, { count, likedBy });
+                });
+            } catch (e) { console.error("Erro na transação de like:", e); }
+        }
+
+        window.handleCommentSubmit = async function(event, stageId) {
+            event.preventDefault();
+            const { name, comment } = event.target.elements;
+            if (!name.value.trim() || !comment.value.trim() || !userId) return;
+            localStorage.setItem('commenterName', name.value);
+            try {
+                await addDoc(collection(db, 'comments'), { stageId, name: name.value, text: comment.value, likes: 0, likedBy: [], timestamp: serverTimestamp(), authorId: userId });
+                comment.value = '';
+            } catch (error) { console.error("Erro ao adicionar comentário:", error); }
+        }
+        
+        window.toggleCommentLike = async function(commentId) {
+             if (!userId) return;
+            const commentRef = doc(db, 'comments', commentId);
+            try {
+                await runTransaction(db, async (t) => {
+                    const docSnap = await t.get(commentRef);
+                    if (!docSnap.exists()) return;
+                    let { likes = 0, likedBy = [] } = docSnap.data();
+                    if (likedBy.includes(userId)) {
+                        likes = Math.max(0, likes - 1);
+                        likedBy = likedBy.filter(id => id !== userId);
+                    } else {
+                        likes++;
+                        likedBy.push(userId);
+                    }
+                    t.update(commentRef, { likes, likedBy });
+                });
+            } catch (e) { console.error("Erro ao curtir comentário:", e); }
+        }
+
+        window.toggleReplyForm = function(commentId) {
+            document.getElementById(`reply-form-container-${commentId}`).classList.toggle('hidden');
+        }
+
+        window.handleReplySubmit = async function(event, commentId) {
+            event.preventDefault();
+            const { name, reply } = event.target.elements;
+            if (!name.value.trim() || !reply.value.trim() || !userId) return;
+            localStorage.setItem('commenterName', name.value);
+            try {
+                await addDoc(collection(db, `comments/${commentId}/replies`), { name: name.value, text: reply.value, timestamp: serverTimestamp(), authorId: userId });
+                reply.value = '';
+                toggleReplyForm(commentId);
+                loadReplies(commentId);
+            } catch (error) { console.error("Erro ao adicionar resposta:", error); }
+        }
+        
+        window.showDeleteConfirmation = function(type, id1, id2 = null) {
+            const modal = document.getElementById('delete-confirmation-modal');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            confirmBtn.onclick = () => {
+                if (type === 'comment') deleteComment(id1);
+                else if (type === 'reply') deleteReply(id1, id2);
+            };
+            modal.classList.add('is-open');
+        }
+
+        async function deleteComment(commentId) {
+            try {
+                const repliesSnapshot = await getDocs(collection(db, `comments/${commentId}/replies`));
+                const batch = writeBatch(db);
+                repliesSnapshot.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                await deleteDoc(doc(db, 'comments', commentId));
+            } catch (error) { console.error("Erro ao apagar comentário:", error); }
+            finally { closeModal('delete-confirmation-modal'); }
+        }
+
+        async function deleteReply(commentId, replyId) {
+            try {
+                await deleteDoc(doc(db, `comments/${commentId}/replies`, replyId));
+                loadReplies(commentId);
+            } catch (error) { console.error("Erro ao apagar resposta:", error); }
+            finally { closeModal('delete-confirmation-modal'); }
+        }
+        
         async function setupDataListeners() {
             if (!userId) return;
             const reRender = () => {
@@ -617,7 +716,9 @@
                 });
                 
                 if (settingsSnap.exists()) {
-                    sporadicRiders = settingsSnap.data().sporadicRiders || [];
+                    const settings = settingsSnap.data();
+                    sporadicRiders = settings.sporadicRiders || [];
+                    imageBaseUrl = settings.imageBaseUrl || '';
                 }
                 
                 const monthSelect = document.getElementById('month-select');

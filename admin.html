@@ -120,7 +120,13 @@
             <!-- Coluna da Direita: Resultados -->
             <div class="lg:col-span-2">
                 <div class="card">
-                    <h2 class="text-xl font-bold mb-4">Gerir Resultados</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Gerir Resultados</h2>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                            <span class="font-medium">Mês Concluído (exibir pódio)</span>
+                        </label>
+                    </div>
                     <div class="flex flex-wrap gap-4 items-center mb-6">
                         <select id="month-select-admin" class="input-field flex-grow"></select>
                         <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
@@ -132,12 +138,6 @@
                     <div class="mt-6 border-t pt-6">
                          <button id="add-stage-btn" class="btn btn-secondary w-full mb-4">Adicionar Nova Etapa</button>
                          <div class="space-y-4 my-4">
-                             <div>
-                                 <label class="flex items-center gap-2 cursor-pointer">
-                                     <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                                     <span class="font-medium">Mês Concluído (exibir pódio)</span>
-                                 </label>
-                             </div>
                              <div>
                                  <label for="geral_podium_img" class="font-medium text-sm">URL da Foto da Classificação Geral</label>
                                  <input type="url" id="geral_podium_img" class="input-field mt-1" placeholder="https://...">
@@ -184,7 +184,7 @@
             </form>
         </div>
     </div>
-
+    
     <!-- Modal para Opções de Exclusão -->
     <div id="delete-options-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
         <div class="card w-full max-w-lg">
@@ -449,7 +449,12 @@
                 const currentTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
 
                 if (newTeam && newTeam !== currentTeam) {
-                    teamHistory.push({ team: newTeam, date: new Date().toISOString().split('T')[0] });
+                    const action = confirm(`Deseja atualizar todo o histórico com esta nova equipa?\n\n- Clique "OK" para alterar em todos os registos (Corrigir Erro).\n- Clique "Cancelar" para aplicar esta equipa apenas a partir de hoje (Transferência).`);
+                    if (action) { // Corrigir
+                        teamHistory.forEach(h => h.team = newTeam);
+                    } else { // Transferir
+                        teamHistory.push({ team: newTeam, date: new Date().toISOString().split('T')[0] });
+                    }
                 }
 
                 const participantData = {
@@ -638,7 +643,7 @@
                 </div>
             `;
         }
-        
+
         function renderResultsForm(monthId) {
             const container = document.getElementById('results-form');
             if (!monthId || !monthlyData[monthId]) {

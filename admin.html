@@ -108,7 +108,11 @@
                     <form id="add-participant-form" class="space-y-3 mb-6">
                         <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
                         <select id="participant-team" class="input-field"></select>
-                        <input id="participant-image-url" type="url" placeholder="URL da Foto" class="input-field">
+                        <div>
+                            <label for="participant-image-filename" class="font-medium text-sm">Nome do Ficheiro da Foto</label>
+                            <input id="participant-image-filename" type="text" placeholder="ex: joao.jpg" class="input-field mt-1">
+                            <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta 'fotosparticipantes'.</p>
+                        </div>
                         <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
                     </form>
                     <div id="participants-list" class="space-y-2">
@@ -168,8 +172,9 @@
                     <select id="edit-participant-team" class="input-field mt-1"></select>
                 </div>
                 <div>
-                    <label for="edit-participant-image-url" class="font-medium">URL da Foto</label>
-                    <input id="edit-participant-image-url" type="url" class="input-field mt-1">
+                    <label for="edit-participant-image-filename" class="font-medium">Nome do Ficheiro da Foto</label>
+                    <input id="edit-participant-image-filename" type="text" class="input-field mt-1" placeholder="ex: joao.jpg">
+                     <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta 'fotosparticipantes'.</p>
                 </div>
                 <div class="pt-2">
                     <label class="flex items-center gap-2">
@@ -223,6 +228,7 @@
             messagingSenderId: "28309536958",
             appId: "1:28309536958:web:eac51586cdabd82f691eef"
         };
+        const IMAGE_BASE_PATH = 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosparticipantes/';
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -382,9 +388,12 @@
 
             try {
                 const team = document.getElementById('participant-team').value.trim();
+                const imageName = document.getElementById('participant-image-filename').value.trim();
+                const imageUrl = imageName ? `${IMAGE_BASE_PATH}${imageName}` : '';
+
                 await addDoc(collection(db, 'participants'), {
                     name: name,
-                    imageUrl: document.getElementById('participant-image-url').value.trim(),
+                    imageUrl: imageUrl,
                     teamHistory: team ? [{ team: team, date: new Date().toISOString().split('T')[0] }] : [],
                     createdAt: serverTimestamp(),
                     isActive: true
@@ -413,7 +422,11 @@
                 document.getElementById('edit-participant-id').value = id;
                 document.getElementById('edit-participant-name').value = participant.name;
                 document.getElementById('edit-participant-team').value = currentTeam;
-                document.getElementById('edit-participant-image-url').value = participant.imageUrl || '';
+                
+                const imageUrl = participant.imageUrl || '';
+                const filename = imageUrl.split('/').pop();
+                document.getElementById('edit-participant-image-filename').value = filename;
+                
                 document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
                 openModal('edit-participant-modal');
             } else if (button.querySelector('.fa-trash')) {
@@ -456,10 +469,13 @@
                         teamHistory.push({ team: newTeam, date: new Date().toISOString().split('T')[0] });
                     }
                 }
+                
+                const imageName = document.getElementById('edit-participant-image-filename').value.trim();
+                const imageUrl = imageName ? `${IMAGE_BASE_PATH}${imageName}` : '';
 
                 const participantData = {
                     name: newName,
-                    imageUrl: document.getElementById('edit-participant-image-url').value.trim(),
+                    imageUrl: imageUrl,
                     teamHistory: teamHistory
                 };
                 if (participantData.team) delete participantData.team;
@@ -643,7 +659,7 @@
                 </div>
             `;
         }
-
+        
         function renderResultsForm(monthId) {
             const container = document.getElementById('results-form');
             if (!monthId || !monthlyData[monthId]) {

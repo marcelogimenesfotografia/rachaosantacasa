@@ -206,6 +206,30 @@
             const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
             return `https://placehold.co/200x200/e5e7eb/000000?text=${firstLetter}`;
         }
+        
+        function getTeamForDate(participantData, dateStr = null) {
+            const history = participantData.teamHistory || [];
+            if (!history.length) {
+                return participantData.team || ''; // Fallback for very old data structure
+            }
+
+            const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (!dateStr) {
+                return sortedHistory[sortedHistory.length - 1].team;
+            }
+
+            const competitionDate = new Date(dateStr + 'T00:00:00');
+            let teamForDate = sortedHistory[0].team; 
+            for (const entry of sortedHistory) {
+                if (new Date(entry.date) <= competitionDate) {
+                    teamForDate = entry.team;
+                } else {
+                    break;
+                }
+            }
+            return teamForDate;
+        }
 
         function processStageData(stageData) {
             if (!stageData) return [];
@@ -259,7 +283,8 @@
         function getParticipantData(overallData) {
             return overallData.map(p => {
                 const info = participantsData[p.id] || { name: 'Desconhecido' };
-                return { ...p, ...info, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
+                const team = getTeamForDate(info);
+                return { ...p, ...info, team, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
             });
         }
         
@@ -307,11 +332,13 @@
                 dataToShow = allParticipantsData;
             } else {
                 const stageIndex = parseInt(tab.replace('tab-stage-', ''));
-                const stageData = (originalMonthData.stages[stageIndex]?.results || []).map((p, index) => {
+                const stageInfo = originalMonthData.stages[stageIndex];
+                const stageData = (stageInfo?.results || []).map((p, index) => {
                     const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
                     const processed = (monthData.stages[stageIndex]?.results || []).find(proc => (proc.id || nameToIdMap[proc.name.toUpperCase()]) === participantId);
                     const info = participantsData[participantId] || { name: p.name };
-                    return { ...p, id: participantId, pos: index + 1, pts: processed ? processed.pts : 0, ...info, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
+                    const team = getTeamForDate(info, stageInfo.date);
+                    return { ...p, id: participantId, pos: index + 1, pts: processed ? processed.pts : 0, ...info, team, image: info.imageUrl || getPlaceholderImageUrl(info.name) };
                 });
                 dataToShow = stageData;
             }
@@ -370,7 +397,8 @@
             const tableStartIndex = (isOverall && data.length >= 3 && (monthData.isCompleted || false)) ? 3 : 0;
             card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
 
-            const podiumImageUrl = currentStage?.podium_img;
+            const podiumImageUrl = isOverall ? monthData.geral_podium_img : currentStage?.podium_img;
+            
             if(podiumImageUrl) {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';

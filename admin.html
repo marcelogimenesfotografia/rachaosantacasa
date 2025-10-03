@@ -101,8 +101,8 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Coluna da Esquerda: Participantes -->
-            <div class="lg:col-span-1">
+            <!-- Coluna da Esquerda: Participantes e Configurações -->
+            <div class="lg:col-span-1 space-y-8">
                 <div class="card">
                     <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
                     <form id="add-participant-form" class="space-y-3 mb-6">
@@ -117,6 +117,17 @@
                     </form>
                     <div id="participants-list" class="space-y-2">
                         <!-- Lista de participantes será preenchida aqui -->
+                    </div>
+                </div>
+                 <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Configurações Gerais</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="image-base-url" class="font-medium text-sm">URL Base das Imagens</label>
+                            <input id="image-base-url" type="url" placeholder="https://..." class="input-field mt-1">
+                            <p class="text-xs text-gray-500 mt-1">Caminho da pasta onde as fotos estão guardadas.</p>
+                        </div>
+                        <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
                     </div>
                 </div>
             </div>
@@ -228,7 +239,6 @@
             messagingSenderId: "28309536958",
             appId: "1:28309536958:web:eac51586cdabd82f691eef"
         };
-        const IMAGE_BASE_PATH = 'https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/main/fotosparticipantes/';
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -239,6 +249,7 @@
         let monthlyData = {};
         let sporadicRiders = [];
         let allTeams = new Set();
+        let imageBaseUrl = '';
 
         const loginSection = document.getElementById('login-section');
         const dashboardSection = document.getElementById('dashboard-section');
@@ -294,7 +305,12 @@
                     monthlyData[doc.id] = doc.data();
                 });
 
-                sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
+                if (settingsSnap.exists()) {
+                    const settings = settingsSnap.data();
+                    sporadicRiders = settings.sporadicRiders || [];
+                    imageBaseUrl = settings.imageBaseUrl || '';
+                    document.getElementById('image-base-url').value = imageBaseUrl;
+                }
                 
                 allTeams.clear();
                 Object.values(participantsData).forEach(p => {
@@ -389,11 +405,10 @@
             try {
                 const team = document.getElementById('participant-team').value.trim();
                 const imageName = document.getElementById('participant-image-filename').value.trim();
-                const imageUrl = imageName ? `${IMAGE_BASE_PATH}${imageName}` : '';
 
                 await addDoc(collection(db, 'participants'), {
                     name: name,
-                    imageUrl: imageUrl,
+                    imageUrl: imageName,
                     teamHistory: team ? [{ team: team, date: new Date().toISOString().split('T')[0] }] : [],
                     createdAt: serverTimestamp(),
                     isActive: true
@@ -422,11 +437,7 @@
                 document.getElementById('edit-participant-id').value = id;
                 document.getElementById('edit-participant-name').value = participant.name;
                 document.getElementById('edit-participant-team').value = currentTeam;
-                
-                const imageUrl = participant.imageUrl || '';
-                const filename = imageUrl.split('/').pop();
-                document.getElementById('edit-participant-image-filename').value = filename;
-                
+                document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
                 document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
                 openModal('edit-participant-modal');
             } else if (button.querySelector('.fa-trash')) {
@@ -471,11 +482,10 @@
                 }
                 
                 const imageName = document.getElementById('edit-participant-image-filename').value.trim();
-                const imageUrl = imageName ? `${IMAGE_BASE_PATH}${imageName}` : '';
 
                 const participantData = {
                     name: newName,
-                    imageUrl: imageUrl,
+                    imageUrl: imageName,
                     teamHistory: teamHistory
                 };
                 if (participantData.team) delete participantData.team;

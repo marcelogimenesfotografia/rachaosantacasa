@@ -124,7 +124,7 @@
                 </div>
 
                 <div id="stats-container" class="card hidden">
-                    <h2 class="text-2xl font-bold text-center mb-6">Favoritos da Galera (1º Lugar)</h2>
+                    <h2 class="text-2xl font-bold text-center mb-6">Estatísticas de Palpites da Etapa</h2>
                     <div id="stats-content" class="space-y-4">
                         <!-- Stats bars will be injected here -->
                     </div>
@@ -321,29 +321,46 @@
             }
 
             statsContainer.style.display = 'block';
-            const firstPlaceVotes = {};
+            const votesByPosition = { '1': {}, '2': {}, '3': {}, '4': {}, '5': {} };
+            const positionKeys = { '1': 'firstPlace', '2': 'secondPlace', '3': 'thirdPlace', '4': 'fourthPlace', '5': 'fifthPlace' };
+
             allStageBets.forEach(bet => {
-                firstPlaceVotes[bet.firstPlace] = (firstPlaceVotes[bet.firstPlace] || 0) + 1;
+                for (const position in positionKeys) {
+                    const participantId = bet[positionKeys[position]];
+                    if (participantId) {
+                        votesByPosition[position][participantId] = (votesByPosition[position][participantId] || 0) + 1;
+                    }
+                }
             });
+            
+            for (const position in votesByPosition) {
+                const votes = votesByPosition[position];
+                if (Object.keys(votes).length === 0) continue;
 
-            const sortedVotes = Object.entries(firstPlaceVotes).sort((a,b) => b[1] - a[1]);
+                const positionTitle = document.createElement('h3');
+                positionTitle.className = 'text-xl font-bold text-center mt-6 mb-4 border-t pt-4 first:mt-0 first:border-t-0';
+                positionTitle.textContent = `Mais Votados para ${position}º Lugar`;
+                statsContent.appendChild(positionTitle);
 
-            sortedVotes.forEach(([participantId, count]) => {
-                const percentage = ((count / allStageBets.length) * 100).toFixed(1);
-                const participantName = participantsData[participantId]?.name || 'Desconhecido';
-                const barHtml = `
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-semibold">${participantName}</span>
-                            <span class="text-sm font-bold text-gray-600">${percentage}%</span>
+                const sortedVotes = Object.entries(votes).sort((a,b) => b[1] - a[1]);
+
+                sortedVotes.forEach(([participantId, count]) => {
+                    const percentage = ((count / allStageBets.length) * 100).toFixed(1);
+                    const participantName = participantsData[participantId]?.name || 'Desconhecido';
+                    const barHtml = `
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-semibold">${participantName}</span>
+                                <span class="text-sm font-bold text-gray-600">${count} Voto(s) - ${percentage}%</span>
+                            </div>
+                            <div class="stat-bar-bg w-full h-4">
+                                <div class="stat-bar" style="width: ${percentage}%;"></div>
+                            </div>
                         </div>
-                        <div class="stat-bar-bg w-full h-4">
-                            <div class="stat-bar" style="width: ${percentage}%;"></div>
-                        </div>
-                    </div>
-                `;
-                statsContent.innerHTML += barHtml;
-            });
+                    `;
+                    statsContent.insertAdjacentHTML('beforeend', barHtml);
+                });
+            }
         }
 
         function editBet() {

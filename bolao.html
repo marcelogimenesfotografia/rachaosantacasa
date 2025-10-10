@@ -43,6 +43,19 @@
         }
         .btn-primary { background-color: var(--accent-color); color: white; }
         .btn-primary:hover:not(:disabled) { background-color: #d99f07; }
+        .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
+        .btn-secondary:hover { background-color: #d1d5db; }
+        .stat-bar-bg {
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .stat-bar {
+            background-color: var(--accent-color);
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -101,13 +114,22 @@
 
                         <div id="user-bet-display" class="hidden text-center">
                             <h3 class="font-bold text-lg">O seu palpite para esta etapa:</h3>
-                            <p id="user-bet-text" class="text-gray-600"></p>
+                            <p id="user-bet-text" class="text-gray-600 mb-4"></p>
+                            <button id="edit-bet-btn" class="btn btn-secondary">Editar Palpite</button>
                         </div>
                          <div id="no-stages-message" class="hidden text-center text-gray-500 py-8">
                             <p>De momento, não há etapas futuras disponíveis para palpites.</p>
                         </div>
                     </div>
                 </div>
+
+                <div id="stats-container" class="card hidden">
+                    <h2 class="text-2xl font-bold text-center mb-6">Favoritos da Galera (1º Lugar)</h2>
+                    <div id="stats-content" class="space-y-4">
+                        <!-- Stats bars will be injected here -->
+                    </div>
+                </div>
+
             </div>
         </main>
     
@@ -125,7 +147,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, doc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -144,6 +166,7 @@
         let userId = null;
         let participantsData = {};
         let upcomingStages = [];
+        let allStageBets = [];
 
         async function initializeAppLogica() {
             onAuthStateChanged(auth, async (user) => {
@@ -195,7 +218,7 @@
             }
         }
 
-        function renderBolao() {
+        async function renderBolao() {
             const loadingOverlay = document.getElementById('loading-overlay');
             const bolaoContainer = document.getElementById('bolao-container');
             const stageSelect = document.getElementById('stage-select');
@@ -217,11 +240,12 @@
             });
             
             populateParticipantSelects();
-            loadUserBetForSelectedStage();
+            await loadBetsAndRenderStats();
             
-            stageSelect.addEventListener('change', loadUserBetForSelectedStage);
+            stageSelect.addEventListener('change', loadBetsAndRenderStats);
             betForm.addEventListener('submit', saveBet);
             document.querySelectorAll('.participant-select').forEach(sel => sel.addEventListener('change', handleDuplicateSelection));
+            document.getElementById('edit-bet-btn').addEventListener('click', editBet);
         }
 
         function populateParticipantSelects() {
@@ -250,35 +274,91 @@
             });
         }
 
-        async function loadUserBetForSelectedStage() {
+        async function loadBetsAndRenderStats() {
             const stageId = document.getElementById('stage-select').value;
-            if (!stageId || !userId) return;
+            if (!stageId) return;
 
+            const betsQuery = query(collection(db, "bolao_bets"), where("stageId", "==", stageId));
+            const betsSnapshot = await getDocs(betsQuery);
+            allStageBets = [];
+            betsSnapshot.forEach(doc => {
+                allStageBets.push({ id: doc.id, ...doc.data() });
+            });
+
+            renderUserBetStatus();
+            renderBetStats();
+        }
+
+        function renderUserBetStatus() {
             const betForm = document.getElementById('bet-form');
             const userBetDisplay = document.getElementById('user-bet-display');
-            
-            const betRef = doc(db, 'bolao_bets', `${stageId}_${userId}`);
-            const betSnap = await getDoc(betRef);
+            const userBet = allStageBets.find(b => b.userId === userId);
 
-            if (betSnap.exists()) {
-                const bet = betSnap.data();
-                const first = participantsData[bet.firstPlace]?.name || 'N/A';
-                const second = participantsData[bet.secondPlace]?.name || 'N/A';
-                const third = participantsData[bet.thirdPlace]?.name || 'N/A';
-                const fourth = participantsData[bet.fourthPlace]?.name || 'N/A';
-                const fifth = participantsData[bet.fifthPlace]?.name || 'N/A';
-                document.getElementById('user-bet-text').textContent = `1º: ${first}, 2º: ${second}, 3º: ${third}, 4º: ${fourth}, 5º: ${fifth}`;
+            if (userBet) {
+                const first = participantsData[userBet.firstPlace]?.name || 'N/A';
+                const second = participantsData[userBet.secondPlace]?.name || 'N/A';
+                const third = participantsData[userBet.thirdPlace]?.name || 'N/A';
+                const fourth = participantsData[userBet.fourthPlace]?.name || 'N/A';
+                const fifth = participantsData[userBet.fifthPlace]?.name || 'N/A';
+                document.getElementById('user-bet-text').innerHTML = `<b>1º:</b> ${first}, <b>2º:</b> ${second}, <b>3º:</b> ${third}, <br><b>4º:</b> ${fourth}, <b>5º:</b> ${fifth}`;
                 betForm.style.display = 'none';
                 userBetDisplay.style.display = 'block';
             } else {
                 betForm.style.display = 'block';
                 userBetDisplay.style.display = 'none';
-                 document.getElementById('first-place').value = '';
-                 document.getElementById('second-place').value = '';
-                 document.getElementById('third-place').value = '';
-                 document.getElementById('fourth-place').value = '';
-                 document.getElementById('fifth-place').value = '';
+                betForm.reset();
             }
+        }
+
+        function renderBetStats() {
+            const statsContainer = document.getElementById('stats-container');
+            const statsContent = document.getElementById('stats-content');
+            statsContent.innerHTML = '';
+
+            if (allStageBets.length === 0) {
+                statsContainer.style.display = 'none';
+                return;
+            }
+
+            statsContainer.style.display = 'block';
+            const firstPlaceVotes = {};
+            allStageBets.forEach(bet => {
+                firstPlaceVotes[bet.firstPlace] = (firstPlaceVotes[bet.firstPlace] || 0) + 1;
+            });
+
+            const sortedVotes = Object.entries(firstPlaceVotes).sort((a,b) => b[1] - a[1]);
+
+            sortedVotes.forEach(([participantId, count]) => {
+                const percentage = ((count / allStageBets.length) * 100).toFixed(1);
+                const participantName = participantsData[participantId]?.name || 'Desconhecido';
+                const barHtml = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold">${participantName}</span>
+                            <span class="text-sm font-bold text-gray-600">${percentage}%</span>
+                        </div>
+                        <div class="stat-bar-bg w-full h-4">
+                            <div class="stat-bar" style="width: ${percentage}%;"></div>
+                        </div>
+                    </div>
+                `;
+                statsContent.innerHTML += barHtml;
+            });
+        }
+
+        function editBet() {
+            const userBet = allStageBets.find(b => b.userId === userId);
+            if (!userBet) return;
+
+            document.getElementById('first-place').value = userBet.firstPlace;
+            document.getElementById('second-place').value = userBet.secondPlace;
+            document.getElementById('third-place').value = userBet.thirdPlace;
+            document.getElementById('fourth-place').value = userBet.fourthPlace;
+            document.getElementById('fifth-place').value = userBet.fifthPlace;
+
+            document.getElementById('user-bet-display').style.display = 'none';
+            document.getElementById('bet-form').style.display = 'block';
+            document.querySelector('#bet-form button[type="submit"]').textContent = 'Atualizar Palpite';
         }
 
         async function saveBet(e) {
@@ -303,17 +383,10 @@
             try {
                 const betRef = doc(db, 'bolao_bets', `${stageId}_${userId}`);
                 await setDoc(betRef, {
-                    stageId,
-                    userId,
-                    firstPlace,
-                    secondPlace,
-                    thirdPlace,
-                    fourthPlace,
-                    fifthPlace,
-                    createdAt: new Date()
+                    stageId, userId, firstPlace, secondPlace, thirdPlace, fourthPlace, fifthPlace, createdAt: new Date()
                 });
                 alert('Palpite guardado com sucesso!');
-                loadUserBetForSelectedStage();
+                await loadBetsAndRenderStats();
             } catch (error) {
                 console.error("Erro ao guardar palpite:", error);
                 alert('Ocorreu um erro ao guardar o seu palpite.');

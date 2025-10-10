@@ -229,7 +229,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
@@ -405,8 +405,12 @@
             try {
                 const team = document.getElementById('participant-team').value.trim();
                 const imageName = document.getElementById('participant-image-filename').value.trim();
-                
-                await addDoc(collection(db, 'participants'), {
+
+                const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                const randomChars = Math.random().toString(36).substring(2, 8);
+                const newParticipantId = `${sanitizedName}-${randomChars}`;
+
+                await setDoc(doc(db, 'participants', newParticipantId), {
                     name: name,
                     imageUrl: imageName,
                     teamHistory: team ? [{ team: team, date: new Date().toISOString().split('T')[0] }] : [],
@@ -601,7 +605,105 @@
         }
 
         document.getElementById('month-select-admin').addEventListener('change', (e) => renderResultsForm(e.target.value));
+
+        function createStageFormHTML(stage, index) {
+            const stageId = stage.id || `new_stage_${index}`;
+            const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
+
+            const availableParticipants = Object.entries(participantsData)
+                .filter(([id, p]) => p.isActive !== false && !stageResultsIds.includes(id))
+                .sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+            const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
+                <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
+                    <span>${p.name}</span>
+                    <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
+                </div>
+            `).join('');
+            
+            const classifiedParticipantsHtml = stageResultsIds.map((id, idx) => {
+                const p = participantsData[id];
+                if (!p) return '';
+                return `
+                    <div class="participant-item classified-participant" data-id="${id}">
+                        <span>${idx + 1}. ${p.name}</span>
+                        <div class="space-x-2">
+                            <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
+                            <button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="stage-form-group border-t-2 border-dashed pt-6" data-stage-id="${stageId}">
+                    <div class="flex justify-between items-center mb-2">
+                         <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
+                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
+                        <input type="date" class="input-field stage-date" value="${stage.date || ''}">
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <select class="input-field stage-type">
+                            <option value="">Selecione o tipo</option>
+                            <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
+                            <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
+                            <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
+                        </select>
+                        <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
+                            <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
+                            <div class="participant-list available-list">${availableParticipantsHtml}</div>
+                        </div>
+                        <div>
+                            <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
+                            <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
+                        </div>
+                    </div>
+
+                    <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
+                    <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
+                </div>
+            `;
+        }
         
+        function renderResultsForm(monthId) {
+            const container = document.getElementById('results-form');
+            if (!monthId || !monthlyData[monthId]) {
+                document.getElementById('month-completed-checkbox').checked = false;
+                document.getElementById('geral_podium_img').value = '';
+                container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
+            }
+            let data = monthlyData[monthId];
+            
+             if ((data.etapa1 || data.etapa2) && !data.stages) {
+                const migratedStages = [];
+                for (let i = 1; i <= 4; i++) {
+                    const etapaKey = `etapa${i}`;
+                    if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
+                        migratedStages.push({
+                            id: `${etapaKey}_${monthId}`, name: `Etapa ${i}`, date: '', type: '', durationDistance: '',
+                            podium_img: data[`${etapaKey}_podium_img`] || '',
+                            results: data[etapaKey]
+                        });
+                    }
+                }
+                data.stages = migratedStages;
+            }
+
+            document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
+            document.getElementById('geral_podium_img').value = data.geral_podium_img || '';
+            const stages = data.stages || [];
+            container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
+        }
+
         function getThursdays(year, month) {
             const thursdays = [];
             const date = new Date(year, month - 1, 1);
@@ -698,103 +800,6 @@
                 }
             }
         });
-        
-        function createStageFormHTML(stage, index) {
-            const stageId = stage.id || `new_stage_${index}`;
-            const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
-
-            const availableParticipants = Object.entries(participantsData)
-                .filter(([id, p]) => p.isActive !== false && !stageResultsIds.includes(id))
-                .sort((a, b) => a[1].name.localeCompare(b[1].name));
-
-            const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
-                <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
-                    <span>${p.name}</span>
-                    <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
-                </div>
-            `).join('');
-            
-            const classifiedParticipantsHtml = stageResultsIds.map((id, idx) => {
-                const p = participantsData[id];
-                if (!p) return '';
-                return `
-                    <div class="participant-item classified-participant" data-id="${id}">
-                        <span>${idx + 1}. ${p.name}</span>
-                        <div class="space-x-2">
-                            <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
-                            <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
-                            <button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="stage-form-group border-t-2 border-dashed pt-6" data-stage-id="${stageId}">
-                    <div class="flex justify-between items-center mb-2">
-                         <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
-                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
-                        <input type="date" class="input-field stage-date" value="${stage.date || ''}">
-                    </div>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                        <select class="input-field stage-type">
-                            <option value="">Selecione o tipo</option>
-                            <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
-                            <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
-                            <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
-                        </select>
-                        <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                        <div>
-                            <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
-                            <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
-                            <div class="participant-list available-list">${availableParticipantsHtml}</div>
-                        </div>
-                        <div>
-                            <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
-                            <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
-                        </div>
-                    </div>
-
-                    <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
-                    <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
-                </div>
-            `;
-        }
-
-        function renderResultsForm(monthId) {
-            const container = document.getElementById('results-form');
-            if (!monthId || !monthlyData[monthId]) {
-                document.getElementById('month-completed-checkbox').checked = false;
-                container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
-            }
-            let data = monthlyData[monthId];
-            
-             if ((data.etapa1 || data.etapa2) && !data.stages) {
-                const migratedStages = [];
-                for (let i = 1; i <= 4; i++) {
-                    const etapaKey = `etapa${i}`;
-                    if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
-                        migratedStages.push({
-                            id: `${etapaKey}_${monthId}`, name: `Etapa ${i}`, date: '', type: '', durationDistance: '',
-                            podium_img: data[`${etapaKey}_podium_img`] || '',
-                            results: data[etapaKey]
-                        });
-                    }
-                }
-                data.stages = migratedStages;
-            }
-
-            document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
-            document.getElementById('geral_podium_img').value = data.geral_podium_img || '';
-            const stages = data.stages || [];
-            container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
-        }
 
         document.getElementById('add-stage-btn').addEventListener('click', () => {
             const container = document.getElementById('results-form');
@@ -805,8 +810,90 @@
             container.insertAdjacentHTML('beforeend', newStageHTML);
         });
         
-        document.getElementById('save-results-btn').addEventListener('click', async () => { /* ... */ });
-        document.getElementById('new-month-btn').addEventListener('click', async () => { /* ... */ });
+        document.getElementById('save-results-btn').addEventListener('click', async () => {
+            const monthId = document.getElementById('month-select-admin').value;
+            if (!monthId) return;
+
+            const docRef = doc(db, 'results', monthId);
+            const isCompleted = document.getElementById('month-completed-checkbox').checked;
+            const geralPodiumImg = document.getElementById('geral_podium_img').value.trim();
+            const newStages = [];
+            
+            document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
+                const classifiedIds = [];
+                group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
+                    classifiedIds.push(item.dataset.id);
+                });
+
+                const stage = {
+                    id: group.dataset.stageId,
+                    name: group.querySelector('.stage-name').value.trim(),
+                    date: group.querySelector('.stage-date').value,
+                    type: group.querySelector('.stage-type').value,
+                    durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
+                    podium_img: group.querySelector('.stage-podium-img').value.trim(),
+                    results: classifiedIds.map(id => ({ id }))
+                };
+                newStages.push(stage);
+            });
+            
+            try {
+                const dataToSave = { 
+                    title: monthlyData[monthId]?.title || `${monthId.split('_')[1]}/${monthId.split('_')[0]}`, 
+                    stages: newStages, 
+                    isCompleted: isCompleted,
+                    geral_podium_img: geralPodiumImg
+                };
+
+                await setDoc(docRef, dataToSave, { merge: true });
+                alert('Resultados guardados com sucesso!');
+                loadAllData();
+            } catch (error) {
+                console.error("Erro ao guardar resultados:", error);
+                alert("Ocorreu um erro ao guardar os resultados.");
+            }
+        });
+        
+        document.getElementById('new-month-btn').addEventListener('click', async () => {
+            const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
+            if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
+                alert("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); return;
+            }
+            if (monthlyData[monthId]) {
+                alert("Este mês já existe!"); return;
+            }
+
+            const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
+            if (!monthTitle) return;
+
+            try {
+                const [year, month] = monthId.split('_').map(Number);
+                const thursdays = getThursdays(year, month);
+                
+                const newStages = thursdays.map((thursdayDate, index) => ({
+                    id: `etapa_${index + 1}_${Date.now()}`,
+                    name: `Etapa ${index + 1}`,
+                    date: thursdayDate,
+                    type: 'Circuito',
+                    durationDistance: '55 min + 1 volta',
+                    podium_img: '',
+                    results: []
+                }));
+
+                const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
+                await setDoc(doc(db, 'results', monthId), newMonthData);
+                alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
+                
+                monthlyData[monthId] = newMonthData;
+                renderMonthSelector();
+                document.getElementById('month-select-admin').value = monthId;
+                renderResultsForm(monthId);
+
+            } catch (error) {
+                console.error("Erro ao criar mês:", error);
+                alert(`Erro: ${error.message}`);
+            }
+        });
 
         onAuthStateChanged(auth, (user) => {
             if (user) { showDashboard(); } else { showLogin(); }

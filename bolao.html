@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <!-- Metadados essenciais -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão do Rachão - Rachão Santa Casa</title>
+    
+    <!-- CDNs de Estilos e Fontes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos Personalizados -->
+    <style>
+        :root {
+            --bg-color: #f4f4f5;
+            --card-bg-color: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --accent-color: #eab308;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
+        .card { background-color: var(--card-bg-color); border-radius: 1.5rem; padding: 2rem; border: 1px solid var(--border-color); box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05); margin-bottom: 2rem; }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background-color: #f9fafb;
+        }
+         .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary { background-color: var(--accent-color); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: #d99f07; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <header class="text-center mb-6">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
+            <nav class="mt-4">
+                <ul class="flex justify-center gap-6 md:gap-8">
+                    <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
+                    <li><a href="bolao.html" class="font-semibold text-yellow-500 transition">Bolão</a></li>
+                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <div id="loading-overlay" class="text-center p-10 card">
+                <p class="text-lg font-semibold text-gray-500">A carregar o Bolão...</p>
+            </div>
+
+            <div id="bolao-container" class="hidden">
+                 <div class="card">
+                    <h1 class="text-3xl font-bold text-center mb-2">Bolão do Rachão</h1>
+                    <p class="text-center text-gray-500 mb-8">Dê o seu palpite para o pódio das próximas etapas!</p>
+
+                    <div class="space-y-6">
+                        <div class="flex flex-col sm:flex-row gap-4 items-center">
+                            <label for="stage-select" class="font-semibold">Escolha a Etapa:</label>
+                            <select id="stage-select" class="input-field flex-grow"></select>
+                        </div>
+
+                        <form id="bet-form" class="space-y-4 hidden">
+                            <div>
+                                <label for="first-place" class="font-semibold block mb-1">1º Lugar:</label>
+                                <select id="first-place" class="input-field participant-select"></select>
+                            </div>
+                             <div>
+                                <label for="second-place" class="font-semibold block mb-1">2º Lugar:</label>
+                                <select id="second-place" class="input-field participant-select"></select>
+                            </div>
+                             <div>
+                                <label for="third-place" class="font-semibold block mb-1">3º Lugar:</label>
+                                <select id="third-place" class="input-field participant-select"></select>
+                            </div>
+                             <div>
+                                <label for="fourth-place" class="font-semibold block mb-1">4º Lugar:</label>
+                                <select id="fourth-place" class="input-field participant-select"></select>
+                            </div>
+                             <div>
+                                <label for="fifth-place" class="font-semibold block mb-1">5º Lugar:</label>
+                                <select id="fifth-place" class="input-field participant-select"></select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-full">Submeter Palpite</button>
+                        </form>
+
+                        <div id="user-bet-display" class="hidden text-center">
+                            <h3 class="font-bold text-lg">O seu palpite para esta etapa:</h3>
+                            <p id="user-bet-text" class="text-gray-600"></p>
+                        </div>
+                         <div id="no-stages-message" class="hidden text-center text-gray-500 py-8">
+                            <p>De momento, não há etapas futuras disponíveis para palpites.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    
+        <div class="text-center mt-8">
+            <a href="admin.html" class="inline-block bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition shadow-sm">
+                <i class="fas fa-user-shield mr-2"></i> Acesso Administrativo
+            </a>
+        </div>
+        
+        <footer class="mt-12 pt-8 text-center text-gray-500 border-t border-gray-200">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-20 h-auto mx-auto mb-2 opacity-80">
+            <p class="text-sm font-semibold">Nós pedalamos forte, mas o que nos mantém juntos é a amizade.</p>
+        </footer>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
+            authDomain: "rachaosc.firebaseapp.com",
+            projectId: "rachaosc",
+            storageBucket: "rachaosc.appspot.com",
+            messagingSenderId: "28309536958",
+            appId: "1:28309536958:web:eac51586cdabd82f691eef"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null;
+        let participantsData = {};
+        let upcomingStages = [];
+
+        async function initializeAppLogica() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    await loadData();
+                } else {
+                    await signInAnonymously(auth);
+                }
+            });
+        }
+
+        async function loadData() {
+            try {
+                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                    getDocs(collection(db, "participants")),
+                    getDocs(collection(db, "results")),
+                    getDoc(doc(db, "settings", "config"))
+                ]);
+
+                const sporadicRiders = settingsSnap.exists() ? settingsSnap.data().sporadicRiders || [] : [];
+                
+                participantsData = {};
+                pSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.isActive !== false && !sporadicRiders.includes(doc.id)) {
+                        participantsData[doc.id] = data;
+                    }
+                });
+
+                const currentDate = new Date().toISOString().split('T')[0];
+                upcomingStages = [];
+                rSnap.forEach(resultDoc => {
+                    const monthData = resultDoc.data();
+                    (monthData.stages || []).forEach(stage => {
+                        if (stage.date >= currentDate) {
+                            upcomingStages.push({
+                                id: stage.id,
+                                name: `${monthData.title} - ${stage.name}`,
+                                monthId: resultDoc.id
+                            });
+                        }
+                    });
+                });
+                
+                renderBolao();
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+            }
+        }
+
+        function renderBolao() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const bolaoContainer = document.getElementById('bolao-container');
+            const stageSelect = document.getElementById('stage-select');
+            const betForm = document.getElementById('bet-form');
+            const noStagesMessage = document.getElementById('no-stages-message');
+
+            loadingOverlay.style.display = 'none';
+            bolaoContainer.style.display = 'block';
+
+            if (upcomingStages.length === 0) {
+                betForm.style.display = 'none';
+                noStagesMessage.style.display = 'block';
+                return;
+            }
+
+            stageSelect.innerHTML = '';
+            upcomingStages.forEach(stage => {
+                stageSelect.add(new Option(stage.name, stage.id));
+            });
+            
+            populateParticipantSelects();
+            loadUserBetForSelectedStage();
+            
+            stageSelect.addEventListener('change', loadUserBetForSelectedStage);
+            betForm.addEventListener('submit', saveBet);
+            document.querySelectorAll('.participant-select').forEach(sel => sel.addEventListener('change', handleDuplicateSelection));
+        }
+
+        function populateParticipantSelects() {
+            const selects = document.querySelectorAll('.participant-select');
+            const sortedParticipants = Object.entries(participantsData).sort((a,b) => a[1].name.localeCompare(b[1].name));
+            
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">Selecione um participante...</option>';
+                sortedParticipants.forEach(([id, p]) => {
+                    select.add(new Option(p.name, id));
+                });
+            });
+        }
+
+        function handleDuplicateSelection(e) {
+            const selects = Array.from(document.querySelectorAll('.participant-select'));
+            const currentSelect = e.target;
+            const selectedValue = currentSelect.value;
+            if(!selectedValue) return;
+
+            selects.forEach(select => {
+                if (select !== currentSelect && select.value === selectedValue) {
+                    alert('Este participante já foi escolhido para outra posição. Por favor, selecione outro.');
+                    currentSelect.value = '';
+                }
+            });
+        }
+
+        async function loadUserBetForSelectedStage() {
+            const stageId = document.getElementById('stage-select').value;
+            if (!stageId || !userId) return;
+
+            const betForm = document.getElementById('bet-form');
+            const userBetDisplay = document.getElementById('user-bet-display');
+            
+            const betRef = doc(db, 'bolao_bets', `${stageId}_${userId}`);
+            const betSnap = await getDoc(betRef);
+
+            if (betSnap.exists()) {
+                const bet = betSnap.data();
+                const first = participantsData[bet.firstPlace]?.name || 'N/A';
+                const second = participantsData[bet.secondPlace]?.name || 'N/A';
+                const third = participantsData[bet.thirdPlace]?.name || 'N/A';
+                const fourth = participantsData[bet.fourthPlace]?.name || 'N/A';
+                const fifth = participantsData[bet.fifthPlace]?.name || 'N/A';
+                document.getElementById('user-bet-text').textContent = `1º: ${first}, 2º: ${second}, 3º: ${third}, 4º: ${fourth}, 5º: ${fifth}`;
+                betForm.style.display = 'none';
+                userBetDisplay.style.display = 'block';
+            } else {
+                betForm.style.display = 'block';
+                userBetDisplay.style.display = 'none';
+                 document.getElementById('first-place').value = '';
+                 document.getElementById('second-place').value = '';
+                 document.getElementById('third-place').value = '';
+                 document.getElementById('fourth-place').value = '';
+                 document.getElementById('fifth-place').value = '';
+            }
+        }
+
+        async function saveBet(e) {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const stageId = document.getElementById('stage-select').value;
+
+            const firstPlace = document.getElementById('first-place').value;
+            const secondPlace = document.getElementById('second-place').value;
+            const thirdPlace = document.getElementById('third-place').value;
+            const fourthPlace = document.getElementById('fourth-place').value;
+            const fifthPlace = document.getElementById('fifth-place').value;
+
+            if(!firstPlace || !secondPlace || !thirdPlace || !fourthPlace || !fifthPlace) {
+                alert('Por favor, preencha todas as cinco posições do pódio.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'A guardar...';
+
+            try {
+                const betRef = doc(db, 'bolao_bets', `${stageId}_${userId}`);
+                await setDoc(betRef, {
+                    stageId,
+                    userId,
+                    firstPlace,
+                    secondPlace,
+                    thirdPlace,
+                    fourthPlace,
+                    fifthPlace,
+                    createdAt: new Date()
+                });
+                alert('Palpite guardado com sucesso!');
+                loadUserBetForSelectedStage();
+            } catch (error) {
+                console.error("Erro ao guardar palpite:", error);
+                alert('Ocorreu um erro ao guardar o seu palpite.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submeter Palpite';
+            }
+        }
+
+        initializeAppLogica();
+    </script>
+</body>
+</html>
+

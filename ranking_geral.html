@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Estilos Personalizados (mesmos de index.html) -->
     <style>
@@ -77,7 +78,7 @@
         </main>
     
         <!-- Modal de Detalhes do Atleta -->
-        <div id="details-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+        <div id="details-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70 overflow-auto py-10">
             <div id="modal-content-container" class="modal-content card">
                 <!-- Conteúdo injetado por JS -->
             </div>
@@ -105,6 +106,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        let imageBaseUrl = '';
+
         function openModal(modalId) { document.getElementById(modalId).classList.add('is-open'); }
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         
@@ -113,18 +116,15 @@
             return `https://placehold.co/200x200/e5e7eb/000000?text=${firstLetter}`;
         }
 
-         function getTeamForDate(participantData, dateStr = null) {
+        function getTeamForDate(participantData, dateStr = null) {
             const history = participantData.teamHistory || [];
             if (!history.length) {
-                return participantData.team || ''; // Fallback for very old data structure
+                return participantData.team || ''; 
             }
-
             const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
-
             if (!dateStr) {
                 return sortedHistory[sortedHistory.length - 1].team;
             }
-
             const competitionDate = new Date(dateStr + 'T00:00:00');
             let teamForDate = sortedHistory[0].team; 
             for (const entry of sortedHistory) {
@@ -167,7 +167,7 @@
                 
                 const settings = settingsSnap.exists() ? settingsSnap.data() : {};
                 const sporadicRiders = settings.sporadicRiders || [];
-                const imageBaseUrl = settings.imageBaseUrl || '';
+                imageBaseUrl = settings.imageBaseUrl || '';
                 
                 const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
 
@@ -178,12 +178,15 @@
                             totalPoints: 0,
                             latestYearPoints: 0,
                             top5Finishes: [0, 0, 0, 0, 0],
-                            monthlyRanks: {}
+                            monthlyRanks: {},
+                            pointsHistory: []
                         };
                     }
                 });
 
-                for (const monthId in monthlyData) {
+                const sortedMonthIds = Object.keys(monthlyData).sort();
+
+                for (const monthId of sortedMonthIds) {
                     const monthResults = monthlyData[monthId];
                     let monthStandings = {};
 
@@ -207,11 +210,6 @@
 
                                 if (!sporadicRiders.includes(participantId)) {
                                     const points = pointsDistribution[pointsIndex] || 0;
-                                    lifetimeStats[participantId].totalPoints += points;
-
-                                    if (monthId.startsWith(latestYearWithData)) {
-                                        lifetimeStats[participantId].latestYearPoints += points;
-                                    }
                                     
                                     if (!monthStandings[participantId]) monthStandings[participantId] = 0;
                                     monthStandings[participantId] += points;
@@ -222,23 +220,14 @@
                         });
                     });
                     
-                    const monthParticipants = new Set();
-                    stages.forEach(stage => {
-                        (stage.results || []).forEach(p => {
-                            const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
-                            if (participantId && !sporadicRiders.includes(participantId)) {
-                                monthParticipants.add(participantId);
-                            }
-                        });
+                    Object.keys(lifetimeStats).forEach(id => {
+                        const pointsThisMonth = monthStandings[id] || 0;
+                        lifetimeStats[id].totalPoints += pointsThisMonth;
+                        lifetimeStats[id].pointsHistory.push({ monthId: monthId, points: lifetimeStats[id].totalPoints });
                     });
 
-                    monthParticipants.forEach(id => {
-                        if (monthStandings[id] === undefined) {
-                            monthStandings[id] = 0;
-                        }
-                    });
-
-                    const sortedMonth = Object.keys(monthStandings).sort((a, b) => monthStandings[b] - monthStandings[a]);
+                    const monthParticipants = new Set(Object.keys(monthStandings));
+                    const sortedMonth = [...monthParticipants].sort((a, b) => monthStandings[b] - monthStandings[a]);
                     sortedMonth.forEach((id, index) => {
                         if (lifetimeStats[id]) {
                             lifetimeStats[id].monthlyRanks[monthId] = {
@@ -255,7 +244,7 @@
                     ...lifetimeStats[id]
                 })).sort((a, b) => b.totalPoints - a.totalPoints);
                 
-                renderTable(finalRanking, latestYearWithData, imageBaseUrl);
+                renderTable(finalRanking, latestYearWithData);
 
                 loadingOverlay.style.display = 'none';
                 rankingContainer.style.display = 'block';
@@ -266,7 +255,7 @@
             }
         }
 
-        function renderTable(rankingData, latestYearWithData, imageBaseUrl) {
+        function renderTable(rankingData, latestYearWithData) {
             const tableBody = document.getElementById('ranking-table-body');
             tableBody.innerHTML = '';
             rankingData.forEach((p, index) => {
@@ -286,12 +275,12 @@
                     </td>
                     <td class="text-right font-bold text-gray-800">${p.totalPoints}</td>
                 `;
-                row.addEventListener('click', () => renderModal(p, latestYearWithData, imageBaseUrl));
+                row.addEventListener('click', () => renderModal(p, latestYearWithData));
                 tableBody.appendChild(row);
             });
         }
 
-        function renderModal(participant, yearToDisplay, imageBaseUrl) {
+        function renderModal(participant, yearToDisplay) {
             const modalContent = document.getElementById('modal-content-container');
             
             let top5Html = '';
@@ -333,12 +322,44 @@
                     <div class="grid grid-cols-5 gap-2 text-center">${top5Html}</div>
                 </div>
 
+                <div class="mt-6 w-full">
+                    <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Evolução da Pontuação</h4>
+                    <canvas id="evolution-chart"></canvas>
+                </div>
+
                 <div class="mt-6 w-full text-left">
                     <h4 class="text-md font-bold text-gray-800 mb-2 text-center border-t border-gray-200 pt-4">Últimos Resultados (Top 10 Mensal)</h4>
                     <ul class="space-y-1">${monthlyRanksHtml}</ul>
                 </div>
             `;
             openModal('details-modal');
+
+            // Render chart
+            const ctx = document.getElementById('evolution-chart').getContext('2d');
+            const labels = participant.pointsHistory.map(h => monthlyData[h.monthId]?.title.split('/')[0]);
+            const data = participant.pointsHistory.map(h => h.points);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pontos Acumulados',
+                        data: data,
+                        backgroundColor: 'rgba(234, 179, 8, 0.2)',
+                        borderColor: 'rgba(234, 179, 8, 1)',
+                        borderWidth: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
 
         calculateLifetimeRanking();

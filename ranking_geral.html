@@ -224,6 +224,10 @@
                         const pointsThisMonth = monthStandings[id] || 0;
                         lifetimeStats[id].totalPoints += pointsThisMonth;
                         lifetimeStats[id].pointsHistory.push({ monthId: monthId, points: lifetimeStats[id].totalPoints });
+
+                        if (monthId.startsWith(latestYearWithData)) {
+                             lifetimeStats[id].latestYearPoints += pointsThisMonth;
+                        }
                     });
 
                     const monthParticipants = new Set(Object.keys(monthStandings));
@@ -311,6 +315,7 @@
                 <img class="modal-image mx-auto" src="${imageUrl}" alt="Foto de Perfil">
                 <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
                 <p class="text-sm text-gray-600">${getTeamForDate(participant) || 'Sem equipe'}</p>
+                <p class="font-semibold text-gray-800 mt-2">Pontuação (${yearToDisplay}): ${participant.latestYearPoints}</p>
                 
                 <div class="mt-4 w-full text-center border-t border-gray-200 pt-4">
                     <h4 class="text-md font-bold text-gray-800 mb-1">Pontuação Total (Geral)</h4>

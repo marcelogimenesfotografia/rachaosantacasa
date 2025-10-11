@@ -405,7 +405,7 @@
             try {
                 const team = document.getElementById('participant-team').value.trim();
                 const imageName = document.getElementById('participant-image-filename').value.trim();
-
+                
                 const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
                 const randomChars = Math.random().toString(36).substring(2, 8);
                 const newParticipantId = `${sanitizedName}-${randomChars}`;
@@ -477,12 +477,12 @@
                 const currentTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
 
                 if (newTeam && newTeam !== currentTeam) {
-                    const action = confirm(`Deseja atualizar todo o histórico com esta nova equipa?\n\n- Clique "OK" para alterar em todos os registos (Corrigir Erro).\n- Clique "Cancelar" para aplicar esta equipa apenas a partir de hoje (Transferência).`);
-                    if (action) { // Corrigir
-                        teamHistory.forEach(h => h.team = newTeam);
-                    } else { // Transferir
-                        teamHistory.push({ team: newTeam, date: new Date().toISOString().split('T')[0] });
-                    }
+                     const transferDate = prompt("Por favor, insira a data da transferência (AAAA-MM-DD):", new Date().toISOString().split('T')[0]);
+                     if (transferDate && /^\d{4}-\d{2}-\d{2}$/.test(transferDate)) {
+                        teamHistory.push({ team: newTeam, date: transferDate });
+                     } else if (transferDate) {
+                        alert("Formato de data inválido. A equipa não foi alterada.");
+                     }
                 }
                 
                 const imageName = document.getElementById('edit-participant-image-filename').value.trim();
@@ -895,9 +895,26 @@
             }
         });
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) { showDashboard(); } else { showLogin(); }
-        });
+        async function initializeAuth() {
+            try {
+                await setPersistence(auth, browserSessionPersistence);
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        showDashboard();
+                    } else {
+                        showLogin();
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao definir a persistência da autenticação:", error);
+                // Fallback to default behavior if persistence fails
+                onAuthStateChanged(auth, (user) => {
+                    if (user) { showDashboard(); } else { showLogin(); }
+                });
+            }
+        }
+
+        initializeAuth();
     </script>
 </body>
 </html>

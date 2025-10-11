@@ -137,10 +137,6 @@
                 <div class="card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Gerir Resultados</h2>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                            <span class="font-medium">Mês Concluído (exibir pódio)</span>
-                        </label>
                     </div>
                     <div class="flex flex-wrap gap-4 items-center mb-6">
                         <select id="month-select-admin" class="input-field flex-grow"></select>
@@ -156,6 +152,12 @@
                              <div>
                                  <label for="geral_podium_img" class="font-medium text-sm">URL da Foto da Classificação Geral</label>
                                  <input type="url" id="geral_podium_img" class="input-field mt-1" placeholder="https://...">
+                             </div>
+                              <div>
+                                 <label class="flex items-center gap-2 cursor-pointer">
+                                     <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                                     <span class="font-medium">Mês Concluído (exibir pódio)</span>
+                                 </label>
                              </div>
                          </div>
                          <button id="save-results-btn" class="btn btn-primary w-full">Guardar Alterações do Mês</button>
@@ -179,8 +181,20 @@
                     <input id="edit-participant-name" type="text" class="input-field mt-1" required>
                 </div>
                 <div>
-                    <label for="edit-participant-team" class="font-medium">Equipa</label>
+                    <label for="edit-participant-team" class="font-medium">Equipe</label>
                     <select id="edit-participant-team" class="input-field mt-1"></select>
+                </div>
+                <div id="team-change-options" class="hidden space-y-2 border-t pt-4">
+                    <div>
+                        <label for="transfer-date" class="font-medium text-sm">Data da Transferência/Correção</label>
+                        <input id="transfer-date" type="date" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label class="flex items-center gap-2">
+                             <input type="checkbox" id="correction-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                             <span class="text-sm">Apenas corrigir (alterar todo o histórico)</span>
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <label for="edit-participant-image-filename" class="font-medium">Nome do Ficheiro da Foto</label>
@@ -250,6 +264,7 @@
         let sporadicRiders = [];
         let allTeams = new Set();
         let imageBaseUrl = '';
+        let participantOriginalTeam = '';
 
         const loginSection = document.getElementById('login-section');
         const dashboardSection = document.getElementById('dashboard-section');
@@ -314,7 +329,6 @@
                 
                 allTeams.clear();
                 Object.values(participantsData).forEach(p => {
-                    if (p.team) allTeams.add(p.team);
                     (p.teamHistory || []).forEach(h => allTeams.add(h.team));
                 });
 
@@ -338,9 +352,9 @@
             selects.forEach(select => {
                 if (!select) return;
                 const currentValue = select.value;
-                select.innerHTML = '<option value="">Selecionar equipa</option>';
+                select.innerHTML = '<option value="">Selecionar equipe</option>';
                 sortedTeams.forEach(team => select.add(new Option(team, team)));
-                select.add(new Option("--- Criar nova equipa ---", "new_team"));
+                select.add(new Option("--- Criar nova equipe ---", "new_team"));
                 select.value = newTeamToSelect || currentValue || '';
             });
         }
@@ -348,7 +362,7 @@
         function handleTeamSelection(selectElementId) {
             const select = document.getElementById(selectElementId);
             if (select.value === 'new_team') {
-                const newTeam = prompt("Digite o nome da nova equipa:");
+                const newTeam = prompt("Digite o nome da nova equipe:");
                 if (newTeam && newTeam.trim()) {
                     const trimmedTeam = newTeam.trim();
                     allTeams.add(trimmedTeam);
@@ -360,7 +374,10 @@
         }
 
         document.getElementById('participant-team').addEventListener('change', () => handleTeamSelection('participant-team'));
-        document.getElementById('edit-participant-team').addEventListener('change', () => handleTeamSelection('edit-participant-team'));
+        document.getElementById('edit-participant-team').addEventListener('change', (e) => {
+            handleTeamSelection('edit-participant-team');
+            document.getElementById('team-change-options').style.display = e.target.value !== participantOriginalTeam ? 'block' : 'none';
+        });
 
         function renderParticipants() {
             const list = document.getElementById('participants-list');
@@ -437,12 +454,19 @@
             
             if (button.querySelector('.fa-edit')) { 
                 const participant = participantsData[id];
-                const currentTeam = participant.teamHistory?.[participant.teamHistory.length - 1]?.team || participant.team || '';
+                const teamHistory = participant.teamHistory || [];
+                participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
+                
                 document.getElementById('edit-participant-id').value = id;
                 document.getElementById('edit-participant-name').value = participant.name;
-                document.getElementById('edit-participant-team').value = currentTeam;
+                document.getElementById('edit-participant-team').value = participantOriginalTeam;
                 document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
                 document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
+
+                document.getElementById('team-change-options').style.display = 'none';
+                document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('correction-checkbox').checked = false;
+
                 openModal('edit-participant-modal');
             } else if (button.querySelector('.fa-trash')) {
                 openDeleteOptionsModal(id);
@@ -474,15 +498,23 @@
                 
                 const newTeam = document.getElementById('edit-participant-team').value.trim();
                 const teamHistory = participant.teamHistory || [];
-                const currentTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
 
-                if (newTeam && newTeam !== currentTeam) {
-                     const transferDate = prompt("Por favor, insira a data da transferência (AAAA-MM-DD):", new Date().toISOString().split('T')[0]);
-                     if (transferDate && /^\d{4}-\d{2}-\d{2}$/.test(transferDate)) {
+                if (newTeam && newTeam !== participantOriginalTeam) {
+                    const isCorrection = document.getElementById('correction-checkbox').checked;
+                    const transferDate = document.getElementById('transfer-date').value;
+
+                    if (isCorrection) {
+                        teamHistory.forEach(h => h.team = newTeam);
+                    } else {
+                         if (!transferDate) {
+                            alert("Por favor, insira a data da transferência.");
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = 'Guardar Alterações';
+                            return;
+                        }
                         teamHistory.push({ team: newTeam, date: transferDate });
-                     } else if (transferDate) {
-                        alert("Formato de data inválido. A equipa não foi alterada.");
-                     }
+                        teamHistory.sort((a,b) => new Date(a.date) - new Date(b.date));
+                    }
                 }
                 
                 const imageName = document.getElementById('edit-participant-image-filename').value.trim();
@@ -907,7 +939,6 @@
                 });
             } catch (error) {
                 console.error("Erro ao definir a persistência da autenticação:", error);
-                // Fallback to default behavior if persistence fails
                 onAuthStateChanged(auth, (user) => {
                     if (user) { showDashboard(); } else { showLogin(); }
                 });

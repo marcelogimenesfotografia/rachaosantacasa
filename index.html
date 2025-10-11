@@ -539,21 +539,6 @@
 
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         
-        function setupEventListeners() {
-            document.getElementById('tabs-container').addEventListener('click', (e) => {
-                const button = e.target.closest('.tab-button');
-                if (button) {
-                    currentTab = button.id;
-                    renderContent(document.getElementById('month-select').value, currentTab);
-                }
-            });
-            document.getElementById('month-select').addEventListener('change', (e) => {
-                currentTab = 'tab-geral';
-                renderContent(e.target.value, currentTab);
-            });
-            document.getElementById('cancel-delete-btn').addEventListener('click', () => closeModal('delete-confirmation-modal'));
-        }
-
         async function setupDataListeners() {
             if (!userId) return;
             const reRender = () => {
@@ -669,6 +654,21 @@
                 console.error("Erro na inicialização:", error);
                 showError("Falha ao carregar dados.");
             }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('tabs-container').addEventListener('click', (e) => {
+                const button = e.target.closest('.tab-button');
+                if (button) {
+                    currentTab = button.id;
+                    renderContent(document.getElementById('month-select').value, currentTab);
+                }
+            });
+            document.getElementById('month-select').addEventListener('change', (e) => {
+                currentTab = 'tab-geral';
+                renderContent(e.target.value, currentTab);
+            });
+            document.getElementById('cancel-delete-btn').addEventListener('click', () => closeModal('delete-confirmation-modal'));
         }
         
         runApplication();

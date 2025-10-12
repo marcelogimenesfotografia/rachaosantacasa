@@ -347,10 +347,6 @@
         let imageBaseUrl = '';
         let participantOriginalTeam = '';
         let dashboardInitialized = false;
-
-        const loginSection = document.getElementById('login-section');
-        const dashboardSection = document.getElementById('dashboard-section');
-        const loginForm = document.getElementById('login-form');
         
         // --- Modal Logic ---
         function openInfoModal(text) {
@@ -367,7 +363,7 @@
             });
         }
 
-        function openPromptModal(text, defaultValue = '') {
+        async function openPromptModal(text, defaultValue = '') {
             return new Promise((resolve) => {
                 document.getElementById('prompt-modal-text').textContent = text;
                 const input = document.getElementById('prompt-modal-input');
@@ -405,8 +401,8 @@
         }
 
         function showDashboard() {
-            loginSection.style.display = 'none';
-            dashboardSection.style.display = 'block';
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
             if (!dashboardInitialized) {
                 setupDashboardEventListeners();
                 dashboardInitialized = true;
@@ -415,8 +411,8 @@
         }
 
         function showLogin() {
-            loginSection.style.display = 'flex';
-            dashboardSection.style.display = 'none';
+            document.getElementById('login-section').style.display = 'flex';
+            document.getElementById('dashboard-section').style.display = 'none';
         }
         
         function openModal(id) { document.getElementById(id).classList.add('is-open'); }
@@ -465,6 +461,7 @@
             }
             return false;
         }
+
 
         async function loadAllData() {
             try {
@@ -741,7 +738,9 @@
         }
         
         function setupDashboardEventListeners() {
-            logoutBtn.addEventListener('click', async () => {
+            document.getElementById('info-modal-close').addEventListener('click', () => closeModal('info-modal'));
+            
+            document.getElementById('logout-btn').addEventListener('click', async () => {
                 try { await signOut(auth); } catch (error) { console.error("Erro ao sair:", error); }
             });
 
@@ -786,11 +785,12 @@
                 }
             });
 
-            document.getElementById('results-form').addEventListener('click', (e) => {
+            document.getElementById('results-form').addEventListener('click', async (e) => {
                 const header = e.target.closest('.accordion-header');
                 if (header) {
                     const content = header.nextElementSibling;
                     content.classList.toggle('hidden');
+                    header.querySelector('.accordion-icon').classList.toggle('rotate-180');
                     return;
                 }
 
@@ -843,11 +843,10 @@
                         renumberClassifiedList(participantItem.parentElement);
                     }
                 } else if (button.classList.contains('remove-stage-btn')) {
-                    openConfirmModal('Tem a certeza que deseja remover esta etapa?').then(confirmed => {
-                        if(confirmed) {
-                             button.closest('.stage-form-group').remove();
-                        }
-                    });
+                    const confirmed = await openConfirmModal('Tem a certeza que deseja remover esta etapa?');
+                    if(confirmed) {
+                         button.closest('.stage-form-group').remove();
+                    }
                 }
             });
             
@@ -966,8 +965,22 @@
                 });
             }
         }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                try { 
+                    await signInWithEmailAndPassword(auth, email, password); 
+                } catch (error) { 
+                    openInfoModal('Email ou palavra-passe incorreta!'); 
+                }
+            });
+            initializeAuth();
+        });
 
-        initializeAuth();
     </script>
 </body>
 </html>

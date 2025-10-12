@@ -198,6 +198,7 @@
         let commentsData = {};
         let monthlyData = {};
         let participantsData = {};
+        let teamsData = {};
         let nameToIdMap = {};
         let sporadicRiders = [];
         let allParticipantsData = [];
@@ -211,26 +212,34 @@
         
         function getTeamForDate(participantData, dateStr = null) {
             const history = participantData.teamHistory || [];
-            if (!history.length) {
-                return participantData.team || ''; 
+            if (!history || history.length === 0) {
+                 return ''; 
             }
 
             const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            if (!dateStr) {
-                return sortedHistory[sortedHistory.length - 1].team;
+            if (!dateStr || isNaN(new Date(dateStr))) {
+                 const latestTeamId = sortedHistory[sortedHistory.length - 1].teamId;
+                 return teamsData[latestTeamId]?.name || '';
             }
 
             const competitionDate = new Date(dateStr + 'T00:00:00');
-            let teamForDate = sortedHistory[0].team; 
+            
+            let teamIdForDate = ''; 
+            
             for (const entry of sortedHistory) {
                 if (new Date(entry.date) <= competitionDate) {
-                    teamForDate = entry.team;
+                    teamIdForDate = entry.teamId;
                 } else {
                     break;
                 }
             }
-            return teamForDate;
+            
+            if (teamIdForDate === '' && sortedHistory.length > 0) {
+                teamIdForDate = sortedHistory[0].teamId;
+            }
+            
+            return teamsData[teamIdForDate]?.name || '';
         }
 
         function processStageData(stageData) {
@@ -282,10 +291,10 @@
             return overallData.map((item, index) => ({ ...item, pos: index + 1 }));
         }
 
-        function getParticipantData(overallData) {
+        function getParticipantData(overallData, referenceDate = null) {
             return overallData.map(p => {
                 const info = participantsData[p.id] || { name: 'Desconhecido' };
-                const team = getTeamForDate(info);
+                const team = getTeamForDate(info, referenceDate);
                 const imageUrl = info.imageUrl ? `${imageBaseUrl}${info.imageUrl}` : getPlaceholderImageUrl(info.name);
                 return { ...p, ...info, team, image: imageUrl };
             });
@@ -331,7 +340,12 @@
             if (tab === 'tab-geral') {
                 isOverall = true;
                 const overall = calculateOverall(monthData.stages);
-                allParticipantsData = getParticipantData(overall);
+                 let monthEndDate = null;
+                if (originalMonthData.stages && originalMonthData.stages.length > 0) {
+                    const dates = originalMonthData.stages.map(s => s.date).filter(Boolean).sort();
+                    if(dates.length > 0) monthEndDate = dates[dates.length - 1];
+                }
+                allParticipantsData = getParticipantData(overall, monthEndDate);
                 dataToShow = allParticipantsData;
             } else {
                 const stageIndex = parseInt(tab.replace('tab-stage-', ''));
@@ -570,10 +584,11 @@
         
         async function loadInitialData() {
             try {
-                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                const [pSnap, rSnap, settingsSnap, tSnap] = await Promise.all([
                     getDocs(collection(db, "participants")), 
                     getDocs(collection(db, "results")),
-                    getDoc(doc(db, "settings", "config"))
+                    getDoc(doc(db, "settings", "config")),
+                    getDocs(collection(db, "teams"))
                 ]);
                 if (rSnap.empty) return false;
 
@@ -584,16 +599,23 @@
                         nameToIdMap[data.name.toUpperCase()] = doc.id;
                     }
                 });
+
+                teamsData = {};
+                tSnap.forEach(doc => {
+                    teamsData[doc.id] = doc.data();
+                });
                 
                 rSnap.forEach(doc => {
                     let data = doc.data();
                     if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
                         const migratedStages = [];
+                        const [year, month] = doc.id.split('_');
                         for (let i = 1; i <= 4; i++) {
                             const etapaKey = `etapa${i}`;
                             if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
+                                 const fakeDate = `${year}-${month}-${String(i * 7).padStart(2, '0')}`;
                                 migratedStages.push({
-                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: '',
+                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: fakeDate,
                                     type: '', durationDistance: '',
                                     podium_img: data[`${etapaKey}_podium_img`] || '',
                                     results: data[etapaKey].map(r => ({ ...r, id: nameToIdMap[r.name.toUpperCase()] }))
@@ -655,7 +677,7 @@
                 showError("Falha ao carregar dados.");
             }
         }
-
+        
         function setupEventListeners() {
             document.getElementById('tabs-container').addEventListener('click', (e) => {
                 const button = e.target.closest('.tab-button');

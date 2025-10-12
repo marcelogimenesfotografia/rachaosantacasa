@@ -97,7 +97,7 @@
         .accordion-icon {
             transition: transform 0.3s ease-in-out;
         }
-         .accordion-content.hidden .accordion-icon {
+         .accordion-content.hidden ~ .accordion-header .accordion-icon {
              transform: rotate(-90deg);
         }
     </style>
@@ -212,7 +212,7 @@
                 <div id="section-logs" class="admin-section hidden">
                     <div class="card">
                         <h2 class="text-xl font-bold mb-4">Registro de Atividades (Logs)</h2>
-                        <div id="logs-list" class="space-y-2 text-sm text-gray-600 max-h-96 overflow-y-auto"></div>
+                        <div id="logs-list" class="space-y-2 text-sm text-gray-600 max-h-[40rem] overflow-y-auto"></div>
                     </div>
                 </div>
 
@@ -220,8 +220,8 @@
         </div>
     </div>
 
-    <!-- Modais (continuam iguais) -->
-    <div id="edit-participant-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+    <!-- Modais -->
+    <div id="edit-participant-modal" class="modal">
         <div class="card w-full max-w-md">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Editar Participante</h2>
@@ -268,7 +268,7 @@
         </div>
     </div>
     
-    <div id="delete-options-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+    <div id="delete-options-modal" class="modal">
         <div class="card w-full max-w-lg">
             <h2 class="text-xl font-bold mb-2">Como deseja remover <span id="delete-participant-name" class="text-yellow-600"></span>?</h2>
             <p class="text-gray-600 mb-6">Pode desativar o participante para o remover das listas, mas manter o seu histórico, ou excluí-lo permanentemente.</p>
@@ -288,6 +288,35 @@
 
             <div class="mt-6 text-center">
                  <button id="cancel-delete-options-btn" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Modals -->
+    <div id="info-modal" class="modal">
+        <div class="card w-full max-w-sm text-center">
+            <p id="info-modal-text" class="mb-6"></p>
+            <button id="info-modal-close" class="btn btn-primary">OK</button>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal">
+        <div class="card w-full max-w-sm text-center">
+            <p id="confirm-modal-text" class="mb-6"></p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-modal-cancel" class="btn btn-secondary">Cancelar</button>
+                <button id="confirm-modal-ok" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prompt-modal" class="modal">
+        <div class="card w-full max-w-sm">
+            <p id="prompt-modal-text" class="mb-4 font-medium"></p>
+            <input id="prompt-modal-input" type="text" class="input-field mb-4">
+            <div class="flex justify-end gap-4">
+                <button id="prompt-modal-cancel" class="btn btn-secondary">Cancelar</button>
+                <button id="prompt-modal-ok" class="btn btn-primary">OK</button>
             </div>
         </div>
     </div>
@@ -322,8 +351,45 @@
         const loginSection = document.getElementById('login-section');
         const dashboardSection = document.getElementById('dashboard-section');
         const loginForm = document.getElementById('login-form');
-        const logoutBtn = document.getElementById('logout-btn');
         
+        // --- Modal Logic ---
+        function openInfoModal(text) {
+            document.getElementById('info-modal-text').textContent = text;
+            openModal('info-modal');
+        }
+
+        function openConfirmModal(text) {
+            return new Promise((resolve) => {
+                document.getElementById('confirm-modal-text').textContent = text;
+                openModal('confirm-modal');
+                document.getElementById('confirm-modal-ok').onclick = () => { closeModal('confirm-modal'); resolve(true); };
+                document.getElementById('confirm-modal-cancel').onclick = () => { closeModal('confirm-modal'); resolve(false); };
+            });
+        }
+
+        function openPromptModal(text, defaultValue = '') {
+            return new Promise((resolve) => {
+                document.getElementById('prompt-modal-text').textContent = text;
+                const input = document.getElementById('prompt-modal-input');
+                input.value = defaultValue;
+                openModal('prompt-modal');
+                
+                const okHandler = () => {
+                    closeModal('prompt-modal');
+                    resolve(input.value);
+                };
+
+                const cancelHandler = () => {
+                    closeModal('prompt-modal');
+                    resolve(null);
+                };
+
+                document.getElementById('prompt-modal-ok').onclick = okHandler;
+                document.getElementById('prompt-modal-cancel').onclick = cancelHandler;
+            });
+        }
+        // --- End Modal Logic ---
+
         async function logAction(action, details) {
             if (!auth.currentUser) return;
             try {
@@ -337,14 +403,6 @@
                 console.error("Erro ao gravar log:", error);
             }
         }
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try { await signInWithEmailAndPassword(auth, email, password); } 
-            catch (error) { alert('Email ou palavra-passe incorreta!'); }
-        });
 
         function showDashboard() {
             loginSection.style.display = 'none';
@@ -408,7 +466,6 @@
             return false;
         }
 
-
         async function loadAllData() {
             try {
                 const standardized = await standardizeParticipantsData();
@@ -460,7 +517,7 @@
 
             } catch (error) {
                 console.error("Erro ao carregar dados:", error);
-                alert("Não foi possível carregar os dados do Firebase. Verifique a consola.");
+                openInfoModal("Não foi possível carregar os dados do Firebase. Verifique a consola.");
             }
         }
 
@@ -478,10 +535,10 @@
             });
         }
 
-        function handleTeamSelection(selectElementId) {
+        async function handleTeamSelection(selectElementId) {
             const select = document.getElementById(selectElementId);
             if (select.value === 'new_team') {
-                const newTeam = prompt("Digite o nome da nova equipe:");
+                const newTeam = await openPromptModal("Digite o nome da nova equipe:");
                 if (newTeam && newTeam.trim()) {
                     const trimmedTeam = newTeam.trim();
                     allTeams.add(trimmedTeam);
@@ -709,10 +766,10 @@
                     await setDoc(settingsRef, { imageBaseUrl: newBaseUrl }, { merge: true });
                     imageBaseUrl = newBaseUrl;
                     await logAction('SETTINGS_UPDATED', `URL base das imagens foi atualizada.`);
-                    alert('Configurações guardadas com sucesso!');
+                    openInfoModal('Configurações guardadas com sucesso!');
                 } catch (error) {
                     console.error("Erro ao guardar configurações:", error);
-                    alert('Ocorreu um erro ao guardar as configurações.');
+                    openInfoModal('Ocorreu um erro ao guardar as configurações.');
                 } finally {
                     btn.disabled = false;
                     btn.textContent = 'Guardar Configurações';
@@ -730,6 +787,13 @@
             });
 
             document.getElementById('results-form').addEventListener('click', (e) => {
+                const header = e.target.closest('.accordion-header');
+                if (header) {
+                    const content = header.nextElementSibling;
+                    content.classList.toggle('hidden');
+                    return;
+                }
+
                 const button = e.target.closest('button');
                 if (!button) return;
 
@@ -779,9 +843,11 @@
                         renumberClassifiedList(participantItem.parentElement);
                     }
                 } else if (button.classList.contains('remove-stage-btn')) {
-                    if (confirm('Tem a certeza que deseja remover esta etapa?')) {
-                        button.closest('.stage-form-group').remove();
-                    }
+                    openConfirmModal('Tem a certeza que deseja remover esta etapa?').then(confirmed => {
+                        if(confirmed) {
+                             button.closest('.stage-form-group').remove();
+                        }
+                    });
                 }
             });
             
@@ -831,24 +897,25 @@
 
                     await setDoc(docRef, dataToSave, { merge: true });
                     await logAction('RESULTS_SAVED', `Resultados do mês "${dataToSave.title}" foram guardados.`);
-                    alert('Resultados guardados com sucesso!');
+                    openInfoModal('Resultados guardados com sucesso!');
                     loadAllData();
                 } catch (error) {
                     console.error("Erro ao guardar resultados:", error);
-                    alert("Ocorreu um erro ao guardar os resultados.");
+                    openInfoModal("Ocorreu um erro ao guardar os resultados.");
                 }
             });
             
             document.getElementById('new-month-btn').addEventListener('click', async () => {
-                const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
+                const monthId = await openPromptModal("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
                 if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
-                    alert("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); return;
+                    if(monthId) openInfoModal("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); 
+                    return;
                 }
                 if (monthlyData[monthId]) {
-                    alert("Este mês já existe!"); return;
+                    openInfoModal("Este mês já existe!"); return;
                 }
 
-                const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
+                const monthTitle = await openPromptModal("Insira o título para o novo mês (ex: Setembro/2025):");
                 if (!monthTitle) return;
 
                 try {
@@ -868,7 +935,7 @@
                     const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
                     await setDoc(doc(db, 'results', monthId), newMonthData);
                     await logAction('MONTH_CREATED', `Novo mês "${monthTitle}" (${monthId}) foi criado.`);
-                    alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
+                    openInfoModal(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
                     
                     monthlyData[monthId] = newMonthData;
                     renderMonthSelector();
@@ -877,12 +944,11 @@
 
                 } catch (error) {
                     console.error("Erro ao criar mês:", error);
-                    alert(`Erro: ${error.message}`);
+                    openInfoModal(`Erro: ${error.message}`);
                 }
             });
         }
         
-
         async function initializeAuth() {
             try {
                 await setPersistence(auth, browserSessionPersistence);

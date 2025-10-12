@@ -129,6 +129,11 @@
                         </div>
                         <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
                     </div>
+                    <div class="mt-4 border-t pt-4">
+                        <h3 class="font-semibold text-red-700">Ações Perigosas</h3>
+                        <p class="text-xs text-gray-500 mb-2">Use com cuidado. Estas ações modificam a base de dados permanentemente.</p>
+                        <button id="standardize-participants-btn" class="btn bg-orange-500 hover:bg-orange-600 text-white w-full">Padronizar Estrutura de Participantes</button>
+                    </div>
                 </div>
             </div>
 
@@ -242,7 +247,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -329,6 +334,7 @@
                 
                 allTeams.clear();
                 Object.values(participantsData).forEach(p => {
+                    if (p.team) allTeams.add(p.team);
                     (p.teamHistory || []).forEach(h => allTeams.add(h.team));
                 });
 
@@ -498,7 +504,7 @@
                 
                 const newTeam = document.getElementById('edit-participant-team').value.trim();
                 const teamHistory = participant.teamHistory || [];
-
+                
                 if (newTeam && newTeam !== participantOriginalTeam) {
                     const isCorrection = document.getElementById('correction-checkbox').checked;
                     const transferDate = document.getElementById('transfer-date').value;
@@ -766,6 +772,62 @@
                 btn.textContent = 'Guardar Configurações';
             }
         });
+        
+        document.getElementById('standardize-participants-btn').addEventListener('click', async () => {
+             if (!confirm("Esta ação irá padronizar todos os participantes para a nova estrutura de dados (com histórico de equipe, data de criação e status 'ativo'). Os dados antigos serão preservados no histórico. Deseja continuar?")) return;
+
+            const btn = document.getElementById('standardize-participants-btn');
+            btn.disabled = true;
+            btn.textContent = 'Padronizando...';
+
+            try {
+                const batch = writeBatch(db);
+                const pSnap = await getDocs(collection(db, "participants"));
+
+                pSnap.forEach(doc => {
+                    const id = doc.id;
+                    const p = doc.data();
+                    let needsUpdate = false;
+                    let updatedData = { ...p };
+
+                    if (typeof updatedData.isActive === 'undefined') {
+                        updatedData.isActive = true;
+                        needsUpdate = true;
+                    }
+
+                    if (!updatedData.createdAt) {
+                        updatedData.createdAt = Timestamp.fromDate(new Date('2023-01-01T12:00:00Z'));
+                        needsUpdate = true;
+                    }
+
+                    if ((!updatedData.teamHistory || updatedData.teamHistory.length === 0) && updatedData.team) {
+                        const defaultDate = updatedData.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString().split('T')[0] : '2023-01-01';
+                        updatedData.teamHistory = [{ team: updatedData.team, date: defaultDate }];
+                        needsUpdate = true;
+                    }
+
+                    if ('team' in updatedData) {
+                        delete updatedData.team;
+                        needsUpdate = true;
+                    }
+
+                    if (needsUpdate) {
+                        const pRef = doc(db, 'participants', id);
+                        batch.set(pRef, updatedData);
+                    }
+                });
+
+                await batch.commit();
+                alert("Participantes padronizados com sucesso! A página será recarregada.");
+                loadAllData();
+            } catch(error) {
+                console.error("Erro na padronização:", error);
+                alert("Ocorreu um erro durante a padronização.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Padronizar Estrutura de Participantes';
+            }
+        });
 
         document.getElementById('results-form').addEventListener('input', (e) => {
             if (e.target.classList.contains('filter-available-participants')) {
@@ -832,7 +894,7 @@
                 }
             }
         });
-
+        
         document.getElementById('add-stage-btn').addEventListener('click', () => {
             const container = document.getElementById('results-form');
             const newIndex = container.querySelectorAll('.stage-form-group').length;

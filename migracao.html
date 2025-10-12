@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferramenta de Migração - Rachão Santa Casa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f4f5; }
+        .card { background-color: #ffffff; border-radius: 1.5rem; padding: 2rem; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 16px 0 rgba(0,0,0,0.05); }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="login-section" class="min-h-screen flex items-center justify-center">
+        <div class="card w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center mb-6">Acesso à Ferramenta de Migração</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" class="w-full mt-1 p-2 border rounded-md" required>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
+                    <input type="password" id="password" class="w-full mt-1 p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="btn bg-yellow-500 text-white w-full">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="migration-section" class="hidden min-h-screen flex items-center justify-center">
+        <div class="card w-full max-w-2xl text-center">
+            <h1 class="text-3xl font-bold mb-4">Ferramenta de Migração de Dados</h1>
+            <p class="text-gray-600 mb-6">Esta ferramenta irá atualizar a estrutura da sua base de dados para usar IDs de equipe. Execute esta operação apenas uma vez.</p>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                <p class="font-bold">Atenção!</p>
+                <p>Esta ação é irreversível. Faça um backup da sua base de dados antes de continuar, se desejar.</p>
+            </div>
+            <button id="run-migration-btn" class="btn bg-blue-600 text-white w-full">Iniciar Migração</button>
+            <div id="status-log" class="mt-6 text-left text-sm bg-gray-100 p-4 rounded-lg max-h-64 overflow-y-auto">
+                <p>A aguardar o início...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, writeBatch, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
+            authDomain: "rachaosc.firebaseapp.com",
+            projectId: "rachaosc",
+            storageBucket: "rachaosc.appspot.com",
+            messagingSenderId: "28309536958",
+            appId: "1:28309536958:web:eac51586cdabd82f691eef"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const loginSection = document.getElementById('login-section');
+        const migrationSection = document.getElementById('migration-section');
+        const loginForm = document.getElementById('login-form');
+        const runMigrationBtn = document.getElementById('run-migration-btn');
+        const statusLog = document.getElementById('status-log');
+        
+        function log(message) {
+            statusLog.innerHTML += `<p>${message}</p>`;
+            statusLog.scrollTop = statusLog.scrollHeight;
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                await setPersistence(auth, browserSessionPersistence);
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                alert('Credenciais inválidas.');
+            }
+        });
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                loginSection.style.display = 'none';
+                migrationSection.style.display = 'flex';
+            } else {
+                loginSection.style.display = 'flex';
+                migrationSection.style.display = 'none';
+            }
+        });
+
+        runMigrationBtn.addEventListener('click', async () => {
+            if (!confirm("Tem a certeza ABSOLUTA de que deseja iniciar a migração? Esta ação não pode ser desfeita.")) {
+                return;
+            }
+
+            runMigrationBtn.disabled = true;
+            runMigrationBtn.textContent = "Migração em Andamento...";
+            statusLog.innerHTML = '';
+            log("Iniciando migração...");
+
+            try {
+                // 1. Carregar todos os participantes
+                log("1/4 - A carregar participantes...");
+                const pSnap = await getDocs(collection(db, "participants"));
+                const participantsData = [];
+                pSnap.forEach(doc => participantsData.push({ id: doc.id, ...doc.data() }));
+                log(`${participantsData.length} participantes encontrados.`);
+                
+                // 2. Extrair todas as equipes únicas
+                log("2/4 - A extrair nomes de equipes únicas...");
+                const teamNames = new Set();
+                participantsData.forEach(p => {
+                    (p.teamHistory || []).forEach(h => {
+                        if (h.team) teamNames.add(h.team);
+                    });
+                });
+                log(`${teamNames.size} equipes únicas encontradas.`);
+                
+                // 3. Criar coleção de equipes e mapear nomes para IDs
+                log("3/4 - A criar coleção 'teams' e a mapear IDs...");
+                const teamNameToId = {};
+                const batchTeams = writeBatch(db);
+                
+                // Carregar equipes existentes para evitar duplicados
+                const existingTeamsSnap = await getDocs(collection(db, "teams"));
+                existingTeamsSnap.forEach(doc => {
+                    const teamData = doc.data();
+                    teamNameToId[teamData.name] = doc.id;
+                });
+                
+                teamNames.forEach(name => {
+                    if (!teamNameToId[name]) {
+                        const newTeamRef = doc(collection(db, "teams"));
+                        batchTeams.set(newTeamRef, { name });
+                        teamNameToId[name] = newTeamRef.id;
+                        log(`  - Nova equipe a ser criada: ${name}`);
+                    } else {
+                        log(`  - Equipe já existente: ${name}`);
+                    }
+                });
+                await batchTeams.commit();
+                log("Coleção 'teams' criada/atualizada com sucesso.");
+
+                // 4. Atualizar o teamHistory de cada participante para usar IDs
+                log("4/4 - A atualizar participantes com IDs de equipes...");
+                const batchParticipants = writeBatch(db);
+                participantsData.forEach(p => {
+                    if (p.teamHistory && p.teamHistory.length > 0) {
+                        const newTeamHistory = p.teamHistory.map(h => {
+                            if (h.team && teamNameToId[h.team]) {
+                                return { teamId: teamNameToId[h.team], date: h.date };
+                            }
+                            return h; // Mantém o registo se algo falhar
+                        });
+                        const pRef = doc(db, 'participants', p.id);
+                        batchParticipants.update(pRef, { teamHistory: newTeamHistory });
+                    }
+                });
+                await batchParticipants.commit();
+                log("Todos os participantes foram atualizados com sucesso!");
+                
+                log("\n--- MIGRAÇÃO COMPLETA ---");
+                alert("Migração concluída com sucesso! Pode agora usar o painel de administração normalmente.");
+                runMigrationBtn.textContent = "Migração Concluída";
+
+            } catch (error) {
+                console.error("ERRO na migração:", error);
+                log(`ERRO: ${error.message}`);
+                alert("Ocorreu um erro grave durante a migração. Verifique a consola para mais detalhes.");
+                runMigrationBtn.disabled = false;
+                runMigrationBtn.textContent = "Tentar Migração Novamente";
+            }
+        });
+    </script>
+</body>
+</html>

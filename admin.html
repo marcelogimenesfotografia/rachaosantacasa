@@ -137,6 +137,7 @@
                     <ul id="admin-menu" class="space-y-1">
                         <li><a href="#" data-target="section-resultados" class="admin-menu-item"><i class="fas fa-trophy w-6 mr-2"></i>Resultados</a></li>
                         <li><a href="#" data-target="section-participantes" class="admin-menu-item"><i class="fas fa-users w-6 mr-2"></i>Participantes</a></li>
+                        <li><a href="#" data-target="section-equipes" class="admin-menu-item"><i class="fas fa-shield-alt w-6 mr-2"></i>Equipes</a></li>
                         <li><a href="#" data-target="section-config" class="admin-menu-item"><i class="fas fa-cog w-6 mr-2"></i>Configurações</a></li>
                         <li><a href="#" data-target="section-logs" class="admin-menu-item"><i class="fas fa-clipboard-list w-6 mr-2"></i>Logs</a></li>
                     </ul>
@@ -200,6 +201,19 @@
                             </div>
                         </div>
                         <div id="participants-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                
+                 <!-- Seção Gerir Equipes -->
+                <div id="section-equipes" class="admin-section hidden">
+                     <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Gerir Equipes</h2>
+                        <form id="add-team-form" class="space-y-3 mb-6">
+                            <label for="new-team-name" class="font-medium text-sm">Nome da Nova Equipe</label>
+                            <input id="new-team-name" type="text" placeholder="Nome da Equipe" class="input-field" required>
+                            <button type="submit" class="btn btn-primary w-full">Adicionar Equipe</button>
+                        </form>
+                        <div id="teams-list" class="space-y-2"></div>
                     </div>
                 </div>
 
@@ -353,7 +367,7 @@
         let nameToIdMap = {};
         let monthlyData = {};
         let sporadicRiders = [];
-        let allTeams = new Set();
+        let teamsData = {};
         let imageBaseUrl = '';
         let participantOriginalTeam = '';
         let dashboardInitialized = false;
@@ -472,19 +486,48 @@
             return false;
         }
 
+        async function migrateTeams() {
+             const existingTeamsSnap = await getDocs(collection(db, "teams"));
+             const existingTeams = new Set();
+             existingTeamsSnap.forEach(doc => existingTeams.add(doc.data().name.toUpperCase()));
+
+             const teamsToCreate = new Set();
+             Object.values(participantsData).forEach(p => {
+                (p.teamHistory || []).forEach(h => {
+                    if(h.team && !existingTeams.has(h.team.toUpperCase())) {
+                        teamsToCreate.add(h.team);
+                    }
+                });
+             });
+
+             if (teamsToCreate.size > 0) {
+                 const batch = writeBatch(db);
+                 teamsToCreate.forEach(teamName => {
+                     const newTeamRef = doc(collection(db, 'teams'));
+                     batch.set(newTeamRef, { name: teamName });
+                 });
+                 await batch.commit();
+                 await logAction('TEAM_MIGRATION', `${teamsToCreate.size} equipes antigas foram migradas.`);
+                 console.log(`${teamsToCreate.size} equipes migradas.`);
+                 return true;
+             }
+             return false;
+        }
+
 
         async function loadAllData() {
             try {
                 const standardized = await standardizeParticipantsData();
                 if (standardized) {
-                    console.log("Recarregando dados após padronização.");
+                    console.log("Recarregando dados após padronização de participantes.");
                 }
 
-                const [pSnap, rSnap, settingsSnap, logsSnap] = await Promise.all([
+                const [pSnap, rSnap, settingsSnap, logsSnap, tSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
                     getDoc(doc(db, "settings", "config")),
-                    getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50)))
+                    getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50))),
+                    getDocs(collection(db, "teams"))
                 ]);
                 
                 participantsData = {};
@@ -502,6 +545,18 @@
                     monthlyData[doc.id] = doc.data();
                 });
 
+                teamsData = {};
+                tSnap.forEach(doc => {
+                    teamsData[doc.id] = doc.data();
+                });
+
+                const migrated = await migrateTeams();
+                 if (migrated) {
+                    console.log("Recarregando dados após migração de equipes.");
+                    await loadAllData();
+                    return;
+                }
+
                 if (settingsSnap.exists()) {
                     const settings = settingsSnap.data();
                     sporadicRiders = settings.sporadicRiders || [];
@@ -509,15 +564,11 @@
                     document.getElementById('image-base-url').value = imageBaseUrl;
                 }
                 
-                allTeams.clear();
-                Object.values(participantsData).forEach(p => {
-                    (p.teamHistory || []).forEach(h => allTeams.add(h.team));
-                });
-
                 renderParticipants();
                 renderMonthSelector();
                 renderTeamSelectors();
                 renderLogs(logsSnap);
+                renderTeamsList();
                 
                 const initialMonth = document.getElementById('month-select-admin').value;
                 if(initialMonth) renderResultsForm(initialMonth);
@@ -529,15 +580,16 @@
         }
 
         function renderTeamSelectors(newTeamToSelect = '') {
-            const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team')];
-            const sortedTeams = [...allTeams].sort();
-
+            const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team'), document.getElementById('filter-team')];
+            const sortedTeams = Object.values(teamsData).map(t => t.name).sort();
+            
             selects.forEach(select => {
                 if (!select) return;
                 const currentValue = select.value;
-                select.innerHTML = '<option value="">Selecionar equipe</option>';
-                sortedTeams.forEach(team => select.add(new Option(team, team)));
-                select.add(new Option("--- Criar nova equipe ---", "new_team"));
+                select.innerHTML = select.id === 'filter-team' ? '<option value="">Todas as Equipes</option>' : '<option value="">Selecionar equipe</option>';
+                sortedTeams.forEach(teamName => {
+                     select.add(new Option(teamName, teamName));
+                });
                 select.value = newTeamToSelect || currentValue || '';
             });
         }
@@ -548,8 +600,17 @@
                 const newTeam = await openPromptModal("Digite o nome da nova equipe:");
                 if (newTeam && newTeam.trim()) {
                     const trimmedTeam = newTeam.trim();
-                    allTeams.add(trimmedTeam);
-                    renderTeamSelectors(trimmedTeam);
+                    try {
+                        const newDocRef = doc(collection(db, 'teams'));
+                        await setDoc(newDocRef, { name: trimmedTeam });
+                        await logAction('TEAM_CREATED', `Equipe "${trimmedTeam}" criada.`);
+                        teamsData[newDocRef.id] = { name: trimmedTeam };
+                        renderTeamSelectors(trimmedTeam);
+                        renderTeamsList();
+                    } catch(e) {
+                        console.error("Erro ao criar equipe", e);
+                        openInfoModal("Erro ao criar equipe.");
+                    }
                 } else {
                     select.value = '';
                 }
@@ -763,6 +824,30 @@
             return thursdays.map(d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
         }
         
+        function renderTeamsList() {
+            const list = document.getElementById('teams-list');
+            list.innerHTML = '';
+            const sortedTeams = Object.entries(teamsData).sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+            if (sortedTeams.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Nenhuma equipe cadastrada.</p>';
+                return;
+            }
+
+            sortedTeams.forEach(([id, team]) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
+                div.innerHTML = `
+                    <span class="font-medium">${team.name}</span>
+                    <div class="space-x-2">
+                        <button class="text-blue-500 hover:text-blue-700" data-id="${id}"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700" data-id="${id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
         function setupDashboardEventListeners() {
             document.getElementById('info-modal-close').addEventListener('click', () => closeModal('info-modal'));
             
@@ -972,6 +1057,91 @@
                     openInfoModal(`Erro: ${error.message}`);
                 }
             });
+
+            document.getElementById('filter-team').addEventListener('change', renderParticipants);
+            document.getElementById('filter-name').addEventListener('input', renderParticipants);
+
+            document.getElementById('add-team-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newTeamName = document.getElementById('new-team-name').value.trim();
+                if (!newTeamName) return;
+
+                const teamExists = Object.values(teamsData).some(t => t.name.toUpperCase() === newTeamName.toUpperCase());
+                if (teamExists) {
+                    openInfoModal("Essa equipe já existe.");
+                    return;
+                }
+                try {
+                    const newDocRef = doc(collection(db, 'teams'));
+                    await setDoc(newDocRef, { name: newTeamName });
+                    await logAction('TEAM_CREATED', `Equipe "${newTeamName}" criada.`);
+                    openInfoModal("Equipe adicionada com sucesso!");
+                    e.target.reset();
+                    loadAllData();
+                } catch (error) {
+                    console.error("Erro ao adicionar equipe:", error);
+                    openInfoModal("Ocorreu um erro ao adicionar a equipe.");
+                }
+            });
+
+            document.getElementById('teams-list').addEventListener('click', async (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                const teamId = button.dataset.id;
+                const teamName = teamsData[teamId]?.name;
+
+                if(button.querySelector('.fa-edit')) {
+                    const newName = await openPromptModal(`Editar nome da equipe:`, teamName);
+                    if (newName && newName.trim() && newName.trim() !== teamName) {
+                        try {
+                            await updateDoc(doc(db, 'teams', teamId), { name: newName.trim() });
+                            const batch = writeBatch(db);
+                            Object.entries(participantsData).forEach(([pId, pData]) => {
+                                if (pData.teamHistory && pData.teamHistory.some(h => h.team === teamName)) {
+                                    const updatedHistory = pData.teamHistory.map(h => {
+                                        if (h.team === teamName) {
+                                            return { ...h, team: newName.trim() };
+                                        }
+                                        return h;
+                                    });
+                                    batch.update(doc(db, 'participants', pId), { teamHistory: updatedHistory });
+                                }
+                            });
+                            await batch.commit();
+
+                            await logAction('TEAM_UPDATED', `Equipe "${teamName}" foi renomeada para "${newName.trim()}".`);
+                            openInfoModal("Equipe atualizada com sucesso.");
+                            loadAllData();
+                        } catch (error) {
+                            console.error("Erro ao editar equipe:", error);
+                            openInfoModal("Ocorreu um erro ao editar a equipe.");
+                        }
+                    }
+                } else if(button.querySelector('.fa-trash')) {
+                    const isUsed = Object.values(participantsData).some(p => {
+                         const teamHistory = p.teamHistory || [];
+                         return teamHistory.some(h => h.team === teamName);
+                    });
+
+                    if (isUsed) {
+                        openInfoModal(`Não é possível excluir a equipe "${teamName}" porque ela está associada a um ou mais participantes.`);
+                        return;
+                    }
+
+                    if(await openConfirmModal(`Tem certeza que deseja excluir a equipe "${teamName}"?`)) {
+                        try {
+                            await deleteDoc(doc(db, 'teams', teamId));
+                            await logAction('TEAM_DELETED', `Equipe "${teamName}" foi excluída.`);
+                            openInfoModal("Equipe excluída com sucesso.");
+                            loadAllData();
+                        } catch (error) {
+                             console.error("Erro ao excluir equipe:", error);
+                             openInfoModal("Ocorreu um erro ao excluir a equipe.");
+                        }
+                    }
+                }
+            });
         }
         
         async function initializeAuth() {
@@ -994,16 +1164,18 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             const loginForm = document.getElementById('login-form');
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                try { 
-                    await signInWithEmailAndPassword(auth, email, password); 
-                } catch (error) { 
-                    openInfoModal('Email ou palavra-passe incorreta!'); 
-                }
-            });
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    try { 
+                        await signInWithEmailAndPassword(auth, email, password); 
+                    } catch (error) { 
+                        openInfoModal('Email ou palavra-passe incorreta!'); 
+                    }
+                });
+            }
             initializeAuth();
         });
 

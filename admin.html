@@ -23,7 +23,6 @@
             padding: 2rem;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
-            margin-bottom: 2rem;
         }
         .input-field {
             width: 100%;
@@ -70,6 +69,37 @@
         .participant-item:hover {
             background-color: #f3f4f6;
         }
+        .admin-menu-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .admin-menu-item:hover {
+            background-color: #f3f4f6;
+            color: var(--text-primary);
+        }
+        .admin-menu-item.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .accordion-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .accordion-content {
+            transition: max-height 0.3s ease-out;
+            overflow: hidden;
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+         .accordion-content.hidden .accordion-icon {
+             transform: rotate(-90deg);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -100,79 +130,97 @@
             <button id="logout-btn" class="btn btn-secondary">Sair</button>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Coluna da Esquerda: Participantes e Configurações -->
-            <div class="lg:col-span-1 space-y-8">
-                <div class="card">
-                    <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
-                    <form id="add-participant-form" class="space-y-3 mb-6">
-                        <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
-                        <select id="participant-team" class="input-field"></select>
-                        <div>
-                            <label for="participant-image-filename" class="font-medium text-sm">Nome do Ficheiro da Foto</label>
-                            <input id="participant-image-filename" type="text" placeholder="ex: joao.jpg" class="input-field mt-1">
-                            <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta configurada.</p>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
-                    </form>
-                    <div id="participants-list" class="space-y-2">
-                        <!-- Lista de participantes será preenchida aqui -->
-                    </div>
-                </div>
-                 <div class="card">
-                    <h2 class="text-xl font-bold mb-4">Configurações Gerais</h2>
-                    <div class="space-y-3">
-                        <div>
-                            <label for="image-base-url" class="font-medium text-sm">URL Base das Imagens</label>
-                            <input id="image-base-url" type="url" placeholder="https://..." class="input-field mt-1">
-                            <p class="text-xs text-gray-500 mt-1">Caminho da pasta onde as fotos estão guardadas (terminar com /).</p>
-                        </div>
-                        <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
-                    </div>
-                    <div class="mt-4 border-t pt-4">
-                        <h3 class="font-semibold text-red-700">Ações Perigosas</h3>
-                        <p class="text-xs text-gray-500 mb-2">Use com cuidado. Estas ações modificam a base de dados permanentemente.</p>
-                        <button id="standardize-participants-btn" class="btn bg-orange-500 hover:bg-orange-600 text-white w-full">Padronizar Estrutura de Participantes</button>
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Menu Lateral -->
+            <div class="md:col-span-1">
+                <div class="card p-4">
+                    <ul id="admin-menu" class="space-y-1">
+                        <li><a href="#" data-target="section-resultados" class="admin-menu-item"><i class="fas fa-trophy w-6 mr-2"></i>Resultados</a></li>
+                        <li><a href="#" data-target="section-participantes" class="admin-menu-item"><i class="fas fa-users w-6 mr-2"></i>Participantes</a></li>
+                        <li><a href="#" data-target="section-config" class="admin-menu-item"><i class="fas fa-cog w-6 mr-2"></i>Configurações</a></li>
+                        <li><a href="#" data-target="section-logs" class="admin-menu-item"><i class="fas fa-clipboard-list w-6 mr-2"></i>Logs</a></li>
+                    </ul>
                 </div>
             </div>
 
-            <!-- Coluna da Direita: Resultados -->
-            <div class="lg:col-span-2">
-                <div class="card">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold">Gerir Resultados</h2>
-                    </div>
-                    <div class="flex flex-wrap gap-4 items-center mb-6">
-                        <select id="month-select-admin" class="input-field flex-grow"></select>
-                        <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
-                    </div>
+            <!-- Área de Conteúdo -->
+            <div class="md:col-span-3">
+                
+                <!-- Seção Gerir Resultados -->
+                <div id="section-resultados" class="admin-section">
+                    <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Gerir Resultados</h2>
+                        <div class="flex flex-wrap gap-4 items-center mb-6">
+                            <select id="month-select-admin" class="input-field flex-grow"></select>
+                            <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
+                        </div>
 
-                    <div id="results-form" class="space-y-8">
-                        <!-- Formulários de resultados serão preenchidos aqui -->
-                    </div>
-                    <div class="mt-6 border-t pt-6">
-                         <button id="add-stage-btn" class="btn btn-secondary w-full mb-4">Adicionar Nova Etapa</button>
-                         <div class="space-y-4 my-4">
-                             <div>
-                                 <label for="geral_podium_img" class="font-medium text-sm">URL da Foto da Classificação Geral</label>
-                                 <input type="url" id="geral_podium_img" class="input-field mt-1" placeholder="https://...">
-                             </div>
-                              <div>
-                                 <label class="flex items-center gap-2 cursor-pointer">
-                                     <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                                     <span class="font-medium">Mês Concluído (exibir pódio)</span>
-                                 </label>
-                             </div>
-                         </div>
-                         <button id="save-results-btn" class="btn btn-primary w-full">Guardar Alterações do Mês</button>
+                        <div id="results-form" class="space-y-2"></div>
+                        <div class="mt-6 border-t pt-6">
+                            <button id="add-stage-btn" class="btn btn-secondary w-full mb-4">Adicionar Nova Etapa</button>
+                            <div class="space-y-4 my-4">
+                                <div>
+                                    <label for="geral_podium_img" class="font-medium text-sm">URL da Foto da Classificação Geral</label>
+                                    <input type="url" id="geral_podium_img" class="input-field mt-1" placeholder="https://...">
+                                </div>
+                                <div>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
+                                        <span class="font-medium">Mês Concluído (exibir pódio)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button id="save-results-btn" class="btn btn-primary w-full">Guardar Alterações do Mês</button>
+                        </div>
                     </div>
                 </div>
+                
+                <!-- Seção Gerir Participantes -->
+                <div id="section-participantes" class="admin-section hidden">
+                     <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
+                        <form id="add-participant-form" class="space-y-3 mb-6">
+                            <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
+                            <select id="participant-team" class="input-field"></select>
+                            <div>
+                                <label for="participant-image-filename" class="font-medium text-sm">Nome do Ficheiro da Foto</label>
+                                <input id="participant-image-filename" type="text" placeholder="ex: joao.jpg" class="input-field mt-1">
+                                <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta configurada.</p>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
+                        </form>
+                        <div id="participants-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Seção Configurações -->
+                <div id="section-config" class="admin-section hidden">
+                    <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Configurações Gerais</h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label for="image-base-url" class="font-medium text-sm">URL Base das Imagens</label>
+                                <input id="image-base-url" type="url" placeholder="https://..." class="input-field mt-1">
+                                <p class="text-xs text-gray-500 mt-1">Caminho da pasta onde as fotos estão guardadas (terminar com /).</p>
+                            </div>
+                            <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção Logs -->
+                <div id="section-logs" class="admin-section hidden">
+                    <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Registro de Atividades (Logs)</h2>
+                        <div id="logs-list" class="space-y-2 text-sm text-gray-600 max-h-96 overflow-y-auto"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Modal para Editar Participante -->
+    <!-- Modais (continuam iguais) -->
     <div id="edit-participant-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
         <div class="card w-full max-w-md">
             <div class="flex justify-between items-center mb-4">
@@ -220,7 +268,6 @@
         </div>
     </div>
     
-    <!-- Modal para Opções de Exclusão -->
     <div id="delete-options-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
         <div class="card w-full max-w-lg">
             <h2 class="text-xl font-bold mb-2">Como deseja remover <span id="delete-participant-name" class="text-yellow-600"></span>?</h2>
@@ -247,7 +294,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -270,11 +317,26 @@
         let allTeams = new Set();
         let imageBaseUrl = '';
         let participantOriginalTeam = '';
+        let dashboardInitialized = false;
 
         const loginSection = document.getElementById('login-section');
         const dashboardSection = document.getElementById('dashboard-section');
         const loginForm = document.getElementById('login-form');
         const logoutBtn = document.getElementById('logout-btn');
+        
+        async function logAction(action, details) {
+            if (!auth.currentUser) return;
+            try {
+                await addDoc(collection(db, 'logs'), {
+                    timestamp: serverTimestamp(),
+                    adminEmail: auth.currentUser.email,
+                    action: action,
+                    details: details
+                });
+            } catch (error) {
+                console.error("Erro ao gravar log:", error);
+            }
+        }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -284,13 +346,13 @@
             catch (error) { alert('Email ou palavra-passe incorreta!'); }
         });
 
-        logoutBtn.addEventListener('click', async () => {
-            try { await signOut(auth); } catch (error) { console.error("Erro ao sair:", error); }
-        });
-
         function showDashboard() {
             loginSection.style.display = 'none';
             dashboardSection.style.display = 'block';
+            if (!dashboardInitialized) {
+                setupDashboardEventListeners();
+                dashboardInitialized = true;
+            }
             loadAllData();
         }
 
@@ -302,12 +364,63 @@
         function openModal(id) { document.getElementById(id).classList.add('is-open'); }
         window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
 
+        async function standardizeParticipantsData() {
+            const pSnap = await getDocs(collection(db, "participants"));
+            const batch = writeBatch(db);
+            let needsMigration = false;
+
+            pSnap.forEach(pDoc => {
+                const p = pDoc.data();
+                let updatedData = { ...p };
+                let needsUpdate = false;
+
+                if (typeof updatedData.isActive === 'undefined') {
+                    updatedData.isActive = true;
+                    needsUpdate = true;
+                }
+                if (!updatedData.createdAt) {
+                    updatedData.createdAt = Timestamp.fromDate(new Date('2023-01-01T12:00:00Z'));
+                    needsUpdate = true;
+                }
+                if ((!updatedData.teamHistory || updatedData.teamHistory.length === 0) && updatedData.team) {
+                    const defaultDate = updatedData.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString().split('T')[0] : '2023-01-01';
+                    updatedData.teamHistory = [{ team: updatedData.team, date: defaultDate }];
+                    needsUpdate = true;
+                }
+                if ('team' in updatedData) {
+                    delete updatedData.team;
+                    needsUpdate = true;
+                }
+                if (needsUpdate) {
+                    needsMigration = true;
+                    const pRef = doc(db, 'participants', pDoc.id);
+                    batch.set(pRef, updatedData);
+                }
+            });
+
+            if (needsMigration) {
+                console.log("Padronizando estrutura de participantes...");
+                await batch.commit();
+                await logAction('DATA_MIGRATION', 'Estrutura de participantes foi padronizada automaticamente.');
+                console.log("Padronização concluída.");
+                return true;
+            }
+            return false;
+        }
+
+
         async function loadAllData() {
             try {
-                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                const standardized = await standardizeParticipantsData();
+                if (standardized) {
+                    console.log("Recarregando dados após padronização.");
+                }
+
+                const [pSnap, rSnap, settingsSnap, logsSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
-                    getDoc(doc(db, "settings", "config"))
+                    getDoc(doc(db, "settings", "config")),
+                    getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50)))
                 ]);
                 
                 participantsData = {};
@@ -334,13 +447,13 @@
                 
                 allTeams.clear();
                 Object.values(participantsData).forEach(p => {
-                    if (p.team) allTeams.add(p.team);
                     (p.teamHistory || []).forEach(h => allTeams.add(h.team));
                 });
 
                 renderParticipants();
                 renderMonthSelector();
                 renderTeamSelectors();
+                renderLogs(logsSnap);
                 
                 const initialMonth = document.getElementById('month-select-admin').value;
                 if(initialMonth) renderResultsForm(initialMonth);
@@ -378,12 +491,26 @@
                 }
             }
         }
-
-        document.getElementById('participant-team').addEventListener('change', () => handleTeamSelection('participant-team'));
-        document.getElementById('edit-participant-team').addEventListener('change', (e) => {
-            handleTeamSelection('edit-participant-team');
-            document.getElementById('team-change-options').style.display = e.target.value !== participantOriginalTeam ? 'block' : 'none';
-        });
+        
+        function renderLogs(logsSnap) {
+            const list = document.getElementById('logs-list');
+            list.innerHTML = '';
+            if (logsSnap.empty) {
+                list.innerHTML = '<p>Nenhuma atividade registrada.</p>';
+                return;
+            }
+            logsSnap.forEach(doc => {
+                const log = doc.data();
+                const date = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('pt-BR') : 'Data inválida';
+                const div = document.createElement('div');
+                div.className = 'p-2 bg-gray-50 rounded-md border-l-4 border-gray-300';
+                div.innerHTML = `
+                    <p><strong class="font-semibold">${log.details}</strong></p>
+                    <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
+                `;
+                list.appendChild(div);
+            });
+        }
 
         function renderParticipants() {
             const list = document.getElementById('participants-list');
@@ -410,222 +537,6 @@
             });
         }
         
-        document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'A guardar...';
-
-            const name = document.getElementById('participant-name').value.trim().toUpperCase();
-            if (!name) { /* ... */ return; };
-            if (nameToIdMap[name]) {
-                alert(`O participante "${name}" já existe.`);
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Adicionar Participante';
-                return;
-            }
-
-            try {
-                const team = document.getElementById('participant-team').value.trim();
-                const imageName = document.getElementById('participant-image-filename').value.trim();
-                
-                const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-                const randomChars = Math.random().toString(36).substring(2, 8);
-                const newParticipantId = `${sanitizedName}-${randomChars}`;
-
-                await setDoc(doc(db, 'participants', newParticipantId), {
-                    name: name,
-                    imageUrl: imageName,
-                    teamHistory: team ? [{ team: team, date: new Date().toISOString().split('T')[0] }] : [],
-                    createdAt: serverTimestamp(),
-                    isActive: true
-                });
-
-                alert('Participante adicionado!');
-                e.target.reset();
-                loadAllData();
-            } catch (error) {
-                console.error("Erro ao adicionar:", error);
-                alert('Ocorreu um erro.');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Adicionar Participante';
-            }
-        });
-        
-        document.getElementById('participants-list').addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-            const id = button.dataset.id;
-            
-            if (button.querySelector('.fa-edit')) { 
-                const participant = participantsData[id];
-                const teamHistory = participant.teamHistory || [];
-                participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
-                
-                document.getElementById('edit-participant-id').value = id;
-                document.getElementById('edit-participant-name').value = participant.name;
-                document.getElementById('edit-participant-team').value = participantOriginalTeam;
-                document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
-                document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
-
-                document.getElementById('team-change-options').style.display = 'none';
-                document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
-                document.getElementById('correction-checkbox').checked = false;
-
-                openModal('edit-participant-modal');
-            } else if (button.querySelector('.fa-trash')) {
-                openDeleteOptionsModal(id);
-            }
-        });
-        
-        document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = 'A guardar...';
-
-            const participantId = document.getElementById('edit-participant-id').value;
-            const newName = document.getElementById('edit-participant-name').value.trim().toUpperCase();
-            const isSporadic = document.getElementById('edit-participant-sporadic').checked;
-
-            if (!newName) { /* ... */ return; };
-            const existingId = nameToIdMap[newName];
-            if (existingId && existingId !== participantId) {
-                alert(`Já existe um participante com o nome "${newName}".`);
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Guardar Alterações';
-                return;
-            }
-            
-            try {
-                const participantRef = doc(db, 'participants', participantId);
-                const participant = participantsData[participantId];
-                
-                const newTeam = document.getElementById('edit-participant-team').value.trim();
-                const teamHistory = participant.teamHistory || [];
-                
-                if (newTeam && newTeam !== participantOriginalTeam) {
-                    const isCorrection = document.getElementById('correction-checkbox').checked;
-                    const transferDate = document.getElementById('transfer-date').value;
-
-                    if (isCorrection) {
-                        teamHistory.forEach(h => h.team = newTeam);
-                    } else {
-                         if (!transferDate) {
-                            alert("Por favor, insira a data da transferência.");
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = 'Guardar Alterações';
-                            return;
-                        }
-                        teamHistory.push({ team: newTeam, date: transferDate });
-                        teamHistory.sort((a,b) => new Date(a.date) - new Date(b.date));
-                    }
-                }
-                
-                const imageName = document.getElementById('edit-participant-image-filename').value.trim();
-
-                const participantData = {
-                    name: newName,
-                    imageUrl: imageName,
-                    teamHistory: teamHistory
-                };
-                if (participantData.team) delete participantData.team;
-                
-                await updateDoc(participantRef, participantData);
-
-                const settingsRef = doc(db, "settings", "config");
-                if(isSporadic) { await updateDoc(settingsRef, { sporadicRiders: arrayUnion(participantId) }); } 
-                else { await updateDoc(settingsRef, { sporadicRiders: arrayRemove(participantId) }); }
-                
-                alert('Participante atualizado!');
-            } catch (error) {
-                console.error("Erro ao atualizar:", error); alert('Ocorreu um erro.');
-            }
-            
-            closeModal('edit-participant-modal');
-            await loadAllData();
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Guardar Alterações';
-        });
-
-        function openDeleteOptionsModal(id) {
-            const participantName = participantsData[id]?.name;
-            if (!participantName) return;
-
-            document.getElementById('delete-participant-name').textContent = participantName;
-            
-            const deactivateBtn = document.getElementById('deactivate-btn');
-            const hardDeleteBtn = document.getElementById('hard-delete-btn');
-            const cancelBtn = document.getElementById('cancel-delete-options-btn');
-
-            deactivateBtn.onclick = () => deactivateParticipant(id);
-            hardDeleteBtn.onclick = () => hardDeleteParticipant(id);
-            cancelBtn.onclick = () => closeModal('delete-options-modal');
-            
-            openModal('delete-options-modal');
-        }
-
-        async function deactivateParticipant(id) {
-            const participantName = participantsData[id]?.name;
-            try {
-                await updateDoc(doc(db, 'participants', id), { isActive: false });
-                alert(`Participante "${participantName}" foi desativado com sucesso.`);
-            } catch (error) {
-                console.error("Erro ao desativar participante:", error);
-                alert('Ocorreu um erro ao desativar o participante.');
-            } finally {
-                closeModal('delete-options-modal');
-                loadAllData();
-            }
-        }
-
-        async function hardDeleteParticipant(id) {
-            const participantName = participantsData[id]?.name;
-            if (!confirm(`CONFIRMAÇÃO FINAL: Deseja apagar PERMANENTEMENTE "${participantName}" e TODO o seu histórico de resultados? Esta ação é irreversível.`)) {
-                return;
-            }
-            
-            try {
-                const batch = writeBatch(db);
-                batch.delete(doc(db, 'participants', id));
-                batch.update(doc(db, "settings", "config"), { sporadicRiders: arrayRemove(id) });
-                for (const monthId in monthlyData) {
-                    const monthDoc = JSON.parse(JSON.stringify(monthlyData[monthId])); 
-                    let monthWasUpdated = false;
-                    
-                    const stages = monthDoc.stages || [];
-                    if (stages.length > 0) {
-                         stages.forEach(stage => {
-                            const originalCount = stage.results?.length || 0;
-                            if(stage.results) {
-                                stage.results = stage.results.filter(p => (p.id || nameToIdMap[p.name?.toUpperCase()]) !== id);
-                                if (stage.results.length < originalCount) monthWasUpdated = true;
-                            }
-                        });
-                    } else { 
-                        for(let i = 1; i <= 4; i++) {
-                            const etapaKey = `etapa${i}`;
-                            if(monthDoc[etapaKey]) {
-                               const originalCount = monthDoc[etapaKey].length;
-                               monthDoc[etapaKey] = monthDoc[etapaKey].filter(p => (p.id || nameToIdMap[p.name.toUpperCase()]) !== id);
-                               if(monthDoc[etapaKey].length < originalCount) monthWasUpdated = true;
-                            }
-                        }
-                    }
-                    if (monthWasUpdated) batch.set(doc(db, 'results', monthId), monthDoc);
-                }
-                await batch.commit();
-                alert(`Participante "${participantName}" e todo o seu histórico foram apagados com sucesso!`);
-            } catch (error) {
-                console.error("Erro ao apagar participante:", error);
-                alert(`Ocorreu um erro ao apagar o participante. Detalhe: ${error.message}`);
-            } finally {
-                 closeModal('delete-options-modal');
-                 loadAllData();
-            }
-        }
-        
         function renderMonthSelector() {
             const select = document.getElementById('month-select-admin');
             select.innerHTML = '';
@@ -641,10 +552,8 @@
             });
             select.value = currentMonthId;
         }
-
-        document.getElementById('month-select-admin').addEventListener('change', (e) => renderResultsForm(e.target.value));
         
-        function createStageFormHTML(stage, index) {
+        function createStageFormHTML(stage, index, isOpen = false) {
             const stageId = stage.id || `new_stage_${index}`;
             const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
 
@@ -673,41 +582,46 @@
                     </div>
                 `;
             }).join('');
+            
+            const hiddenClass = isOpen ? '' : 'hidden';
 
             return `
-                <div class="stage-form-group border-t-2 border-dashed pt-6" data-stage-id="${stageId}">
-                    <div class="flex justify-between items-center mb-2">
-                         <h3 class="font-bold text-lg">Etapa ${index + 1}</h3>
-                         <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
+                <div class="stage-form-group border-t-2 border-dashed pt-4">
+                    <div class="accordion-header bg-gray-50 rounded-t-lg p-4">
+                         <h3 class="font-bold text-lg">${stage.name || `Etapa ${index + 1}`}</h3>
+                         <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
-                        <input type="date" class="input-field stage-date" value="${stage.date || ''}">
-                    </div>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                        <select class="input-field stage-type">
-                            <option value="">Selecione o tipo</option>
-                            <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
-                            <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
-                            <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
-                        </select>
-                        <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                        <div>
-                            <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
-                            <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
-                            <div class="participant-list available-list">${availableParticipantsHtml}</div>
+                    <div class="accordion-content p-4 border border-t-0 rounded-b-lg ${hiddenClass}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
+                            <input type="date" class="input-field stage-date" value="${stage.date || ''}">
                         </div>
-                        <div>
-                            <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
-                            <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                            <select class="input-field stage-type">
+                                <option value="">Selecione o tipo</option>
+                                <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
+                                <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
+                                <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
+                            </select>
+                            <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
                         </div>
-                    </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div>
+                                <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
+                                <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
+                                <div class="participant-list available-list">${availableParticipantsHtml}</div>
+                            </div>
+                            <div>
+                                <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
+                                <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
+                            </div>
+                        </div>
 
-                    <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
-                    <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
+                        <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
+                        <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
+                        <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn mt-4">Remover Etapa</button>
+                    </div>
                 </div>
             `;
         }
@@ -739,7 +653,22 @@
             document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
             document.getElementById('geral_podium_img').value = data.geral_podium_img || '';
             const stages = data.stages || [];
-            container.innerHTML = stages.map(createStageFormHTML).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
+
+            const today = new Date().toISOString().split('T')[0];
+            let nextStageIndex = -1;
+            stages.find((stage, index) => { 
+                if (stage.date >= today) {
+                    nextStageIndex = index;
+                    return true;
+                }
+                return false;
+            });
+
+            if (nextStageIndex === -1 && stages.length > 0) {
+                nextStageIndex = stages.length - 1;
+            }
+
+            container.innerHTML = stages.map((stage, i) => createStageFormHTML(stage, i, i === nextStageIndex)).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
         }
 
         function getThursdays(year, month) {
@@ -753,241 +682,206 @@
             }
             return thursdays.map(d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
         }
-
-        document.getElementById('save-settings-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('save-settings-btn');
-            btn.disabled = true;
-            btn.textContent = 'A guardar...';
-            const newBaseUrl = document.getElementById('image-base-url').value.trim();
-            try {
-                const settingsRef = doc(db, "settings", "config");
-                await setDoc(settingsRef, { imageBaseUrl: newBaseUrl }, { merge: true });
-                imageBaseUrl = newBaseUrl;
-                alert('Configurações guardadas com sucesso!');
-            } catch (error) {
-                console.error("Erro ao guardar configurações:", error);
-                alert('Ocorreu um erro ao guardar as configurações.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Guardar Configurações';
-            }
-        });
         
-        document.getElementById('standardize-participants-btn').addEventListener('click', async () => {
-             if (!confirm("Esta ação irá padronizar todos os participantes para a nova estrutura de dados (com histórico de equipe, data de criação e status 'ativo'). Os dados antigos serão preservados no histórico. Deseja continuar?")) return;
+        function setupDashboardEventListeners() {
+            logoutBtn.addEventListener('click', async () => {
+                try { await signOut(auth); } catch (error) { console.error("Erro ao sair:", error); }
+            });
 
-            const btn = document.getElementById('standardize-participants-btn');
-            btn.disabled = true;
-            btn.textContent = 'Padronizando...';
-
-            try {
-                const batch = writeBatch(db);
-                const pSnap = await getDocs(collection(db, "participants"));
-
-                pSnap.forEach(doc => {
-                    const id = doc.id;
-                    const p = doc.data();
-                    let needsUpdate = false;
-                    let updatedData = { ...p };
-
-                    if (typeof updatedData.isActive === 'undefined') {
-                        updatedData.isActive = true;
-                        needsUpdate = true;
-                    }
-
-                    if (!updatedData.createdAt) {
-                        updatedData.createdAt = Timestamp.fromDate(new Date('2023-01-01T12:00:00Z'));
-                        needsUpdate = true;
-                    }
-
-                    if ((!updatedData.teamHistory || updatedData.teamHistory.length === 0) && updatedData.team) {
-                        const defaultDate = updatedData.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString().split('T')[0] : '2023-01-01';
-                        updatedData.teamHistory = [{ team: updatedData.team, date: defaultDate }];
-                        needsUpdate = true;
-                    }
-
-                    if ('team' in updatedData) {
-                        delete updatedData.team;
-                        needsUpdate = true;
-                    }
-
-                    if (needsUpdate) {
-                        const pRef = doc(db, 'participants', id);
-                        batch.set(pRef, updatedData);
-                    }
-                });
-
-                await batch.commit();
-                alert("Participantes padronizados com sucesso! A página será recarregada.");
-                loadAllData();
-            } catch(error) {
-                console.error("Erro na padronização:", error);
-                alert("Ocorreu um erro durante a padronização.");
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Padronizar Estrutura de Participantes';
-            }
-        });
-
-        document.getElementById('results-form').addEventListener('input', (e) => {
-            if (e.target.classList.contains('filter-available-participants')) {
-                const filterText = e.target.value.toLowerCase();
-                const availableList = e.target.nextElementSibling;
-                availableList.querySelectorAll('.available-participant').forEach(item => {
-                    item.style.display = item.dataset.name.includes(filterText) ? 'flex' : 'none';
-                });
-            }
-        });
-
-        document.getElementById('results-form').addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-
-            const participantItem = button.closest('.participant-item');
+            document.getElementById('admin-menu').addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = e.target.closest('a')?.dataset.target;
+                if (!targetId) return;
+                document.querySelectorAll('.admin-section').forEach(section => section.classList.add('hidden'));
+                document.querySelectorAll('.admin-menu-item').forEach(item => item.classList.remove('active'));
+                document.getElementById(targetId).classList.remove('hidden');
+                e.target.closest('a').classList.add('active');
+            });
+            document.querySelector('.admin-menu-item[data-target="section-resultados"]').classList.add('active');
             
-            const renumberClassifiedList = (list) => {
-                list.querySelectorAll('.classified-participant').forEach((item, index) => {
-                    const nameSpan = item.querySelector('span');
-                    nameSpan.textContent = `${index + 1}. ${participantsData[item.dataset.id].name}`;
-                });
-            };
-
-            if (button.classList.contains('add-participant-to-stage-btn')) {
-                const classifiedList = participantItem.closest('.grid').querySelector('.classified-list');
-                const pId = participantItem.dataset.id;
-                const pName = participantsData[pId].name;
-
-                const newItem = document.createElement('div');
-                newItem.className = 'participant-item classified-participant';
-                newItem.dataset.id = pId;
-                newItem.innerHTML = `<span>${pName}</span><div class="space-x-2"><button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button><button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button><button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button></div>`;
-                classifiedList.appendChild(newItem);
-                renumberClassifiedList(classifiedList);
-                participantItem.remove();
-            } else if (button.classList.contains('remove-participant-from-stage-btn')) {
-                const availableList = participantItem.closest('.grid').querySelector('.available-list');
-                const classifiedList = participantItem.parentElement;
-                const pId = participantItem.dataset.id;
-                const pName = participantsData[pId].name;
-
-                const newItem = document.createElement('div');
-                newItem.className = 'participant-item available-participant';
-                newItem.dataset.id = pId;
-                newItem.dataset.name = pName.toLowerCase();
-                newItem.innerHTML = `<span>${pName}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
-                availableList.appendChild(newItem);
-                participantItem.remove();
-                renumberClassifiedList(classifiedList);
-            } else if(button.classList.contains('move-up-btn')) {
-                if(participantItem.previousElementSibling) {
-                    participantItem.parentElement.insertBefore(participantItem, participantItem.previousElementSibling);
-                    renumberClassifiedList(participantItem.parentElement);
+            document.getElementById('save-settings-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('save-settings-btn');
+                btn.disabled = true;
+                btn.textContent = 'A guardar...';
+                const newBaseUrl = document.getElementById('image-base-url').value.trim();
+                try {
+                    const settingsRef = doc(db, "settings", "config");
+                    await setDoc(settingsRef, { imageBaseUrl: newBaseUrl }, { merge: true });
+                    imageBaseUrl = newBaseUrl;
+                    await logAction('SETTINGS_UPDATED', `URL base das imagens foi atualizada.`);
+                    alert('Configurações guardadas com sucesso!');
+                } catch (error) {
+                    console.error("Erro ao guardar configurações:", error);
+                    alert('Ocorreu um erro ao guardar as configurações.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Guardar Configurações';
                 }
-            } else if(button.classList.contains('move-down-btn')) {
-                if(participantItem.nextElementSibling) {
-                    participantItem.parentElement.insertBefore(participantItem.nextElementSibling, participantItem);
-                    renumberClassifiedList(participantItem.parentElement);
-                }
-            } else if (button.classList.contains('remove-stage-btn')) {
-                if (confirm('Tem a certeza que deseja remover esta etapa?')) {
-                    button.closest('.stage-form-group').remove();
-                }
-            }
-        });
+            });
         
-        document.getElementById('add-stage-btn').addEventListener('click', () => {
-            const container = document.getElementById('results-form');
-            const newIndex = container.querySelectorAll('.stage-form-group').length;
-            const newStageHTML = createStageFormHTML({ id: `new_stage_${Date.now()}`}, newIndex);
-            
-            if(newIndex === 0 && container.querySelector('p')) container.innerHTML = ''; 
-            container.insertAdjacentHTML('beforeend', newStageHTML);
-        });
-        
-        document.getElementById('save-results-btn').addEventListener('click', async () => {
-            const monthId = document.getElementById('month-select-admin').value;
-            if (!monthId) return;
+            document.getElementById('results-form').addEventListener('input', (e) => {
+                if (e.target.classList.contains('filter-available-participants')) {
+                    const filterText = e.target.value.toLowerCase();
+                    const availableList = e.target.nextElementSibling;
+                    availableList.querySelectorAll('.available-participant').forEach(item => {
+                        item.style.display = item.dataset.name.includes(filterText) ? 'flex' : 'none';
+                    });
+                }
+            });
 
-            const docRef = doc(db, 'results', monthId);
-            const isCompleted = document.getElementById('month-completed-checkbox').checked;
-            const geralPodiumImg = document.getElementById('geral_podium_img').value.trim();
-            const newStages = [];
-            
-            document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
-                const classifiedIds = [];
-                group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
-                    classifiedIds.push(item.dataset.id);
-                });
+            document.getElementById('results-form').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
 
-                const stage = {
-                    id: group.dataset.stageId,
-                    name: group.querySelector('.stage-name').value.trim(),
-                    date: group.querySelector('.stage-date').value,
-                    type: group.querySelector('.stage-type').value,
-                    durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
-                    podium_img: group.querySelector('.stage-podium-img').value.trim(),
-                    results: classifiedIds.map(id => ({ id }))
+                const participantItem = button.closest('.participant-item');
+                
+                const renumberClassifiedList = (list) => {
+                    list.querySelectorAll('.classified-participant').forEach((item, index) => {
+                        const nameSpan = item.querySelector('span');
+                        nameSpan.textContent = `${index + 1}. ${participantsData[item.dataset.id].name}`;
+                    });
                 };
-                newStages.push(stage);
+
+                if (button.classList.contains('add-participant-to-stage-btn')) {
+                    const classifiedList = participantItem.closest('.grid').querySelector('.classified-list');
+                    const pId = participantItem.dataset.id;
+                    const pName = participantsData[pId].name;
+
+                    const newItem = document.createElement('div');
+                    newItem.className = 'participant-item classified-participant';
+                    newItem.dataset.id = pId;
+                    newItem.innerHTML = `<span>${pName}</span><div class="space-x-2"><button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button><button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button><button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button></div>`;
+                    classifiedList.appendChild(newItem);
+                    renumberClassifiedList(classifiedList);
+                    participantItem.remove();
+                } else if (button.classList.contains('remove-participant-from-stage-btn')) {
+                    const availableList = participantItem.closest('.grid').querySelector('.available-list');
+                    const classifiedList = participantItem.parentElement;
+                    const pId = participantItem.dataset.id;
+                    const pName = participantsData[pId].name;
+
+                    const newItem = document.createElement('div');
+                    newItem.className = 'participant-item available-participant';
+                    newItem.dataset.id = pId;
+                    newItem.dataset.name = pName.toLowerCase();
+                    newItem.innerHTML = `<span>${pName}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
+                    availableList.appendChild(newItem);
+                    participantItem.remove();
+                    renumberClassifiedList(classifiedList);
+                } else if(button.classList.contains('move-up-btn')) {
+                    if(participantItem.previousElementSibling) {
+                        participantItem.parentElement.insertBefore(participantItem, participantItem.previousElementSibling);
+                        renumberClassifiedList(participantItem.parentElement);
+                    }
+                } else if(button.classList.contains('move-down-btn')) {
+                    if(participantItem.nextElementSibling) {
+                        participantItem.parentElement.insertBefore(participantItem.nextElementSibling, participantItem);
+                        renumberClassifiedList(participantItem.parentElement);
+                    }
+                } else if (button.classList.contains('remove-stage-btn')) {
+                    if (confirm('Tem a certeza que deseja remover esta etapa?')) {
+                        button.closest('.stage-form-group').remove();
+                    }
+                }
             });
             
-            try {
-                const dataToSave = { 
-                    title: monthlyData[monthId]?.title || `${monthId.split('_')[1]}/${monthId.split('_')[0]}`, 
-                    stages: newStages, 
-                    isCompleted: isCompleted,
-                    geral_podium_img: geralPodiumImg
-                };
+            document.getElementById('add-stage-btn').addEventListener('click', () => {
+                const container = document.getElementById('results-form');
+                const newIndex = container.querySelectorAll('.stage-form-group').length;
+                const newStageHTML = createStageFormHTML({ id: `new_stage_${Date.now()}`}, newIndex, true);
+                
+                if(newIndex === 0 && container.querySelector('p')) container.innerHTML = ''; 
+                container.insertAdjacentHTML('beforeend', newStageHTML);
+            });
+            
+            document.getElementById('save-results-btn').addEventListener('click', async () => {
+                const monthId = document.getElementById('month-select-admin').value;
+                if (!monthId) return;
 
-                await setDoc(docRef, dataToSave, { merge: true });
-                alert('Resultados guardados com sucesso!');
-                loadAllData();
-            } catch (error) {
-                console.error("Erro ao guardar resultados:", error);
-                alert("Ocorreu um erro ao guardar os resultados.");
-            }
-        });
+                const docRef = doc(db, 'results', monthId);
+                const isCompleted = document.getElementById('month-completed-checkbox').checked;
+                const geralPodiumImg = document.getElementById('geral_podium_img').value.trim();
+                const newStages = [];
+                
+                document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
+                    const classifiedIds = [];
+                    group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
+                        classifiedIds.push(item.dataset.id);
+                    });
+
+                    const stage = {
+                        id: group.dataset.stageId,
+                        name: group.querySelector('.stage-name').value.trim(),
+                        date: group.querySelector('.stage-date').value,
+                        type: group.querySelector('.stage-type').value,
+                        durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
+                        podium_img: group.querySelector('.stage-podium-img').value.trim(),
+                        results: classifiedIds.map(id => ({ id }))
+                    };
+                    newStages.push(stage);
+                });
+                
+                try {
+                    const dataToSave = { 
+                        title: monthlyData[monthId]?.title || `${monthId.split('_')[1]}/${monthId.split('_')[0]}`, 
+                        stages: newStages, 
+                        isCompleted: isCompleted,
+                        geral_podium_img: geralPodiumImg
+                    };
+
+                    await setDoc(docRef, dataToSave, { merge: true });
+                    await logAction('RESULTS_SAVED', `Resultados do mês "${dataToSave.title}" foram guardados.`);
+                    alert('Resultados guardados com sucesso!');
+                    loadAllData();
+                } catch (error) {
+                    console.error("Erro ao guardar resultados:", error);
+                    alert("Ocorreu um erro ao guardar os resultados.");
+                }
+            });
+            
+            document.getElementById('new-month-btn').addEventListener('click', async () => {
+                const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
+                if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
+                    alert("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); return;
+                }
+                if (monthlyData[monthId]) {
+                    alert("Este mês já existe!"); return;
+                }
+
+                const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
+                if (!monthTitle) return;
+
+                try {
+                    const [year, month] = monthId.split('_').map(Number);
+                    const thursdays = getThursdays(year, month);
+                    
+                    const newStages = thursdays.map((thursdayDate, index) => ({
+                        id: `etapa_${index + 1}_${Date.now()}`,
+                        name: `Etapa ${index + 1}`,
+                        date: thursdayDate,
+                        type: 'Circuito',
+                        durationDistance: '55 min + 1 volta',
+                        podium_img: '',
+                        results: []
+                    }));
+
+                    const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
+                    await setDoc(doc(db, 'results', monthId), newMonthData);
+                    await logAction('MONTH_CREATED', `Novo mês "${monthTitle}" (${monthId}) foi criado.`);
+                    alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
+                    
+                    monthlyData[monthId] = newMonthData;
+                    renderMonthSelector();
+                    document.getElementById('month-select-admin').value = monthId;
+                    renderResultsForm(monthId);
+
+                } catch (error) {
+                    console.error("Erro ao criar mês:", error);
+                    alert(`Erro: ${error.message}`);
+                }
+            });
+        }
         
-        document.getElementById('new-month-btn').addEventListener('click', async () => {
-            const monthId = prompt("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
-            if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
-                alert("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); return;
-            }
-            if (monthlyData[monthId]) {
-                alert("Este mês já existe!"); return;
-            }
-
-            const monthTitle = prompt("Insira o título para o novo mês (ex: Setembro/2025):");
-            if (!monthTitle) return;
-
-            try {
-                const [year, month] = monthId.split('_').map(Number);
-                const thursdays = getThursdays(year, month);
-                
-                const newStages = thursdays.map((thursdayDate, index) => ({
-                    id: `etapa_${index + 1}_${Date.now()}`,
-                    name: `Etapa ${index + 1}`,
-                    date: thursdayDate,
-                    type: 'Circuito',
-                    durationDistance: '55 min + 1 volta',
-                    podium_img: '',
-                    results: []
-                }));
-
-                const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
-                await setDoc(doc(db, 'results', monthId), newMonthData);
-                alert(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
-                
-                monthlyData[monthId] = newMonthData;
-                renderMonthSelector();
-                document.getElementById('month-select-admin').value = monthId;
-                renderResultsForm(monthId);
-
-            } catch (error) {
-                console.error("Erro ao criar mês:", error);
-                alert(`Erro: ${error.message}`);
-            }
-        });
 
         async function initializeAuth() {
             try {

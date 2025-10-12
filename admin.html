@@ -189,6 +189,16 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
                         </form>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="filter-team" class="font-medium text-sm">Filtrar por Equipe</label>
+                                <select id="filter-team" class="input-field mt-1"></select>
+                            </div>
+                            <div>
+                                <label for="filter-name" class="font-medium text-sm">Filtrar por Nome</label>
+                                <input id="filter-name" type="text" placeholder="Digite o nome..." class="input-field mt-1">
+                            </div>
+                        </div>
                         <div id="participants-list" class="space-y-2"></div>
                     </div>
                 </div>
@@ -568,12 +578,28 @@
 
         function renderParticipants() {
             const list = document.getElementById('participants-list');
+            const filterTeam = document.getElementById('filter-team').value;
+            const filterName = document.getElementById('filter-name').value.toLowerCase();
             list.innerHTML = '';
+
             const sortedParticipants = Object.entries(participantsData)
                 .filter(([id, p]) => p.isActive !== false)
                 .sort((a, b) => a[1].name.localeCompare(b[1].name));
 
-            sortedParticipants.forEach(([id, participant]) => {
+            const filteredParticipants = sortedParticipants.filter(([id, p]) => {
+                const teamHistory = p.teamHistory || [];
+                const currentTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : '';
+                const teamMatch = !filterTeam || currentTeam === filterTeam;
+                const nameMatch = p.name.toLowerCase().includes(filterName);
+                return teamMatch && nameMatch;
+            });
+
+            if (filteredParticipants.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Nenhum participante encontrado.</p>';
+                return;
+            }
+
+            filteredParticipants.forEach(([id, participant]) => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
                 const isSporadic = sporadicRiders.includes(id);

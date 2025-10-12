@@ -91,14 +91,25 @@
             align-items: center;
         }
         .accordion-content {
-            transition: max-height 0.3s ease-out;
             overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
         }
         .accordion-icon {
             transition: transform 0.3s ease-in-out;
         }
          .accordion-content.hidden ~ .accordion-header .accordion-icon {
              transform: rotate(-90deg);
+        }
+         .log-change {
+            background-color: #f9fafb;
+            border-left: 4px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+        .log-change code {
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -229,6 +240,11 @@
                             </div>
                             <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
                         </div>
+                         <div class="mt-4 border-t pt-4">
+                            <h3 class="font-semibold text-blue-700">Ações de Migração</h3>
+                            <p class="text-xs text-gray-500 mb-2">Use se precisar de adicionar equipes antigas à nova estrutura.</p>
+                            <button id="migrate-teams-btn" class="btn bg-blue-500 hover:bg-blue-600 text-white w-full">Migrar Equipes Antigas</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -236,6 +252,16 @@
                 <div id="section-logs" class="admin-section hidden">
                     <div class="card">
                         <h2 class="text-xl font-bold mb-4">Registro de Atividades (Logs)</h2>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="log-filter-action" class="font-medium text-sm">Filtrar por Ação</label>
+                                <select id="log-filter-action" class="input-field mt-1"></select>
+                            </div>
+                            <div>
+                                <label for="log-filter-text" class="font-medium text-sm">Buscar no Detalhe</label>
+                                <input id="log-filter-text" type="text" placeholder="Digite para buscar..." class="input-field mt-1">
+                            </div>
+                        </div>
                         <div id="logs-list" class="space-y-2 text-sm text-gray-600 max-h-[40rem] overflow-y-auto"></div>
                     </div>
                 </div>
@@ -371,6 +397,7 @@
         let imageBaseUrl = '';
         let participantOriginalTeam = '';
         let dashboardInitialized = false;
+        let allLogs = [];
         
         // --- Modal Logic ---
         function openInfoModal(text) {
@@ -410,15 +437,19 @@
         }
         // --- End Modal Logic ---
 
-        async function logAction(action, details) {
+        async function logAction(action, details, before, after) {
             if (!auth.currentUser) return;
             try {
-                await addDoc(collection(db, 'logs'), {
+                 const logEntry = {
                     timestamp: serverTimestamp(),
                     adminEmail: auth.currentUser.email,
                     action: action,
-                    details: details
-                });
+                    details: details,
+                 };
+                 if (before) logEntry.before = JSON.stringify(before, null, 2);
+                 if (after) logEntry.after = JSON.stringify(after, null, 2);
+
+                await addDoc(collection(db, 'logs'), logEntry);
             } catch (error) {
                 console.error("Erro ao gravar log:", error);
             }
@@ -564,10 +595,13 @@
                     document.getElementById('image-base-url').value = imageBaseUrl;
                 }
                 
+                allLogs = [];
+                logsSnap.forEach(doc => allLogs.push(doc.data()));
+
                 renderParticipants();
                 renderMonthSelector();
                 renderTeamSelectors();
-                renderLogs(logsSnap);
+                renderLogs();
                 renderTeamsList();
                 
                 const initialMonth = document.getElementById('month-select-admin').value;
@@ -590,6 +624,9 @@
                 sortedTeams.forEach(teamName => {
                      select.add(new Option(teamName, teamName));
                 });
+                if(select.id !== 'filter-team') {
+                    select.add(new Option("--- Criar nova equipe ---", "new_team"));
+                }
                 select.value = newTeamToSelect || currentValue || '';
             });
         }
@@ -603,7 +640,7 @@
                     try {
                         const newDocRef = doc(collection(db, 'teams'));
                         await setDoc(newDocRef, { name: trimmedTeam });
-                        await logAction('TEAM_CREATED', `Equipe "${trimmedTeam}" criada.`);
+                        await logAction('TEAM_CREATED', `Equipe "${trimmedTeam}" criada.`, null, { name: trimmedTeam });
                         teamsData[newDocRef.id] = { name: trimmedTeam };
                         renderTeamSelectors(trimmedTeam);
                         renderTeamsList();
@@ -617,21 +654,44 @@
             }
         }
         
-        function renderLogs(logsSnap) {
+        function renderLogs() {
             const list = document.getElementById('logs-list');
+            const actionFilter = document.getElementById('log-filter-action').value;
+            const textFilter = document.getElementById('log-filter-text').value.toLowerCase();
             list.innerHTML = '';
-            if (logsSnap.empty) {
-                list.innerHTML = '<p>Nenhuma atividade registrada.</p>';
+            
+            const filteredLogs = allLogs.filter(log => {
+                const actionMatch = !actionFilter || log.action === actionFilter;
+                const textMatch = !textFilter || (log.details && log.details.toLowerCase().includes(textFilter)) || (log.before && log.before.toLowerCase().includes(textFilter)) || (log.after && log.after.toLowerCase().includes(textFilter));
+                return actionMatch && textMatch;
+            });
+
+            if (filteredLogs.length === 0) {
+                list.innerHTML = '<p>Nenhuma atividade encontrada com os filtros atuais.</p>';
                 return;
             }
-            logsSnap.forEach(doc => {
-                const log = doc.data();
+
+            const actionTypes = [...new Set(allLogs.map(l => l.action))].sort();
+            const filterSelect = document.getElementById('log-filter-action');
+            filterSelect.innerHTML = '<option value="">Todas as Ações</option>';
+            actionTypes.forEach(action => filterSelect.add(new Option(action, action)));
+            filterSelect.value = actionFilter;
+
+            filteredLogs.forEach(log => {
                 const date = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('pt-BR') : 'Data inválida';
                 const div = document.createElement('div');
                 div.className = 'p-2 bg-gray-50 rounded-md border-l-4 border-gray-300';
+                let changesHtml = '';
+                if(log.before && log.after) {
+                    changesHtml = `
+                        <div class="log-change"><strong>Antes:</strong><code>${log.before}</code></div>
+                        <div class="log-change"><strong>Depois:</strong><code>${log.after}</code></div>
+                    `;
+                }
                 div.innerHTML = `
                     <p><strong class="font-semibold">${log.details}</strong></p>
                     <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
+                    ${changesHtml}
                 `;
                 list.appendChild(div);
             });
@@ -727,7 +787,7 @@
             const hiddenClass = isOpen ? '' : 'hidden';
 
             return `
-                <div class="stage-form-group border-t-2 border-dashed pt-4">
+                <div class="stage-form-group border-t-2 border-dashed pt-4" data-stage-id="${stageId}">
                     <div class="accordion-header bg-gray-50 rounded-t-lg p-4">
                          <h3 class="font-bold text-lg">${stage.name || `Etapa ${index + 1}`}</h3>
                          <i class="fas fa-chevron-down accordion-icon"></i>
@@ -871,11 +931,12 @@
                 btn.disabled = true;
                 btn.textContent = 'A guardar...';
                 const newBaseUrl = document.getElementById('image-base-url').value.trim();
+                const oldBaseUrl = imageBaseUrl;
                 try {
                     const settingsRef = doc(db, "settings", "config");
                     await setDoc(settingsRef, { imageBaseUrl: newBaseUrl }, { merge: true });
                     imageBaseUrl = newBaseUrl;
-                    await logAction('SETTINGS_UPDATED', `URL base das imagens foi atualizada.`);
+                    await logAction('SETTINGS_UPDATED', `URL base das imagens foi atualizada.`, { imageBaseUrl: oldBaseUrl }, { imageBaseUrl: newBaseUrl });
                     openInfoModal('Configurações guardadas com sucesso!');
                 } catch (error) {
                     console.error("Erro ao guardar configurações:", error);
@@ -883,6 +944,12 @@
                 } finally {
                     btn.disabled = false;
                     btn.textContent = 'Guardar Configurações';
+                }
+            });
+
+            document.getElementById('migrate-teams-btn').addEventListener('click', async () => {
+                if(await openConfirmModal("Deseja procurar por equipes antigas e adicioná-las à nova lista de equipes?")) {
+                    loadAllData();
                 }
             });
         
@@ -986,7 +1053,7 @@
                     });
 
                     const stage = {
-                        id: group.dataset.stageId,
+                        id: group.dataset.stageId || `new_stage_${Date.now()}`,
                         name: group.querySelector('.stage-name').value.trim(),
                         date: group.querySelector('.stage-date').value,
                         type: group.querySelector('.stage-type').value,
@@ -1005,8 +1072,9 @@
                         geral_podium_img: geralPodiumImg
                     };
 
+                    const oldData = monthlyData[monthId] || {};
                     await setDoc(docRef, dataToSave, { merge: true });
-                    await logAction('RESULTS_SAVED', `Resultados do mês "${dataToSave.title}" foram guardados.`);
+                    await logAction('RESULTS_SAVED', `Resultados do mês "${dataToSave.title}" foram guardados.`, oldData, dataToSave);
                     openInfoModal('Resultados guardados com sucesso!');
                     loadAllData();
                 } catch (error) {
@@ -1044,7 +1112,7 @@
 
                     const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
                     await setDoc(doc(db, 'results', monthId), newMonthData);
-                    await logAction('MONTH_CREATED', `Novo mês "${monthTitle}" (${monthId}) foi criado.`);
+                    await logAction('MONTH_CREATED', `Novo mês "${monthTitle}" (${monthId}) foi criado.`, null, newMonthData);
                     openInfoModal(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
                     
                     monthlyData[monthId] = newMonthData;
@@ -1074,7 +1142,7 @@
                 try {
                     const newDocRef = doc(collection(db, 'teams'));
                     await setDoc(newDocRef, { name: newTeamName });
-                    await logAction('TEAM_CREATED', `Equipe "${newTeamName}" criada.`);
+                    await logAction('TEAM_CREATED', `Equipe "${newTeamName}" criada.`, null, { name: newTeamName });
                     openInfoModal("Equipe adicionada com sucesso!");
                     e.target.reset();
                     loadAllData();
@@ -1110,7 +1178,7 @@
                             });
                             await batch.commit();
 
-                            await logAction('TEAM_UPDATED', `Equipe "${teamName}" foi renomeada para "${newName.trim()}".`);
+                            await logAction('TEAM_UPDATED', `Equipe "${teamName}" foi renomeada para "${newName.trim()}".`, { name: teamName }, { name: newName.trim() });
                             openInfoModal("Equipe atualizada com sucesso.");
                             loadAllData();
                         } catch (error) {
@@ -1132,7 +1200,7 @@
                     if(await openConfirmModal(`Tem certeza que deseja excluir a equipe "${teamName}"?`)) {
                         try {
                             await deleteDoc(doc(db, 'teams', teamId));
-                            await logAction('TEAM_DELETED', `Equipe "${teamName}" foi excluída.`);
+                            await logAction('TEAM_DELETED', `Equipe "${teamName}" foi excluída.`, { name: teamName }, null);
                             openInfoModal("Equipe excluída com sucesso.");
                             loadAllData();
                         } catch (error) {
@@ -1142,6 +1210,60 @@
                     }
                 }
             });
+
+             document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('participant-name').value.trim();
+                if (name) {
+                    const sanitizedName = name.replace(/\s+/g, '-').toLowerCase();
+                    const participantId = `${sanitizedName}-${Math.random().toString(36).substring(2, 8)}`;
+                    
+                    const participantData = {
+                        name: name,
+                        teamHistory: [{
+                            team: document.getElementById('participant-team').value,
+                            date: new Date().toISOString().split('T')[0]
+                        }],
+                        imageUrl: document.getElementById('participant-image-filename').value.trim(),
+                        isActive: true,
+                        createdAt: serverTimestamp()
+                    };
+
+                    await setDoc(doc(db, "participants", participantId), participantData);
+                    await logAction('PARTICIPANT_CREATED', `Participante "${name}" criado.`, null, participantData);
+                    e.target.reset();
+                    loadAllData();
+                }
+            });
+
+            document.getElementById('participants-list').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                const id = button.dataset.id;
+                
+                if (button.querySelector('.fa-edit')) { 
+                    const participant = participantsData[id];
+                    const teamHistory = participant.teamHistory || [];
+                    participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
+                    
+                    document.getElementById('edit-participant-id').value = id;
+                    document.getElementById('edit-participant-name').value = participant.name;
+                    document.getElementById('edit-participant-team').value = participantOriginalTeam;
+                    document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
+                    document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
+
+                    document.getElementById('team-change-options').style.display = 'none';
+                    document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('correction-checkbox').checked = false;
+
+                    openModal('edit-participant-modal');
+                } else if (button.querySelector('.fa-trash')) {
+                    openDeleteOptionsModal(id);
+                }
+            });
+
+            document.getElementById('log-filter-action').addEventListener('change', renderLogs);
+            document.getElementById('log-filter-text').addEventListener('input', renderLogs);
         }
         
         async function initializeAuth() {

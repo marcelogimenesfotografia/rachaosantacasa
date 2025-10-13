@@ -258,7 +258,7 @@
                     ...lifetimeStats[id]
                 })).sort((a, b) => b.totalPoints - a.totalPoints);
                 
-                renderTable(finalRanking, teamsData);
+                renderTable(finalRanking, teamsData, monthlyData);
 
                 loadingOverlay.style.display = 'none';
                 rankingContainer.style.display = 'block';
@@ -269,7 +269,7 @@
             }
         }
 
-        function renderTable(rankingData, teamsData) {
+        function renderTable(rankingData, teamsData, monthlyData) {
             const tableBody = document.getElementById('ranking-table-body');
             tableBody.innerHTML = '';
             rankingData.forEach((p, index) => {
@@ -289,12 +289,12 @@
                     </td>
                     <td class="text-right font-bold text-gray-800">${p.totalPoints}</td>
                 `;
-                row.addEventListener('click', () => renderModal(p, teamsData));
+                row.addEventListener('click', () => renderModal(p, teamsData, monthlyData));
                 tableBody.appendChild(row);
             });
         }
 
-        function renderModal(participant, teamsData) {
+        function renderModal(participant, teamsData, monthlyData) {
             const modalContent = document.getElementById('modal-content-container');
             
             let top5Html = '';

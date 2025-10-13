@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <!-- Metadados essenciais -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Administração - Rachão Santa Casa</title>
+    <title>Classificação Rachão Santa Casa.</title>
+    
+    <!-- CDNs de Estilos e Fontes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos Personalizados -->
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -15,382 +22,163 @@
             --text-primary: #1f2937;
             --text-secondary: #6b7280;
             --accent-color: #eab308;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
-        .card {
-            background-color: var(--card-bg-color);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
-        }
-        .input-field {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-            background-color: #f9fafb;
-        }
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: background-color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .btn-primary { background-color: var(--accent-color); color: white; }
-        .btn-primary:hover:not(:disabled) { background-color: #d99f07; }
-        .btn-secondary { background-color: #e5e7eb; color: var(--text-primary); }
-        .btn-secondary:hover { background-color: #d1d5db; }
-        .btn-danger { background-color: #ef4444; color: white; }
-        .btn-danger:hover { background-color: #dc2626; }
-        .modal { display: none; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.7); }
-        .modal.is-open { display: flex; }
-        .participant-list {
-            height: 250px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-        }
-        .participant-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-        }
-        .participant-item:hover {
-            background-color: #f3f4f6;
-        }
-        .admin-menu-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .admin-menu-item:hover {
-            background-color: #f3f4f6;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
             color: var(--text-primary);
         }
-        .admin-menu-item.active {
-            background-color: var(--accent-color);
-            color: white;
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
         }
-        .accordion-header {
-            cursor: pointer;
+        .filter-container {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            justify-content: center;
             align-items: center;
+            gap: 1.5rem;
         }
-        .accordion-content {
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out;
+        #month-select {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 9999px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            cursor: pointer;
         }
-        .accordion-icon {
-            transition: transform 0.3s ease-in-out;
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
         }
-         .accordion-content.hidden ~ .accordion-header .accordion-icon {
-             transform: rotate(-90deg);
-        }
-         .log-change {
-            background-color: #f9fafb;
-            border-left: 4px solid var(--border-color);
+        .tab-button {
             padding: 0.5rem 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
-            max-height: 200px;
-            overflow-y: auto;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            color: var(--text-secondary);
+            background-color: transparent;
+            position: relative;
         }
-        .log-change code {
-            white-space: pre-wrap;
-            word-break: break-all;
+        .tab-button:hover { color: var(--text-primary); }
+        .tab-button.active { color: var(--accent-color); }
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
         }
+        .podium-container { display: flex; justify-content: center; align-items: flex-end; gap: 1rem; padding: 2rem 0; text-align: center; }
+        .podium-step { display: flex; flex-direction: column; align-items: center; width: 33.33%; }
+        .podium-rank { font-size: 2.5rem; font-weight: 700; line-height: 1; }
+        .podium-rank-1 { color: var(--gold); order: 2; transform: translateY(-20px); }
+        .podium-rank-2 { color: var(--silver); order: 1; }
+        .podium-rank-3 { color: var(--bronze); order: 3; }
+        .podium-image { border-radius: 50%; object-fit: cover; margin-top: 0.5rem; border: 4px solid; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .podium-image-1 { width: 140px; height: 140px; border-color: var(--gold); }
+        .podium-image-2 { width: 110px; height: 110px; border-color: var(--silver); }
+        .podium-image-3 { width: 110px; height: 110px; border-color: var(--bronze); }
+        .podium-name { font-weight: 600; margin-top: 1rem; color: var(--text-primary); }
+        .podium-points { font-size: 0.875rem; color: var(--text-secondary); }
+        .leaderboard-table { width: 100%; border-collapse: collapse; }
+        .leaderboard-table th, .leaderboard-table td { padding: 1rem; text-align: left; }
+        .leaderboard-table thead { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+        .leaderboard-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background-color: 0.2s ease-in-out; }
+        .leaderboard-table tbody tr:last-child { border-bottom: none; }
+        .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
+        .profile-thumb-wrapper { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
+        .modal { display: none; } .modal.is-open { display: flex; }
+        .modal-content.card { max-width: 500px; width: 90%; text-align: center; position: relative; }
+        .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
+        .interaction-button { display: inline-flex; align-items: center; gap: 0.5rem; background-color: #f9fafb; color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 500; transition: all 0.2s; cursor: pointer; border: 1px solid var(--border-color); }
+        .interaction-button:hover { background-color: #f4f4f5; color: var(--text-primary); }
+        .interaction-button .fa-heart.liked { color: #ef4444; }
+        .comment-input { background-color: #f9fafb; border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 0.75rem; padding: 0.75rem 1rem; width: 100%; }
+        .comment-input:focus { outline: none; border-color: var(--accent-color); }
+        .comment-box { background-color: #f9fafb; padding: 1rem; border-radius: 1rem; }
     </style>
 </head>
 <body class="antialiased">
-
-    <!-- Tela de Login -->
-    <div id="login-section" class="min-h-screen flex items-center justify-center bg-gray-100">
-        <div class="card w-full max-w-sm">
-            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo" class="w-48 mx-auto mb-6">
-            <h2 class="text-2xl font-bold text-center mb-6">Acesso Restrito</h2>
-            <form id="login-form" class="space-y-4">
-                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="email" class="input-field mt-1" required>
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
-                    <input type="password" id="password" class="input-field mt-1" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-full">Entrar</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Painel Principal (escondido por padrão) -->
-    <div id="dashboard-section" class="hidden max-w-7xl mx-auto p-4 md:p-8">
-        <header class="flex justify-between items-center mb-10">
-            <h1 class="text-3xl font-bold">Painel de Administração</h1>
-            <button id="logout-btn" class="btn btn-secondary">Sair</button>
+    <div class="max-w-5xl mx-auto p-4 md:p-6">
+        <header class="text-center mb-6">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
+            <nav class="mt-4">
+                <ul class="flex justify-center gap-6 md:gap-8">
+                    <li><a href="index.html" class="font-semibold text-yellow-500 transition">Classificação</a></li>
+                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
+                    <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
+                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+                </ul>
+            </nav>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <!-- Menu Lateral -->
-            <div class="md:col-span-1">
-                <div class="card p-4">
-                    <ul id="admin-menu" class="space-y-1">
-                        <li><a href="#" data-target="section-resultados" class="admin-menu-item"><i class="fas fa-trophy w-6 mr-2"></i>Resultados</a></li>
-                        <li><a href="#" data-target="section-participantes" class="admin-menu-item"><i class="fas fa-users w-6 mr-2"></i>Participantes</a></li>
-                        <li><a href="#" data-target="section-equipes" class="admin-menu-item"><i class="fas fa-shield-alt w-6 mr-2"></i>Equipes</a></li>
-                        <li><a href="#" data-target="section-config" class="admin-menu-item"><i class="fas fa-cog w-6 mr-2"></i>Configurações</a></li>
-                        <li><a href="#" data-target="section-logs" class="admin-menu-item"><i class="fas fa-clipboard-list w-6 mr-2"></i>Logs</a></li>
-                    </ul>
-                </div>
+        <main>
+            <div id="loading-overlay" class="text-center p-10">
+                <p class="text-lg font-semibold text-gray-500">Carregando dados...</p>
             </div>
 
-            <!-- Área de Conteúdo -->
-            <div class="md:col-span-3">
-                
-                <!-- Seção Gerir Resultados -->
-                <div id="section-resultados" class="admin-section">
-                    <div class="card">
-                        <h2 class="text-xl font-bold mb-4">Gerir Resultados</h2>
-                        <div class="flex flex-wrap gap-4 items-center mb-6">
-                            <select id="month-select-admin" class="input-field flex-grow"></select>
-                            <button id="new-month-btn" class="btn btn-secondary">Novo Mês</button>
-                        </div>
-
-                        <div id="results-form" class="space-y-2"></div>
-                        <div class="mt-6 border-t pt-6">
-                            <button id="add-stage-btn" class="btn btn-secondary w-full mb-4">Adicionar Nova Etapa</button>
-                            <div class="space-y-4 my-4">
-                                <div>
-                                    <label for="geral_podium_img" class="font-medium text-sm">URL da Foto da Classificação Geral</label>
-                                    <input type="url" id="geral_podium_img" class="input-field mt-1" placeholder="https://...">
-                                </div>
-                                <div>
-                                    <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" id="month-completed-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                                        <span class="font-medium">Mês Concluído (exibir pódio)</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <button id="save-results-btn" class="btn btn-primary w-full">Guardar Alterações do Mês</button>
-                        </div>
+            <div id="content-wrapper" class="hidden">
+                <div class="filter-container card">
+                    <select id="month-select"></select>
+                    <div id="tabs-container" class="tabs">
+                        <button id="tab-geral" class="tab-button active">Geral</button>
                     </div>
                 </div>
-                
-                <!-- Seção Gerir Participantes -->
-                <div id="section-participantes" class="admin-section hidden">
-                     <div class="card">
-                        <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
-                        <form id="add-participant-form" class="space-y-3 mb-6">
-                            <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
-                            <select id="participant-team" class="input-field"></select>
-                            <div>
-                                <label for="participant-image-filename" class="font-medium text-sm">Nome do Ficheiro da Foto</label>
-                                <input id="participant-image-filename" type="text" placeholder="ex: joao.jpg" class="input-field mt-1">
-                                <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta configurada.</p>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
-                        </form>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label for="filter-team" class="font-medium text-sm">Filtrar por Equipe</label>
-                                <select id="filter-team" class="input-field mt-1"></select>
-                            </div>
-                            <div>
-                                <label for="filter-name" class="font-medium text-sm">Filtrar por Nome</label>
-                                <input id="filter-name" type="text" placeholder="Digite o nome..." class="input-field mt-1">
-                            </div>
-                        </div>
-                        <div id="participants-list" class="space-y-2"></div>
-                    </div>
-                </div>
-                
-                 <!-- Seção Gerir Equipes -->
-                <div id="section-equipes" class="admin-section hidden">
-                     <div class="card">
-                        <h2 class="text-xl font-bold mb-4">Gerir Equipes</h2>
-                        <form id="add-team-form" class="space-y-3 mb-6">
-                            <label for="new-team-name" class="font-medium text-sm">Nome da Nova Equipe</label>
-                            <input id="new-team-name" type="text" placeholder="Nome da Equipe" class="input-field" required>
-                            <button type="submit" class="btn btn-primary w-full">Adicionar Equipe</button>
-                        </form>
-                        <div id="teams-list" class="space-y-2"></div>
-                    </div>
-                </div>
-
-                <!-- Seção Configurações -->
-                <div id="section-config" class="admin-section hidden">
-                    <div class="card">
-                        <h2 class="text-xl font-bold mb-4">Configurações Gerais</h2>
-                        <div class="space-y-3">
-                            <div>
-                                <label for="image-base-url" class="font-medium text-sm">URL Base das Imagens</label>
-                                <input id="image-base-url" type="url" placeholder="https://..." class="input-field mt-1">
-                                <p class="text-xs text-gray-500 mt-1">Caminho da pasta onde as fotos estão guardadas (terminar com /).</p>
-                            </div>
-                            <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Seção Logs -->
-                <div id="section-logs" class="admin-section hidden">
-                    <div class="card">
-                        <h2 class="text-xl font-bold mb-4">Registro de Atividades (Logs)</h2>
-                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label for="log-filter-action" class="font-medium text-sm">Filtrar por Ação</label>
-                                <select id="log-filter-action" class="input-field mt-1"></select>
-                            </div>
-                            <div>
-                                <label for="log-filter-text" class="font-medium text-sm">Buscar no Detalhe</label>
-                                <input id="log-filter-text" type="text" placeholder="Digite para buscar..." class="input-field mt-1">
-                            </div>
-                        </div>
-                        <div id="logs-list" class="space-y-2 text-sm text-gray-600 max-h-[40rem] overflow-y-auto"></div>
-                    </div>
-                </div>
-
+                <div id="dynamic-content"></div>
             </div>
-        </div>
-    </div>
-
-    <!-- Modais -->
-    <div id="edit-participant-modal" class="modal">
-        <div class="card w-full max-w-md">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Editar Participante</h2>
-                <button onclick="closeModal('edit-participant-modal')" class="text-2xl">&times;</button>
-            </div>
-            <form id="edit-participant-form" class="space-y-3">
-                <input type="hidden" id="edit-participant-id">
-                <div>
-                    <label for="edit-participant-name" class="font-medium">Nome</label>
-                    <input id="edit-participant-name" type="text" class="input-field mt-1" required>
-                </div>
-                <div>
-                    <label for="edit-participant-team" class="font-medium">Equipe</label>
-                    <select id="edit-participant-team" class="input-field mt-1"></select>
-                </div>
-                <div id="team-change-options" class="hidden space-y-2 border-t pt-4">
-                    <div>
-                        <label for="transfer-date" class="font-medium text-sm">Data da Transferência/Correção</label>
-                        <input id="transfer-date" type="date" class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label class="flex items-center gap-2">
-                             <input type="checkbox" id="correction-checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                             <span class="text-sm">Apenas corrigir (alterar todo o histórico)</span>
-                        </label>
-                    </div>
-                </div>
-                <div>
-                    <label for="edit-participant-image-filename" class="font-medium">Nome do Ficheiro da Foto</label>
-                    <input id="edit-participant-image-filename" type="text" class="input-field mt-1" placeholder="ex: joao.jpg">
-                     <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta configurada.</p>
-                </div>
-                <div class="pt-2">
-                    <label class="flex items-center gap-2">
-                         <input type="checkbox" id="edit-participant-sporadic" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
-                         <span class="font-medium">Marcar como participante esporádico (não pontua)</span>
-                    </label>
-                </div>
-                <div class="flex justify-end gap-3 pt-4">
-                     <button type="button" onclick="closeModal('edit-participant-modal')" class="btn btn-secondary">Cancelar</button>
-                     <button type="submit" class="btn btn-primary">Guardar Alterações</button>
-                </div>
-            </form>
-        </div>
-    </div>
+        </main>
     
-    <div id="delete-options-modal" class="modal">
-        <div class="card w-full max-w-lg">
-            <h2 class="text-xl font-bold mb-2">Como deseja remover <span id="delete-participant-name" class="text-yellow-600"></span>?</h2>
-            <p class="text-gray-600 mb-6">Pode desativar o participante para o remover das listas, mas manter o seu histórico, ou excluí-lo permanentemente.</p>
-            
-            <div class="space-y-4">
-                <div class="p-4 border rounded-lg">
-                    <h3 class="font-semibold">Desativar Participante (Recomendado)</h3>
-                    <p class="text-sm text-gray-500 mb-3">O participante será removido das listas de seleção, mas o seu nome e resultados históricos continuarão a aparecer nas classificações antigas.</p>
-                    <button id="deactivate-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white w-full">Desativar</button>
-                </div>
-                <div class="p-4 border rounded-lg border-red-200 bg-red-50">
-                     <h3 class="font-semibold text-red-700">Excluir Permanente</h3>
-                    <p class="text-sm text-gray-500 mb-3">O participante e todo o seu histórico de resultados serão apagados para sempre. Esta ação não pode ser desfeita.</p>
-                    <button id="hard-delete-btn" class="btn bg-red-600 hover:bg-red-700 text-white w-full">Excluir Permanente</button>
-                </div>
-            </div>
-
-            <div class="mt-6 text-center">
-                 <button id="cancel-delete-options-btn" class="btn btn-secondary">Cancelar</button>
-            </div>
+        <div id="details-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+            <div id="modal-content-container" class="modal-content card"></div>
         </div>
-    </div>
-
-    <!-- Universal Modals -->
-    <div id="info-modal" class="modal">
-        <div class="card w-full max-w-sm text-center">
-            <p id="info-modal-text" class="mb-6"></p>
-            <button id="info-modal-close" class="btn btn-primary">OK</button>
-        </div>
-    </div>
-
-    <div id="confirm-modal" class="modal">
-        <div class="card w-full max-w-sm text-center">
-            <p id="confirm-modal-text" class="mb-6"></p>
-            <div class="flex justify-center gap-4">
-                <button id="confirm-modal-cancel" class="btn btn-secondary">Cancelar</button>
-                <button id="confirm-modal-ok" class="btn btn-primary">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="prompt-modal" class="modal">
-        <div class="card w-full max-w-sm">
-            <p id="prompt-modal-text" class="mb-4 font-medium"></p>
-            <input id="prompt-modal-input" type="text" class="input-field mb-4">
-            <div class="flex justify-end gap-4">
-                <button id="prompt-modal-cancel" class="btn btn-secondary">Cancelar</button>
-                <button id="prompt-modal-ok" class="btn btn-primary">OK</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="log-details-modal" class="modal">
-        <div class="card w-full max-w-3xl">
-             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Detalhes do Log</h2>
-                <button onclick="closeModal('log-details-modal')" class="text-2xl">&times;</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <h3 class="font-semibold mb-2">Antes</h3>
-                    <div class="log-change"><code><pre id="log-details-before" class="whitespace-pre-wrap"></pre></code></div>
-                </div>
-                <div>
-                    <h3 class="font-semibold mb-2">Depois</h3>
-                    <div class="log-change"><code><pre id="log-details-after" class="whitespace-pre-wrap"></pre></code></div>
+        
+        <div id="delete-confirmation-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70">
+            <div class="modal-content card max-w-sm">
+                <h3 class="text-lg font-bold mb-4">Confirmar Exclusão</h3>
+                <p class="mb-6 text-gray-600">Tem certeza que deseja apagar? Esta ação não pode ser desfeita.</p>
+                <div class="flex justify-center gap-4">
+                    <button id="cancel-delete-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition">Cancelar</button>
+                    <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition">Apagar</button>
                 </div>
             </div>
         </div>
+        
+        <div class="text-center mt-8">
+            <a href="admin.html" class="inline-block bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition shadow-sm">
+                <i class="fas fa-user-shield mr-2"></i> Acesso Administrativo
+            </a>
+        </div>
+
+        <footer class="mt-12 pt-8 text-center text-gray-500 border-t border-gray-200">
+            <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-20 h-auto mx-auto mb-2 opacity-80">
+            <p class="text-sm font-semibold">Nós pedalamos forte, mas o que nos mantém juntos é a amizade.</p>
+        </footer>
     </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, runTransaction, collection, addDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
@@ -404,881 +192,508 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
-        let participantsData = {};
-        let nameToIdMap = {};
+        
+        let userId = null;
+        let likesData = {};
+        let commentsData = {};
         let monthlyData = {};
-        let sporadicRiders = [];
+        let participantsData = {};
         let teamsData = {};
+        let nameToIdMap = {};
+        let sporadicRiders = [];
+        let allParticipantsData = [];
+        let currentTab = 'tab-geral';
         let imageBaseUrl = '';
-        let participantOriginalTeam = '';
-        let dashboardInitialized = false;
-        let allLogs = [];
-        
-        // --- Modal Logic ---
-        function openInfoModal(text) {
-            document.getElementById('info-modal-text').textContent = text;
-            openModal('info-modal');
-        }
 
-        function openConfirmModal(text) {
-            return new Promise((resolve) => {
-                document.getElementById('confirm-modal-text').textContent = text;
-                openModal('confirm-modal');
-                document.getElementById('confirm-modal-ok').onclick = () => { closeModal('confirm-modal'); resolve(true); };
-                document.getElementById('confirm-modal-cancel').onclick = () => { closeModal('confirm-modal'); resolve(false); };
-            });
-        }
-
-        async function openPromptModal(text, defaultValue = '') {
-            return new Promise((resolve) => {
-                document.getElementById('prompt-modal-text').textContent = text;
-                const input = document.getElementById('prompt-modal-input');
-                input.value = defaultValue;
-                openModal('prompt-modal');
-                
-                const okHandler = () => {
-                    closeModal('prompt-modal');
-                    resolve(input.value);
-                };
-
-                const cancelHandler = () => {
-                    closeModal('prompt-modal');
-                    resolve(null);
-                };
-
-                document.getElementById('prompt-modal-ok').onclick = okHandler;
-                document.getElementById('prompt-modal-cancel').onclick = cancelHandler;
-            });
-        }
-        // --- End Modal Logic ---
-
-        async function logAction(action, details, before, after) {
-            if (!auth.currentUser) return;
-            try {
-                 const logEntry = {
-                    timestamp: serverTimestamp(),
-                    adminEmail: auth.currentUser.email,
-                    action: action,
-                    details: details,
-                 };
-                 if (before) logEntry.before = JSON.stringify(before, null, 2);
-                 if (after) logEntry.after = JSON.stringify(after, null, 2);
-
-                await addDoc(collection(db, 'logs'), logEntry);
-            } catch (error) {
-                console.error("Erro ao gravar log:", error);
-            }
-        }
-
-        function showDashboard() {
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('dashboard-section').style.display = 'block';
-            if (!dashboardInitialized) {
-                setupDashboardEventListeners();
-                dashboardInitialized = true;
-            }
-            loadAllData();
-        }
-
-        function showLogin() {
-            document.getElementById('login-section').style.display = 'flex';
-            document.getElementById('dashboard-section').style.display = 'none';
+        function getPlaceholderImageUrl(name) {
+            const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
+            return `https://placehold.co/200x200/e5e7eb/000000?text=${firstLetter}`;
         }
         
-        function openModal(id) { document.getElementById(id).classList.add('is-open'); }
-        window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
+        function getTeamForDate(participantData, dateStr = null) {
+            const history = participantData.teamHistory || [];
+            if (!history || history.length === 0) {
+                 return ''; 
+            }
 
-        async function standardizeParticipantsData() {
-            // This function is now run automatically once on load
+            const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (!dateStr || isNaN(new Date(dateStr))) {
+                 const latestTeamId = sortedHistory[sortedHistory.length - 1].teamId;
+                 return teamsData[latestTeamId]?.name || '';
+            }
+
+            const competitionDate = new Date(dateStr + 'T00:00:00');
+            
+            let teamIdForDate = ''; 
+            
+            for (const entry of sortedHistory) {
+                if (new Date(entry.date) <= competitionDate) {
+                    teamIdForDate = entry.teamId;
+                } else {
+                    break;
+                }
+            }
+            
+            if (teamIdForDate === '' && sortedHistory.length > 0) {
+                teamIdForDate = sortedHistory[0].teamId;
+            }
+            
+            return teamsData[teamIdForDate]?.name || '';
         }
 
-        async function migrateTeams() {
-             const existingTeamsSnap = await getDocs(collection(db, "teams"));
-             const existingTeams = new Set();
-             existingTeamsSnap.forEach(doc => existingTeams.add(doc.data().name.toUpperCase()));
+        function processStageData(stageData) {
+            if (!stageData) return [];
+            const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
+            let pointsIndex = 0;
+            return stageData.map(participant => {
+                const participantId = participant.id || nameToIdMap[participant.name.toUpperCase()];
+                if (sporadicRiders.includes(participantId)) {
+                    return { ...participant, pts: 0 };
+                } else {
+                    const points = pointsDistribution[pointsIndex] || 0;
+                    pointsIndex++;
+                    return { ...participant, pts: points };
+                }
+            });
+        }
+        
+        function getProcessedMonthData(monthId) {
+            const data = monthlyData[monthId] ? JSON.parse(JSON.stringify(monthlyData[monthId])) : { stages: [] };
+            if (data.stages && Array.isArray(data.stages)) {
+                data.stages.forEach(stage => {
+                    stage.results = processStageData(stage.results);
+                });
+            }
+            return data;
+        }
 
-             const teamsToCreate = new Set();
-             Object.values(participantsData).forEach(p => {
-                (p.teamHistory || []).forEach(h => {
-                    if(h.team && !existingTeams.has(h.team.toUpperCase())) {
-                        teamsToCreate.add(h.team);
+        function calculateOverall(stages = []) {
+            const participantPoints = {};
+            stages.forEach(stage => {
+                (stage.results || []).forEach(p => {
+                    const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
+                     if (participantId && !sporadicRiders.includes(participantId)) {
+                        if (!participantPoints[participantId]) {
+                            participantPoints[participantId] = 0;
+                        }
+                        participantPoints[participantId] += p.pts;
                     }
                 });
-             });
+            });
 
-             if (teamsToCreate.size > 0) {
-                 const batch = writeBatch(db);
-                 teamsToCreate.forEach(teamName => {
-                     const newTeamRef = doc(collection(db, 'teams'));
-                     batch.set(newTeamRef, { name: teamName });
-                 });
-                 await batch.commit();
-                 await logAction('TEAM_MIGRATION', `${teamsToCreate.size} equipes antigas foram migradas.`);
-                 console.log(`${teamsToCreate.size} equipes migradas.`);
-                 return true;
-             }
-             return false;
+            const overallData = Object.keys(participantPoints).map(id => ({
+                id: id,
+                pts: participantPoints[id]
+            }));
+            
+            overallData.sort((a, b) => b.pts - a.pts);
+            return overallData.map((item, index) => ({ ...item, pos: index + 1 }));
         }
 
+        function getParticipantData(overallData, referenceDate = null) {
+            return overallData.map(p => {
+                const info = participantsData[p.id] || { name: 'Desconhecido' };
+                const team = getTeamForDate(info, referenceDate);
+                const imageUrl = info.imageUrl ? `${imageBaseUrl}${info.imageUrl}` : getPlaceholderImageUrl(info.name);
+                return { ...p, ...info, team, image: imageUrl };
+            });
+        }
+        
+        function renderTabs(monthId) {
+            const tabsContainer = document.getElementById('tabs-container');
+            tabsContainer.innerHTML = '<button id="tab-geral" class="tab-button">Geral</button>';
+            
+            const month = monthlyData[monthId];
+            if (month && month.stages) {
+                month.stages.forEach((stage, index) => {
+                    if (stage.name) {
+                        const button = document.createElement('button');
+                        button.id = `tab-stage-${index}`;
+                        button.className = 'tab-button';
+                        button.textContent = stage.name;
+                        tabsContainer.appendChild(button);
+                    }
+                });
+            }
+        }
 
-        async function loadAllData() {
-            try {
-                const standardized = await standardizeParticipantsData();
-                if (standardized) {
-                    console.log("Recarregando dados após padronização de participantes.");
+        function renderContent(monthId, tab) {
+            if (!userId) { return; }
+
+            renderTabs(monthId);
+
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('content-wrapper').classList.remove('hidden');
+
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tab)?.classList.add('active');
+
+            const monthData = getProcessedMonthData(monthId);
+            const originalMonthData = monthlyData[monthId] || { stages: [] };
+            const dynamicContentContainer = document.getElementById('dynamic-content');
+            dynamicContentContainer.innerHTML = '';
+            
+            let dataToShow;
+            let isOverall = false;
+            
+            if (tab === 'tab-geral') {
+                isOverall = true;
+                const overall = calculateOverall(monthData.stages);
+                 let monthEndDate = null;
+                if (originalMonthData.stages && originalMonthData.stages.length > 0) {
+                    const dates = originalMonthData.stages.map(s => s.date).filter(Boolean).sort();
+                    if(dates.length > 0) monthEndDate = dates[dates.length - 1];
                 }
+                allParticipantsData = getParticipantData(overall, monthEndDate);
+                dataToShow = allParticipantsData;
+            } else {
+                const stageIndex = parseInt(tab.replace('tab-stage-', ''));
+                const stageInfo = originalMonthData.stages[stageIndex];
+                const stageData = (stageInfo?.results || []).map((p, index) => {
+                    const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
+                    const processed = (monthData.stages[stageIndex]?.results || []).find(proc => (proc.id || nameToIdMap[proc.name.toUpperCase()]) === participantId);
+                    const info = participantsData[participantId] || { name: p.name };
+                    const team = getTeamForDate(info, stageInfo.date);
+                    const imageUrl = info.imageUrl ? `${imageBaseUrl}${info.imageUrl}` : getPlaceholderImageUrl(info.name);
+                    return { ...p, id: participantId, pos: index + 1, pts: processed ? processed.pts : 0, ...info, team, image: imageUrl };
+                });
+                dataToShow = stageData;
+            }
 
-                const [pSnap, rSnap, settingsSnap, logsSnap, tSnap] = await Promise.all([
-                    getDocs(collection(db, "participants")),
+            dynamicContentContainer.appendChild(createContentCard(monthData, dataToShow, isOverall, monthId, tab));
+            const stageId = `${monthId}_${isOverall ? 'geral' : tab.replace('tab-','')}`;
+            renderCommentsAndReplies(stageId);
+        }
+        
+        function createContentCard(monthData, data, isOverall, monthId, tab) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            const hasData = data && data.length > 0;
+            const stageIndex = isOverall ? -1 : parseInt(tab.replace('tab-stage-', ''));
+            const currentStage = isOverall ? null : monthData.stages[stageIndex];
+
+            if (isOverall) {
+                const titleEl = document.createElement('div');
+                titleEl.className = 'text-center mb-4';
+                let titleText = 'Classificação Geral';
+                if (!monthData.isCompleted) {
+                    titleText += ' (em andamento)';
+                }
+                titleEl.innerHTML = `<h2 class="text-2xl font-bold">${titleText}</h2>`;
+                card.appendChild(titleEl);
+            }
+
+            if(!hasData && !isOverall) {
+                const stageInfo = monthlyData[monthId]?.stages[stageIndex] || {};
+                const date = stageInfo.date ? new Date(stageInfo.date + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                const details = [date, stageInfo.type, stageInfo.durationDistance].filter(Boolean).join(' | ');
+                card.innerHTML += `<div class="text-center mb-4"><h2 class="text-2xl font-bold">${stageInfo.name || 'Etapa'}</h2><p class="text-sm text-gray-500">${details}</p></div><p class="text-center text-gray-400">Etapa não realizada.</p>`;
+                return card;
+            }
+            if (!hasData && isOverall) {
+                if (!card.querySelector('h2')) {
+                    card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
+                }
+                return card;
+            }
+
+            if(currentStage && currentStage.name) {
+                const date = currentStage.date ? new Date(currentStage.date + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+                const details = [date, currentStage.type, currentStage.durationDistance].filter(Boolean).join(' | ');
+                card.innerHTML += `<div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold">${currentStage.name}</h2>
+                    <p class="text-sm text-gray-500">${details}</p>
+                </div>`;
+            }
+
+            if (isOverall && data.length >= 3 && (monthData.isCompleted || false)) {
+                card.appendChild(createPodium(data.slice(0, 3)));
+            }
+
+            const tableStartIndex = (isOverall && data.length >= 3 && (monthData.isCompleted || false)) ? 3 : 0;
+            card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
+
+            const podiumImageUrl = isOverall ? monthData.geral_podium_img : currentStage?.podium_img;
+            
+            if(podiumImageUrl) {
+                const podiumImageContainer = document.createElement('div');
+                podiumImageContainer.className = 'mt-8 text-center';
+                podiumImageContainer.innerHTML = `<img src="${podiumImageUrl}" alt="Foto do Pódio" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
+                card.appendChild(podiumImageContainer);
+            }
+            
+            if (hasData || podiumImageUrl) {
+                const stageId = `${monthId}_${isOverall ? 'geral' : currentStage.id}`;
+                card.appendChild(createInteractionsSection(stageId));
+            }
+            
+            return card;
+        }
+
+        function createPodium(podiumData) {
+            const container = document.createElement('div');
+            container.className = 'podium-container mb-8';
+            podiumData.forEach((p) => {
+                const rank = p.pos;
+                const step = document.createElement('div');
+                step.className = `podium-step podium-rank-${rank}`;
+                step.innerHTML = `
+                    <div class="podium-rank">${rank}</div>
+                    <img src="${p.image}" alt="Foto de ${p.name}" class="podium-image podium-image-${rank}">
+                    <div class="podium-name">${p.name}</div>
+                    <div class="podium-points">${p.pts} pts</div>
+                `;
+                step.addEventListener('click', () => openModal(p.id));
+                container.appendChild(step);
+            });
+            return container;
+        }
+        
+        function createTable(data, isOverall) {
+            const table = document.createElement('table');
+            table.className = 'leaderboard-table';
+            table.innerHTML = `<thead><tr><th class="w-12">#</th><th>Participante</th><th class="text-right">Pts</th></tr></thead>`;
+            const tbody = document.createElement('tbody');
+            data.forEach(p => {
+                const isSporadic = !isOverall && sporadicRiders.includes(p.id);
+                const row = document.createElement('tr');
+                row.className = 'cursor-pointer';
+                row.innerHTML = `
+                    <td class="font-semibold text-gray-400">${isSporadic ? `*${p.pos}` : p.pos}</td>
+                    <td>
+                        <div class="flex items-center gap-4">
+                            <div class="profile-thumb-wrapper"><img src="${p.image}" class="profile-thumb"></div>
+                            <div>
+                                <div class="font-semibold text-gray-800">${p.name}</div>
+                                <div class="text-sm text-gray-400">${p.team || ''}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-right font-bold text-gray-800">${isSporadic ? '-' : p.pts}</td>
+                `;
+                row.addEventListener('click', () => openModal(p.id));
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            return table;
+        }
+
+        function createInteractionsSection(stageId) {
+            const container = document.createElement('div');
+            container.id = `interactions-${stageId}`;
+            container.className = 'mt-8 pt-6 border-t border-gray-200';
+            const likeInfo = likesData[stageId] || { count: 0, likedBy: [] };
+            const userHasLiked = userId && likeInfo.likedBy.includes(userId);
+            container.innerHTML = `<div class="flex justify-center mb-6"><button class="interaction-button" onclick="toggleLike('${stageId}')"><i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i><span>${likeInfo.count}</span></button></div><div id="comments-section-${stageId}"></div>`;
+            return container;
+        }
+
+        function renderCommentsAndReplies(stageId) {
+            const container = document.getElementById(`comments-section-${stageId}`);
+            if(!container) return;
+            const savedName = localStorage.getItem('commenterName') || '';
+            container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Comentários</h3><form onsubmit="handleCommentSubmit(event, '${stageId}')" class="mb-6 space-y-3 max-w-lg mx-auto"><input type="text" name="name" placeholder="Seu nome" required class="comment-input" value="${savedName}"><textarea name="comment" placeholder="Deixe seu comentário..." required rows="3" class="comment-input"></textarea><button type="submit" class="w-full bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition">Publicar</button></form><div id="comments-list-${stageId}" class="space-y-4 max-w-lg mx-auto"></div>`;
+            const listContainer = document.getElementById(`comments-list-${stageId}`);
+            const stageComments = commentsData[stageId] || [];
+            stageComments.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+            if (stageComments.length === 0) { listContainer.innerHTML = `<p class="text-center text-gray-500">Nenhum comentário ainda.</p>`; } 
+            else { stageComments.forEach(comment => listContainer.appendChild(createCommentElement(comment, savedName))); }
+        }
+        
+        function createCommentElement(comment, savedName) {
+            const el = document.createElement('div');
+            el.className = 'comment-box';
+            const userHasLiked = userId && (comment.likedBy || []).includes(userId);
+            const canDelete = userId === comment.authorId || userId === ADMIN_USER_ID;
+            el.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-gray-800">${comment.name}</p>${canDelete ? `<button onclick="showDeleteConfirmation('comment', '${comment.id}')" class="text-gray-500 hover:text-red-500 text-sm"><i class="fas fa-trash-alt"></i></button>` : ''}</div><p class="text-gray-600 mt-1 whitespace-pre-wrap">${comment.text}</p><div class="flex items-center gap-4 mt-3 text-xs text-gray-500"><button onclick="toggleCommentLike('${comment.id}')" class="interaction-button text-xs py-1 px-2 ${userHasLiked ? 'liked' : ''}"><i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i> <span>${comment.likes || 0}</span></button><button onclick="toggleReplyForm('${comment.id}')" class="font-semibold hover:underline">Responder</button></div><div id="reply-form-container-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-gray-300"><form onsubmit="handleReplySubmit(event, '${comment.id}')" class="space-y-2"><input type="text" name="name" placeholder="Seu nome" required class="comment-input text-sm" value="${savedName}"><textarea name="reply" placeholder="Escreva sua resposta..." required rows="2" class="comment-input text-sm"></textarea><button type="submit" class="bg-gray-700 text-white font-bold py-1 px-3 text-xs rounded-lg hover:bg-gray-600">Enviar</button></form></div><div id="replies-list-${comment.id}" class="mt-4 pl-4 border-l-2 border-gray-200 space-y-3"></div>`;
+            loadReplies(comment.id);
+            return el;
+        }
+        
+        async function loadReplies(commentId) {
+            const repliesContainer = document.getElementById(`replies-list-${commentId}`);
+            if (!repliesContainer) return;
+            const q = query(collection(db, `comments/${commentId}/replies`), orderBy("timestamp", "asc"));
+            const snapshot = await getDocs(q);
+            repliesContainer.innerHTML = '';
+            snapshot.forEach(doc => {
+                const reply = { id: doc.id, ...doc.data() };
+                const canDelete = userId === reply.authorId || userId === ADMIN_USER_ID;
+                const replyEl = document.createElement('div');
+                replyEl.className = 'text-sm bg-gray-100 p-3 rounded-md';
+                replyEl.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-gray-800">${reply.name}</p>${canDelete ? `<button onclick="showDeleteConfirmation('reply', '${commentId}', '${reply.id}')" class="text-gray-500 hover:text-red-500 text-xs"><i class="fas fa-trash-alt"></i></button>` : ''}</div><p class="text-gray-600 whitespace-pre-wrap">${reply.text}</p>`;
+                repliesContainer.appendChild(replyEl);
+            });
+        }
+
+        function openModal(participantId) {
+            const p = allParticipantsData.find(p => p.id === participantId);
+            if (!p) return;
+
+            const modalContent = document.getElementById('modal-content-container');
+            const currentMonthId = document.getElementById('month-select').value;
+            const monthData = getProcessedMonthData(currentMonthId);
+            const originalMonthData = monthlyData[currentMonthId] || { stages: [] };
+
+            let stagesHtml = '';
+            (originalMonthData.stages || []).forEach((stage, index) => {
+                const resultIndex = (stage.results || []).findIndex(res => (res.id || nameToIdMap[res.name.toUpperCase()]) === p.id);
+                const result = resultIndex !== -1 ? { ...stage.results[resultIndex], pos: resultIndex + 1 } : null;
+                const processedStage = (monthData.stages || [])[index];
+                const processedResult = (processedStage?.results || []).find(res => (res.id || nameToIdMap[res.name.toUpperCase()]) === p.id);
+
+                stagesHtml += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${stage.name || `Etapa ${index+1}`}</p>${result ? `<p class="text-xl font-bold text-gray-800">${sporadicRiders.includes(p.id) ? `*${result.pos}º` : `${result.pos}º`}</p><p class="text-xs text-gray-500">(${(processedResult || {pts:0}).pts} pts)</p>` : `<p class="text-xl font-bold text-gray-400">-</p>`}</div>`;
+            });
+
+            modalContent.innerHTML = `<span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span><img id="modal-image" class="modal-image mx-auto" src="${p.image}" alt="Foto de Perfil"><h3 class="text-2xl font-bold text-gray-900">${p.name}</h3><p class="text-sm text-gray-600">Posição Geral: ${p.pos}º (${p.pts} pts)</p><p class="text-sm text-gray-600 mt-1">${p.team || 'Sem equipe'}</p><div class="mt-6 w-full"><h4 class="text-md font-bold text-gray-800 mb-2 border-t border-gray-200 pt-4">Resumo de ${monthData.title.split('/')[0]}</h4><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${stagesHtml}</div></div>`;
+            document.getElementById('details-modal').classList.add('is-open');
+        }
+
+        window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
+        
+        async function setupDataListeners() {
+            if (!userId) return;
+            const reRender = () => {
+                const monthSelect = document.getElementById('month-select');
+                if (monthSelect.value) {
+                    renderContent(monthSelect.value, currentTab);
+                }
+            }
+            onSnapshot(collection(db, 'likes'), (snapshot) => {
+                snapshot.docChanges().forEach(change => likesData[change.doc.id] = change.doc.data());
+                reRender();
+            });
+            onSnapshot(collection(db, 'comments'), (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    const comment = { id: change.doc.id, ...change.doc.data() };
+                    const { stageId } = comment;
+                    if (!commentsData[stageId]) commentsData[stageId] = [];
+                    const index = commentsData[stageId].findIndex(c => c.id === comment.id);
+                    if (change.type === "removed") {
+                        if (index > -1) commentsData[stageId].splice(index, 1);
+                    } else {
+                        if (index > -1) commentsData[stageId][index] = comment;
+                        else commentsData[stageId].push(comment);
+                    }
+                });
+                reRender();
+            });
+        }
+        
+        async function loadInitialData() {
+            try {
+                const [pSnap, rSnap, settingsSnap, tSnap] = await Promise.all([
+                    getDocs(collection(db, "participants")), 
                     getDocs(collection(db, "results")),
                     getDoc(doc(db, "settings", "config")),
-                    getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50))),
                     getDocs(collection(db, "teams"))
                 ]);
-                
-                participantsData = {};
-                nameToIdMap = {};
+                if (rSnap.empty) return false;
+
                 pSnap.forEach(doc => {
                     const data = doc.data();
-                    if (data && data.name) {
+                    if(data.name) {
                         participantsData[doc.id] = data;
                         nameToIdMap[data.name.toUpperCase()] = doc.id;
                     }
-                });
-                
-                monthlyData = {};
-                rSnap.forEach(doc => {
-                    monthlyData[doc.id] = doc.data();
                 });
 
                 teamsData = {};
                 tSnap.forEach(doc => {
                     teamsData[doc.id] = doc.data();
                 });
-
-                const migrated = await migrateTeams();
-                 if (migrated) {
-                    console.log("Recarregando dados após migração de equipes.");
-                    await loadAllData();
-                    return;
-                }
-
+                
+                rSnap.forEach(doc => {
+                    let data = doc.data();
+                    if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
+                        const migratedStages = [];
+                        const [year, month] = doc.id.split('_');
+                        for (let i = 1; i <= 4; i++) {
+                            const etapaKey = `etapa${i}`;
+                            if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
+                                 const fakeDate = `${year}-${month}-${String(i * 7).padStart(2, '0')}`;
+                                migratedStages.push({
+                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: fakeDate,
+                                    type: '', durationDistance: '',
+                                    podium_img: data[`${etapaKey}_podium_img`] || '',
+                                    results: data[etapaKey].map(r => ({ ...r, id: nameToIdMap[r.name.toUpperCase()] }))
+                                });
+                            }
+                        }
+                        data.stages = migratedStages;
+                    }
+                    monthlyData[doc.id] = data;
+                });
+                
                 if (settingsSnap.exists()) {
                     const settings = settingsSnap.data();
                     sporadicRiders = settings.sporadicRiders || [];
                     imageBaseUrl = settings.imageBaseUrl || '';
-                    document.getElementById('image-base-url').value = imageBaseUrl;
                 }
                 
-                allLogs = [];
-                logsSnap.forEach(doc => allLogs.push(doc.data()));
-
-                renderParticipants();
-                renderMonthSelector();
-                renderTeamSelectors();
-                renderLogs();
-                renderTeamsList();
+                const monthSelect = document.getElementById('month-select');
+                monthSelect.innerHTML = '';
+                const sortedMonths = Object.keys(monthlyData).sort().reverse();
+                sortedMonths.forEach(id => monthSelect.add(new Option(monthlyData[id].title, id)));
                 
-                const initialMonth = document.getElementById('month-select-admin').value;
-                if(initialMonth) renderResultsForm(initialMonth);
-
-            } catch (error) {
-                console.error("Erro ao carregar dados:", error);
-                if (error.message.includes("requires an index")) {
-                    const projectId = firebaseConfig.projectId;
-                    const indexUrl = `https://console.firebase.google.com/project/${projectId}/firestore/indexes?create_composite=Clxwcm9qZWN0cy9yYWNoYW9zYy9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvbG9ncy9pbmRleGVzL18QARoNCgl0aW1lc3RhbXAQAhgA`;
-                    openInfoModal(`ERRO DE BASE DE DADOS: É necessário criar um índice para os logs. Por favor, acesse o link na consola (F12) e crie o índice com as configurações pré-preenchidas.`);
-                    console.error("LINK PARA CRIAR ÍNDICE:", indexUrl);
-                } else {
-                    openInfoModal("Não foi possível carregar os dados do Firebase. Verifique a consola.");
-                }
-            }
-        }
-
-        function renderTeamSelectors(newTeamToSelect = '') {
-            const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team'), document.getElementById('filter-team')];
-            const sortedTeams = Object.entries(teamsData).sort((a,b) => a[1].name.localeCompare(b[1].name));
-            
-            selects.forEach(select => {
-                if (!select) return;
-                const currentValue = select.value;
-                select.innerHTML = select.id === 'filter-team' ? '<option value="">Todas as Equipes</option>' : '<option value="">Selecionar equipe</option>';
-                sortedTeams.forEach(([id, team]) => {
-                     select.add(new Option(team.name, id));
-                });
-                if(select.id !== 'filter-team') {
-                    select.add(new Option("--- Criar nova equipe ---", "new_team"));
-                }
-                select.value = newTeamToSelect || currentValue || '';
-            });
-        }
-
-        async function handleTeamSelection(selectElementId) {
-            const select = document.getElementById(selectElementId);
-            if (select.value === 'new_team') {
-                const newTeam = await openPromptModal("Digite o nome da nova equipe:");
-                if (newTeam && newTeam.trim()) {
-                    const trimmedTeam = newTeam.trim();
-                    try {
-                        const newDocRef = doc(collection(db, 'teams'));
-                        await setDoc(newDocRef, { name: trimmedTeam });
-                        await logAction('TEAM_CREATED', `Equipe "${trimmedTeam}" criada.`, null, { name: trimmedTeam });
-                        teamsData[newDocRef.id] = { name: trimmedTeam };
-                        renderTeamSelectors(newDocRef.id);
-                        renderTeamsList();
-                    } catch(e) {
-                        console.error("Erro ao criar equipe", e);
-                        openInfoModal("Erro ao criar equipe.");
-                    }
-                } else {
-                    select.value = '';
-                }
-            }
-        }
-        
-        function renderLogs() {
-            const list = document.getElementById('logs-list');
-            const actionFilter = document.getElementById('log-filter-action').value;
-            const textFilter = document.getElementById('log-filter-text').value.toLowerCase();
-            list.innerHTML = '';
-            
-            const filteredLogs = allLogs.filter(log => {
-                const actionMatch = !actionFilter || log.action === actionFilter;
-                const textMatch = !textFilter || (log.details && log.details.toLowerCase().includes(textFilter)) || (log.before && log.before.toLowerCase().includes(textFilter)) || (log.after && log.after.toLowerCase().includes(textFilter));
-                return actionMatch && textMatch;
-            });
-
-            if (filteredLogs.length === 0) {
-                list.innerHTML = '<p>Nenhuma atividade encontrada com os filtros atuais.</p>';
-                return;
-            }
-
-            const actionTypes = [...new Set(allLogs.map(l => l.action))].sort();
-            const filterSelect = document.getElementById('log-filter-action');
-            filterSelect.innerHTML = '<option value="">Todas as Ações</option>';
-            actionTypes.forEach(action => filterSelect.add(new Option(action, action)));
-            filterSelect.value = actionFilter;
-
-            filteredLogs.forEach((log, index) => {
-                const date = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('pt-BR') : 'Data inválida';
-                const div = document.createElement('div');
-                div.className = 'p-2 bg-gray-50 rounded-md border-l-4 border-gray-300';
-                
-                let hasDetails = log.before || log.after;
-
-                div.innerHTML = `
-                     <div class="flex justify-between items-center ${hasDetails ? 'cursor-pointer' : ''}" data-log-index="${index}">
-                        <div>
-                            <p><strong class="font-semibold">${log.details}</strong></p>
-                            <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
-                        </div>
-                        ${hasDetails ? '<i class="fas fa-eye text-gray-400"></i>' : ''}
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function renderParticipants() {
-            const list = document.getElementById('participants-list');
-            const filterTeamId = document.getElementById('filter-team').value;
-            const filterName = document.getElementById('filter-name').value.toLowerCase();
-            list.innerHTML = '';
-
-            const sortedParticipants = Object.entries(participantsData)
-                .filter(([id, p]) => p.isActive !== false)
-                .sort((a, b) => a[1].name.localeCompare(b[1].name));
-
-            const filteredParticipants = sortedParticipants.filter(([id, p]) => {
-                const teamHistory = p.teamHistory || [];
-                const currentTeamId = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].teamId : '';
-                const teamMatch = !filterTeamId || currentTeamId === filterTeamId;
-                const nameMatch = p.name.toLowerCase().includes(filterName);
-                return teamMatch && nameMatch;
-            });
-
-            if (filteredParticipants.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-500">Nenhum participante encontrado.</p>';
-                return;
-            }
-
-            filteredParticipants.forEach(([id, participant]) => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
-                const isSporadic = sporadicRiders.includes(id);
-                div.innerHTML = `
-                    <div>
-                        <span class="font-medium">${participant.name}</span>
-                        ${isSporadic ? '<span class="ml-2 text-xs font-bold text-white bg-blue-500 px-2 py-1 rounded-full">ESPORÁDICO</span>' : ''}
-                    </div>
-                    <div class="space-x-2">
-                        <button class="text-blue-500 hover:text-blue-700" data-id="${id}"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500 hover:text-red-700" data-id="${id}"><i class="fas fa-trash"></i></button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-        
-        function renderMonthSelector() {
-            const select = document.getElementById('month-select-admin');
-            select.innerHTML = '';
-            const allMonthIds = new Set(Object.keys(monthlyData));
-            const currentDate = new Date();
-            const currentMonthId = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-            allMonthIds.add(currentMonthId);
-            const sortedMonths = [...allMonthIds].sort().reverse();
-            
-            sortedMonths.forEach(id => {
-                const title = monthlyData[id] ? monthlyData[id].title : `${id.split('_')[1]}/${id.split('_')[0]} (Novo)`;
-                select.add(new Option(title, id));
-            });
-            select.value = currentMonthId;
-        }
-        
-        function createStageFormHTML(stage, index, isOpen = false) {
-            const stageId = stage.id || `new_stage_${index}`;
-            const stageResultsIds = (stage.results || []).map(p => p.id || nameToIdMap[p.name?.toUpperCase()]).filter(Boolean);
-
-            const availableParticipants = Object.entries(participantsData)
-                .filter(([id, p]) => p.isActive !== false && !stageResultsIds.includes(id))
-                .sort((a, b) => a[1].name.localeCompare(b[1].name));
-
-            const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
-                <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
-                    <span>${p.name}</span>
-                    <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
-                </div>
-            `).join('');
-            
-            const classifiedParticipantsHtml = stageResultsIds.map((id, idx) => {
-                const p = participantsData[id];
-                if (!p) return '';
-                return `
-                    <div class="participant-item classified-participant" data-id="${id}">
-                        <span>${idx + 1}. ${p.name}</span>
-                        <div class="space-x-2">
-                            <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
-                            <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
-                            <button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            const hiddenClass = isOpen ? '' : 'hidden';
-
-            return `
-                <div class="stage-form-group border-t-2 border-dashed pt-4" data-stage-id="${stageId}">
-                    <div class="accordion-header bg-gray-50 rounded-t-lg p-4">
-                         <h3 class="font-bold text-lg">${stage.name || `Etapa ${index + 1}`}</h3>
-                         <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-content p-4 border border-t-0 rounded-b-lg ${hiddenClass}">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <input type="text" placeholder="Nome da Etapa" class="input-field stage-name" value="${stage.name || ''}">
-                            <input type="date" class="input-field stage-date" value="${stage.date || ''}">
-                        </div>
-                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                            <select class="input-field stage-type">
-                                <option value="">Selecione o tipo</option>
-                                <option value="Circuito" ${stage.type === 'Circuito' ? 'selected' : ''}>Circuito</option>
-                                <option value="Estrada" ${stage.type === 'Estrada' ? 'selected' : ''}>Estrada</option>
-                                <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
-                            </select>
-                            <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                            <div>
-                                <label class="font-medium text-sm block mb-1">Participantes Disponíveis</label>
-                                <input type="text" placeholder="Filtrar..." class="input-field mb-2 filter-available-participants">
-                                <div class="participant-list available-list">${availableParticipantsHtml}</div>
-                            </div>
-                            <div>
-                                <label class="font-medium text-sm block mb-1">Classificação da Etapa</label>
-                                <div class="participant-list classified-list">${classifiedParticipantsHtml}</div>
-                            </div>
-                        </div>
-
-                        <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
-                        <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
-                        <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn mt-4">Remover Etapa</button>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function renderResultsForm(monthId) {
-            const container = document.getElementById('results-form');
-            if (!monthId || !monthlyData[monthId]) {
-                document.getElementById('month-completed-checkbox').checked = false;
-                document.getElementById('geral_podium_img').value = '';
-                container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
-            }
-            let data = monthlyData[monthId];
-            
-             if ((data.etapa1 || data.etapa2) && !data.stages) {
-                const migratedStages = [];
-                for (let i = 1; i <= 4; i++) {
-                    const etapaKey = `etapa${i}`;
-                    if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
-                        migratedStages.push({
-                            id: `${etapaKey}_${monthId}`, name: `Etapa ${i}`, date: '', type: '', durationDistance: '',
-                            podium_img: data[`${etapaKey}_podium_img`] || '',
-                            results: data[etapaKey]
-                        });
-                    }
-                }
-                data.stages = migratedStages;
-            }
-
-            document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
-            document.getElementById('geral_podium_img').value = data.geral_podium_img || '';
-            const stages = data.stages || [];
-
-            const today = new Date().toISOString().split('T')[0];
-            let nextStageIndex = -1;
-            stages.find((stage, index) => { 
-                if (stage.date >= today) {
-                    nextStageIndex = index;
-                    return true;
-                }
-                return false;
-            });
-
-            if (nextStageIndex === -1 && stages.length > 0) {
-                nextStageIndex = stages.length - 1;
-            }
-
-            container.innerHTML = stages.map((stage, i) => createStageFormHTML(stage, i, i === nextStageIndex)).join('') || '<p class="text-center text-gray-500">Nenhuma etapa criada para este mês. Adicione uma!</p>';
-        }
-
-        function getThursdays(year, month) {
-            const thursdays = [];
-            const date = new Date(year, month - 1, 1);
-            while (date.getMonth() === month - 1) {
-                if (date.getDay() === 4) { // Thursday
-                    thursdays.push(new Date(date.getTime()));
-                }
-                date.setDate(date.getDate() + 1);
-            }
-            return thursdays.map(d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
-        }
-        
-        function renderTeamsList() {
-            const list = document.getElementById('teams-list');
-            list.innerHTML = '';
-            const sortedTeams = Object.entries(teamsData).sort((a, b) => a[1].name.localeCompare(b[1].name));
-
-            if (sortedTeams.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-500">Nenhuma equipe cadastrada.</p>';
-                return;
-            }
-
-            sortedTeams.forEach(([id, team]) => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
-                div.innerHTML = `
-                    <span class="font-medium">${team.name}</span>
-                    <div class="space-x-2">
-                        <button class="text-blue-500 hover:text-blue-700" data-id="${id}"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500 hover:text-red-700" data-id="${id}"><i class="fas fa-trash"></i></button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-        
-        function setupDashboardEventListeners() {
-            document.getElementById('info-modal-close').addEventListener('click', () => closeModal('info-modal'));
-            
-            document.getElementById('logout-btn').addEventListener('click', async () => {
-                try { await signOut(auth); } catch (error) { console.error("Erro ao sair:", error); }
-            });
-
-            document.getElementById('admin-menu').addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = e.target.closest('a')?.dataset.target;
-                if (!targetId) return;
-                document.querySelectorAll('.admin-section').forEach(section => section.classList.add('hidden'));
-                document.querySelectorAll('.admin-menu-item').forEach(item => item.classList.remove('active'));
-                document.getElementById(targetId).classList.remove('hidden');
-                e.target.closest('a').classList.add('active');
-            });
-            document.querySelector('.admin-menu-item[data-target="section-resultados"]').classList.add('active');
-            
-            document.getElementById('save-settings-btn').addEventListener('click', async () => {
-                const btn = document.getElementById('save-settings-btn');
-                btn.disabled = true;
-                btn.textContent = 'A guardar...';
-                const newBaseUrl = document.getElementById('image-base-url').value.trim();
-                const oldBaseUrl = imageBaseUrl;
-                try {
-                    const settingsRef = doc(db, "settings", "config");
-                    await setDoc(settingsRef, { imageBaseUrl: newBaseUrl }, { merge: true });
-                    imageBaseUrl = newBaseUrl;
-                    await logAction('SETTINGS_UPDATED', `URL base das imagens foi atualizada.`, { imageBaseUrl: oldBaseUrl }, { imageBaseUrl: newBaseUrl });
-                    openInfoModal('Configurações guardadas com sucesso!');
-                } catch (error) {
-                    console.error("Erro ao guardar configurações:", error);
-                    openInfoModal('Ocorreu um erro ao guardar as configurações.');
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Guardar Configurações';
-                }
-            });
-            
-            document.getElementById('results-form').addEventListener('input', (e) => {
-                if (e.target.classList.contains('filter-available-participants')) {
-                    const filterText = e.target.value.toLowerCase();
-                    const availableList = e.target.nextElementSibling;
-                    availableList.querySelectorAll('.available-participant').forEach(item => {
-                        item.style.display = item.dataset.name.includes(filterText) ? 'flex' : 'none';
-                    });
-                }
-            });
-
-            document.getElementById('results-form').addEventListener('click', async (e) => {
-                const header = e.target.closest('.accordion-header');
-                if (header) {
-                    const content = header.nextElementSibling;
-                    content.classList.toggle('hidden');
-                    header.querySelector('.accordion-icon').classList.toggle('rotate-180');
-                    return;
-                }
-
-                const button = e.target.closest('button');
-                if (!button) return;
-
-                const participantItem = button.closest('.participant-item');
-                
-                const renumberClassifiedList = (list) => {
-                    list.querySelectorAll('.classified-participant').forEach((item, index) => {
-                        const nameSpan = item.querySelector('span');
-                        nameSpan.textContent = `${index + 1}. ${participantsData[item.dataset.id].name}`;
-                    });
-                };
-
-                if (button.classList.contains('add-participant-to-stage-btn')) {
-                    const classifiedList = participantItem.closest('.grid').querySelector('.classified-list');
-                    const pId = participantItem.dataset.id;
-                    const pName = participantsData[pId].name;
-
-                    const newItem = document.createElement('div');
-                    newItem.className = 'participant-item classified-participant';
-                    newItem.dataset.id = pId;
-                    newItem.innerHTML = `<span>${pName}</span><div class="space-x-2"><button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button><button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button><button type="button" class="text-red-500 hover:text-red-700 remove-participant-from-stage-btn"><i class="fas fa-trash"></i></button></div>`;
-                    classifiedList.appendChild(newItem);
-                    renumberClassifiedList(classifiedList);
-                    participantItem.remove();
-                } else if (button.classList.contains('remove-participant-from-stage-btn')) {
-                    const availableList = participantItem.closest('.grid').querySelector('.available-list');
-                    const classifiedList = participantItem.parentElement;
-                    const pId = participantItem.dataset.id;
-                    const pName = participantsData[pId].name;
-
-                    const newItem = document.createElement('div');
-                    newItem.className = 'participant-item available-participant';
-                    newItem.dataset.id = pId;
-                    newItem.dataset.name = pName.toLowerCase();
-                    newItem.innerHTML = `<span>${pName}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
-                    availableList.appendChild(newItem);
-                    participantItem.remove();
-                    renumberClassifiedList(classifiedList);
-                } else if(button.classList.contains('move-up-btn')) {
-                    if(participantItem.previousElementSibling) {
-                        participantItem.parentElement.insertBefore(participantItem, participantItem.previousElementSibling);
-                        renumberClassifiedList(participantItem.parentElement);
-                    }
-                } else if(button.classList.contains('move-down-btn')) {
-                    if(participantItem.nextElementSibling) {
-                        participantItem.parentElement.insertBefore(participantItem.nextElementSibling, participantItem);
-                        renumberClassifiedList(participantItem.parentElement);
-                    }
-                } else if (button.classList.contains('remove-stage-btn')) {
-                    const confirmed = await openConfirmModal('Tem a certeza que deseja remover esta etapa?');
-                    if(confirmed) {
-                         button.closest('.stage-form-group').remove();
-                    }
-                }
-            });
-            
-            document.getElementById('add-stage-btn').addEventListener('click', () => {
-                const container = document.getElementById('results-form');
-                const newIndex = container.querySelectorAll('.stage-form-group').length;
-                const newStageHTML = createStageFormHTML({ id: `new_stage_${Date.now()}`}, newIndex, true);
-                
-                if(newIndex === 0 && container.querySelector('p')) container.innerHTML = ''; 
-                container.insertAdjacentHTML('beforeend', newStageHTML);
-            });
-            
-            document.getElementById('save-results-btn').addEventListener('click', async () => {
-                const monthId = document.getElementById('month-select-admin').value;
-                if (!monthId) return;
-
-                const docRef = doc(db, 'results', monthId);
-                const isCompleted = document.getElementById('month-completed-checkbox').checked;
-                const geralPodiumImg = document.getElementById('geral_podium_img').value.trim();
-                const newStages = [];
-                
-                document.querySelectorAll('#results-form .stage-form-group').forEach(group => {
-                    const classifiedIds = [];
-                    group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
-                        classifiedIds.push(item.dataset.id);
-                    });
-
-                    const stage = {
-                        id: group.dataset.stageId || `new_stage_${Date.now()}`,
-                        name: group.querySelector('.stage-name').value.trim(),
-                        date: group.querySelector('.stage-date').value,
-                        type: group.querySelector('.stage-type').value,
-                        durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
-                        podium_img: group.querySelector('.stage-podium-img').value.trim(),
-                        results: classifiedIds.map(id => ({ id }))
-                    };
-                    newStages.push(stage);
-                });
-                
-                try {
-                    const dataToSave = { 
-                        title: monthlyData[monthId]?.title || `${monthId.split('_')[1]}/${monthId.split('_')[0]}`, 
-                        stages: newStages, 
-                        isCompleted: isCompleted,
-                        geral_podium_img: geralPodiumImg
-                    };
-
-                    const oldData = monthlyData[monthId] || {};
-                    await setDoc(docRef, dataToSave, { merge: true });
-                    await logAction('RESULTS_SAVED', `Resultados do mês "${dataToSave.title}" foram guardados.`, oldData, dataToSave);
-                    openInfoModal('Resultados guardados com sucesso!');
-                    loadAllData();
-                } catch (error) {
-                    console.error("Erro ao guardar resultados:", error);
-                    openInfoModal("Ocorreu um erro ao guardar os resultados.");
-                }
-            });
-            
-            document.getElementById('new-month-btn').addEventListener('click', async () => {
-                const monthId = await openPromptModal("Insira um ID para o novo mês NO FORMATO AAAA_MM (ex: 2025_09):");
-                if (!monthId || !/^\d{4}_\d{2}$/.test(monthId)) {
-                    if(monthId) openInfoModal("Formato inválido! Utilize o formato AAAA_MM (ex: 2025_09)."); 
-                    return;
-                }
-                if (monthlyData[monthId]) {
-                    openInfoModal("Este mês já existe!"); return;
-                }
-
-                const monthTitle = await openPromptModal("Insira o título para o novo mês (ex: Setembro/2025):");
-                if (!monthTitle) return;
-
-                try {
-                    const [year, month] = monthId.split('_').map(Number);
-                    const thursdays = getThursdays(year, month);
-                    
-                    const newStages = thursdays.map((thursdayDate, index) => ({
-                        id: `etapa_${index + 1}_${Date.now()}`,
-                        name: `Etapa ${index + 1}`,
-                        date: thursdayDate,
-                        type: 'Circuito',
-                        durationDistance: '55 min + 1 volta',
-                        podium_img: '',
-                        results: []
-                    }));
-
-                    const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
-                    await setDoc(doc(db, 'results', monthId), newMonthData);
-                    await logAction('MONTH_CREATED', `Novo mês "${monthTitle}" (${monthId}) foi criado.`, null, newMonthData);
-                    openInfoModal(`Novo mês criado com ${newStages.length} etapas (quintas-feiras)!`);
-                    
-                    monthlyData[monthId] = newMonthData;
-                    renderMonthSelector();
-                    document.getElementById('month-select-admin').value = monthId;
-                    renderResultsForm(monthId);
-
-                } catch (error) {
-                    console.error("Erro ao criar mês:", error);
-                    openInfoModal(`Erro: ${error.message}`);
-                }
-            });
-
-            document.getElementById('filter-team').addEventListener('change', renderParticipants);
-            document.getElementById('filter-name').addEventListener('input', renderParticipants);
-
-            document.getElementById('add-team-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const newTeamName = document.getElementById('new-team-name').value.trim();
-                if (!newTeamName) return;
-
-                const teamExists = Object.values(teamsData).some(t => t.name.toUpperCase() === newTeamName.toUpperCase());
-                if (teamExists) {
-                    openInfoModal("Essa equipe já existe.");
-                    return;
-                }
-                try {
-                    const newDocRef = doc(collection(db, 'teams'));
-                    await setDoc(newDocRef, { name: newTeamName });
-                    await logAction('TEAM_CREATED', `Equipe "${newTeamName}" criada.`, null, { name: newTeamName });
-                    openInfoModal("Equipe adicionada com sucesso!");
-                    e.target.reset();
-                    loadAllData();
-                } catch (error) {
-                    console.error("Erro ao adicionar equipe:", error);
-                    openInfoModal("Ocorreu um erro ao adicionar a equipe.");
-                }
-            });
-
-            document.getElementById('teams-list').addEventListener('click', async (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-
-                const teamId = button.dataset.id;
-                const teamName = teamsData[teamId]?.name;
-
-                if(button.querySelector('.fa-edit')) {
-                    const newName = await openPromptModal(`Editar nome da equipe:`, teamName);
-                    if (newName && newName.trim() && newName.trim() !== teamName) {
-                        try {
-                            await updateDoc(doc(db, 'teams', teamId), { name: newName.trim() });
-                            const batch = writeBatch(db);
-                            Object.entries(participantsData).forEach(([pId, pData]) => {
-                                if (pData.teamHistory && pData.teamHistory.some(h => h.teamId === teamId)) {
-                                    const updatedHistory = pData.teamHistory.map(h => {
-                                        if (h.teamId === teamId) {
-                                            return { ...h, team: newName.trim() }; // This seems wrong, should update teamId
-                                        }
-                                        return h;
-                                    });
-                                    batch.update(doc(db, 'participants', pId), { teamHistory: updatedHistory });
-                                }
-                            });
-                            await batch.commit();
-
-                            await logAction('TEAM_UPDATED', `Equipe "${teamName}" foi renomeada para "${newName.trim()}".`, { name: teamName }, { name: newName.trim() });
-                            openInfoModal("Equipe atualizada com sucesso.");
-                            loadAllData();
-                        } catch (error) {
-                            console.error("Erro ao editar equipe:", error);
-                            openInfoModal("Ocorreu um erro ao editar a equipe.");
-                        }
-                    }
-                } else if(button.querySelector('.fa-trash')) {
-                    const isUsed = Object.values(participantsData).some(p => {
-                         const teamHistory = p.teamHistory || [];
-                         return teamHistory.some(h => h.teamId === teamId);
-                    });
-
-                    if (isUsed) {
-                        openInfoModal(`Não é possível excluir a equipe "${teamName}" porque ela está associada a um ou mais participantes.`);
-                        return;
-                    }
-
-                    if(await openConfirmModal(`Tem certeza que deseja excluir a equipe "${teamName}"?`)) {
-                        try {
-                            await deleteDoc(doc(db, 'teams', teamId));
-                            await logAction('TEAM_DELETED', `Equipe "${teamName}" foi excluída.`, { name: teamName }, null);
-                            openInfoModal("Equipe excluída com sucesso.");
-                            loadAllData();
-                        } catch (error) {
-                             console.error("Erro ao excluir equipe:", error);
-                             openInfoModal("Ocorreu um erro ao excluir a equipe.");
-                        }
-                    }
-                }
-            });
-
-             document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('participant-name').value.trim();
-                if (name) {
-                    const sanitizedName = name.replace(/\s+/g, '-').toLowerCase();
-                    const participantId = `${sanitizedName}-${Math.random().toString(36).substring(2, 8)}`;
-                    
-                    const participantData = {
-                        name: name,
-                        teamHistory: [{
-                            teamId: document.getElementById('participant-team').value,
-                            date: new Date().toISOString().split('T')[0]
-                        }],
-                        imageUrl: document.getElementById('participant-image-filename').value.trim(),
-                        isActive: true,
-                        createdAt: serverTimestamp()
-                    };
-
-                    await setDoc(doc(db, "participants", participantId), participantData);
-                    await logAction('PARTICIPANT_CREATED', `Participante "${name}" criado.`, null, participantData);
-                    e.target.reset();
-                    loadAllData();
-                }
-            });
-
-            document.getElementById('participants-list').addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-                const id = button.dataset.id;
-                
-                if (button.querySelector('.fa-edit')) { 
-                    const participant = participantsData[id];
-                    const teamHistory = participant.teamHistory || [];
-                    participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].teamId : '';
-                    
-                    document.getElementById('edit-participant-id').value = id;
-                    document.getElementById('edit-participant-name').value = participant.name;
-                    document.getElementById('edit-participant-team').value = participantOriginalTeam;
-                    document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
-                    document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
-
-                    document.getElementById('team-change-options').style.display = 'none';
-                    document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
-                    document.getElementById('correction-checkbox').checked = false;
-
-                    openModal('edit-participant-modal');
-                } else if (button.querySelector('.fa-trash')) {
-                    openDeleteOptionsModal(id);
-                }
-            });
-
-            document.getElementById('log-filter-action').addEventListener('change', renderLogs);
-            document.getElementById('log-filter-text').addEventListener('input', renderLogs);
-        }
-        
-        async function initializeAuth() {
-            try {
-                await setPersistence(auth, browserSessionPersistence);
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        showDashboard();
+                if (monthSelect.options.length > 0) {
+                    const currentDate = new Date();
+                    const currentMonthId = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                    const currentMonthOption = Array.from(monthSelect.options).find(opt => opt.value === currentMonthId);
+                    if (currentMonthOption) {
+                        monthSelect.value = currentMonthId;
                     } else {
-                        showLogin();
+                        monthSelect.selectedIndex = 0;
                     }
-                });
-            } catch (error) {
-                console.error("Erro ao definir a persistência da autenticação:", error);
-                onAuthStateChanged(auth, (user) => {
-                    if (user) { showDashboard(); } else { showLogin(); }
-                });
+                }
+                return true;
+            } catch (e) {
+                console.error("Erro ao carregar dados iniciais:", e); throw e;
             }
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            const loginForm = document.getElementById('login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    try { 
-                        await signInWithEmailAndPassword(auth, email, password); 
-                    } catch (error) { 
-                        openInfoModal('Email ou palavra-passe incorreta!'); 
+        async function runApplication() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const showError = (msg) => loadingOverlay.innerHTML = `<p class="text-lg font-semibold text-red-500">${msg}</p>`;
+            
+            try {
+                setupEventListeners();
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                
+                if (await loadInitialData()) {
+                    const initialMonth = document.getElementById('month-select').value;
+                    if (initialMonth) {
+                        renderContent(initialMonth, currentTab);
                     }
-                });
+                    setupDataListeners();
+                } else {
+                    showError("Nenhum dado encontrado.");
+                }
+            } catch (error) {
+                console.error("Erro na inicialização:", error);
+                showError("Falha ao carregar dados.");
             }
-            initializeAuth();
-        });
-
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('tabs-container').addEventListener('click', (e) => {
+                const button = e.target.closest('.tab-button');
+                if (button) {
+                    currentTab = button.id;
+                    renderContent(document.getElementById('month-select').value, currentTab);
+                }
+            });
+            document.getElementById('month-select').addEventListener('change', (e) => {
+                currentTab = 'tab-geral';
+                renderContent(e.target.value, currentTab);
+            });
+            document.getElementById('cancel-delete-btn').addEventListener('click', () => closeModal('delete-confirmation-modal'));
+        }
+        
+        runApplication();
     </script>
 </body>
 </html>
-

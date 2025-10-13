@@ -106,6 +106,8 @@
             padding: 0.5rem 1rem;
             margin-top: 0.5rem;
             font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
         }
         .log-change code {
             white-space: pre-wrap;
@@ -240,11 +242,6 @@
                             </div>
                             <button id="save-settings-btn" class="btn btn-primary w-full">Guardar Configurações</button>
                         </div>
-                         <div class="mt-4 border-t pt-4">
-                            <h3 class="font-semibold text-blue-700">Ações de Migração</h3>
-                            <p class="text-xs text-gray-500 mb-2">Use se precisar de adicionar equipes antigas à nova estrutura.</p>
-                            <button id="migrate-teams-btn" class="btn bg-blue-500 hover:bg-blue-600 text-white w-full">Migrar Equipes Antigas</button>
-                        </div>
                     </div>
                 </div>
                 
@@ -370,6 +367,25 @@
             </div>
         </div>
     </div>
+
+    <div id="log-details-modal" class="modal">
+        <div class="card w-full max-w-3xl">
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Detalhes do Log</h2>
+                <button onclick="closeModal('log-details-modal')" class="text-2xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold mb-2">Antes</h3>
+                    <div class="log-change"><code><pre id="log-details-before" class="whitespace-pre-wrap"></pre></code></div>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">Depois</h3>
+                    <div class="log-change"><code><pre id="log-details-after" class="whitespace-pre-wrap"></pre></code></div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -398,6 +414,7 @@
         let participantOriginalTeam = '';
         let dashboardInitialized = false;
         let allLogs = [];
+        let filteredLogs = [];
         
         // --- Modal Logic ---
         function openInfoModal(text) {
@@ -434,6 +451,14 @@
                 document.getElementById('prompt-modal-ok').onclick = okHandler;
                 document.getElementById('prompt-modal-cancel').onclick = cancelHandler;
             });
+        }
+
+        function openLogDetailsModal(logIndex) {
+            const log = filteredLogs[logIndex];
+            if (!log) return;
+            document.getElementById('log-details-before').textContent = log.before ? JSON.stringify(JSON.parse(log.before), null, 2) : 'N/A';
+            document.getElementById('log-details-after').textContent = log.after ? JSON.stringify(JSON.parse(log.after), null, 2) : 'N/A';
+            openModal('log-details-modal');
         }
         // --- End Modal Logic ---
 
@@ -474,47 +499,7 @@
         window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
 
         async function standardizeParticipantsData() {
-            const pSnap = await getDocs(collection(db, "participants"));
-            const batch = writeBatch(db);
-            let needsMigration = false;
-
-            pSnap.forEach(pDoc => {
-                const p = pDoc.data();
-                let updatedData = { ...p };
-                let needsUpdate = false;
-
-                if (typeof updatedData.isActive === 'undefined') {
-                    updatedData.isActive = true;
-                    needsUpdate = true;
-                }
-                if (!updatedData.createdAt) {
-                    updatedData.createdAt = Timestamp.fromDate(new Date('2023-01-01T12:00:00Z'));
-                    needsUpdate = true;
-                }
-                if ((!updatedData.teamHistory || updatedData.teamHistory.length === 0) && updatedData.team) {
-                    const defaultDate = updatedData.createdAt?.toDate ? updatedData.createdAt.toDate().toISOString().split('T')[0] : '2023-01-01';
-                    updatedData.teamHistory = [{ team: updatedData.team, date: defaultDate }];
-                    needsUpdate = true;
-                }
-                if ('team' in updatedData) {
-                    delete updatedData.team;
-                    needsUpdate = true;
-                }
-                if (needsUpdate) {
-                    needsMigration = true;
-                    const pRef = doc(db, 'participants', pDoc.id);
-                    batch.set(pRef, updatedData);
-                }
-            });
-
-            if (needsMigration) {
-                console.log("Padronizando estrutura de participantes...");
-                await batch.commit();
-                await logAction('DATA_MIGRATION', 'Estrutura de participantes foi padronizada automaticamente.');
-                console.log("Padronização concluída.");
-                return true;
-            }
-            return false;
+            // This function is now run automatically once on load
         }
 
         async function migrateTeams() {
@@ -581,13 +566,6 @@
                     teamsData[doc.id] = doc.data();
                 });
 
-                const migrated = await migrateTeams();
-                 if (migrated) {
-                    console.log("Recarregando dados após migração de equipes.");
-                    await loadAllData();
-                    return;
-                }
-
                 if (settingsSnap.exists()) {
                     const settings = settingsSnap.data();
                     sporadicRiders = settings.sporadicRiders || [];
@@ -609,20 +587,27 @@
 
             } catch (error) {
                 console.error("Erro ao carregar dados:", error);
-                openInfoModal("Não foi possível carregar os dados do Firebase. Verifique a consola.");
+                if (error.message.includes("requires an index")) {
+                    const projectId = firebaseConfig.projectId;
+                    const indexUrl = `https://console.firebase.google.com/project/${projectId}/firestore/indexes?create_composite=Clxwcm9qZWN0cy9yYWNoYW9zYy9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvbG9ncy9pbmRleGVzL18QARoNCgl0aW1lc3RhbXAQAhgA`;
+                    openInfoModal(`ERRO DE BASE DE DADOS: É necessário criar um índice para os logs. Por favor, acesse o link na consola (F12) e crie o índice com as configurações pré-preenchidas.`);
+                    console.error("LINK PARA CRIAR ÍNDICE:", indexUrl);
+                } else {
+                    openInfoModal("Não foi possível carregar os dados do Firebase. Verifique a consola.");
+                }
             }
         }
 
         function renderTeamSelectors(newTeamToSelect = '') {
             const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team'), document.getElementById('filter-team')];
-            const sortedTeams = Object.values(teamsData).map(t => t.name).sort();
+            const sortedTeams = Object.entries(teamsData).sort((a,b) => a[1].name.localeCompare(b[1].name));
             
             selects.forEach(select => {
                 if (!select) return;
                 const currentValue = select.value;
                 select.innerHTML = select.id === 'filter-team' ? '<option value="">Todas as Equipes</option>' : '<option value="">Selecionar equipe</option>';
-                sortedTeams.forEach(teamName => {
-                     select.add(new Option(teamName, teamName));
+                sortedTeams.forEach(([id, team]) => {
+                     select.add(new Option(team.name, id));
                 });
                 if(select.id !== 'filter-team') {
                     select.add(new Option("--- Criar nova equipe ---", "new_team"));
@@ -642,7 +627,7 @@
                         await setDoc(newDocRef, { name: trimmedTeam });
                         await logAction('TEAM_CREATED', `Equipe "${trimmedTeam}" criada.`, null, { name: trimmedTeam });
                         teamsData[newDocRef.id] = { name: trimmedTeam };
-                        renderTeamSelectors(trimmedTeam);
+                        renderTeamSelectors(newDocRef.id);
                         renderTeamsList();
                     } catch(e) {
                         console.error("Erro ao criar equipe", e);
@@ -660,7 +645,7 @@
             const textFilter = document.getElementById('log-filter-text').value.toLowerCase();
             list.innerHTML = '';
             
-            const filteredLogs = allLogs.filter(log => {
+            filteredLogs = allLogs.filter(log => {
                 const actionMatch = !actionFilter || log.action === actionFilter;
                 const textMatch = !textFilter || (log.details && log.details.toLowerCase().includes(textFilter)) || (log.before && log.before.toLowerCase().includes(textFilter)) || (log.after && log.after.toLowerCase().includes(textFilter));
                 return actionMatch && textMatch;
@@ -677,21 +662,21 @@
             actionTypes.forEach(action => filterSelect.add(new Option(action, action)));
             filterSelect.value = actionFilter;
 
-            filteredLogs.forEach(log => {
+            filteredLogs.forEach((log, index) => {
                 const date = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('pt-BR') : 'Data inválida';
                 const div = document.createElement('div');
                 div.className = 'p-2 bg-gray-50 rounded-md border-l-4 border-gray-300';
-                let changesHtml = '';
-                if(log.before && log.after) {
-                    changesHtml = `
-                        <div class="log-change"><strong>Antes:</strong><code>${log.before}</code></div>
-                        <div class="log-change"><strong>Depois:</strong><code>${log.after}</code></div>
-                    `;
-                }
+                
+                let hasDetails = log.before || log.after;
+
                 div.innerHTML = `
-                    <p><strong class="font-semibold">${log.details}</strong></p>
-                    <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
-                    ${changesHtml}
+                     <div class="flex justify-between items-center ${hasDetails ? 'cursor-pointer' : ''}" data-log-index="${index}">
+                        <div>
+                            <p><strong class="font-semibold">${log.details}</strong></p>
+                            <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
+                        </div>
+                        ${hasDetails ? '<i class="fas fa-eye text-gray-400"></i>' : ''}
+                    </div>
                 `;
                 list.appendChild(div);
             });
@@ -699,7 +684,7 @@
 
         function renderParticipants() {
             const list = document.getElementById('participants-list');
-            const filterTeam = document.getElementById('filter-team').value;
+            const filterTeamId = document.getElementById('filter-team').value;
             const filterName = document.getElementById('filter-name').value.toLowerCase();
             list.innerHTML = '';
 
@@ -709,8 +694,8 @@
 
             const filteredParticipants = sortedParticipants.filter(([id, p]) => {
                 const teamHistory = p.teamHistory || [];
-                const currentTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : '';
-                const teamMatch = !filterTeam || currentTeam === filterTeam;
+                const currentTeamId = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].teamId : '';
+                const teamMatch = !filterTeamId || currentTeamId === filterTeamId;
                 const nameMatch = p.name.toLowerCase().includes(filterName);
                 return teamMatch && nameMatch;
             });
@@ -947,12 +932,6 @@
                 }
             });
 
-            document.getElementById('migrate-teams-btn').addEventListener('click', async () => {
-                if(await openConfirmModal("Deseja procurar por equipes antigas e adicioná-las à nova lista de equipes?")) {
-                    loadAllData();
-                }
-            });
-        
             document.getElementById('results-form').addEventListener('input', (e) => {
                 if (e.target.classList.contains('filter-available-participants')) {
                     const filterText = e.target.value.toLowerCase();
@@ -1164,20 +1143,6 @@
                     if (newName && newName.trim() && newName.trim() !== teamName) {
                         try {
                             await updateDoc(doc(db, 'teams', teamId), { name: newName.trim() });
-                            const batch = writeBatch(db);
-                            Object.entries(participantsData).forEach(([pId, pData]) => {
-                                if (pData.teamHistory && pData.teamHistory.some(h => h.team === teamName)) {
-                                    const updatedHistory = pData.teamHistory.map(h => {
-                                        if (h.team === teamName) {
-                                            return { ...h, team: newName.trim() };
-                                        }
-                                        return h;
-                                    });
-                                    batch.update(doc(db, 'participants', pId), { teamHistory: updatedHistory });
-                                }
-                            });
-                            await batch.commit();
-
                             await logAction('TEAM_UPDATED', `Equipe "${teamName}" foi renomeada para "${newName.trim()}".`, { name: teamName }, { name: newName.trim() });
                             openInfoModal("Equipe atualizada com sucesso.");
                             loadAllData();
@@ -1189,7 +1154,7 @@
                 } else if(button.querySelector('.fa-trash')) {
                     const isUsed = Object.values(participantsData).some(p => {
                          const teamHistory = p.teamHistory || [];
-                         return teamHistory.some(h => h.team === teamName);
+                         return teamHistory.some(h => h.teamId === teamId);
                     });
 
                     if (isUsed) {
@@ -1221,7 +1186,7 @@
                     const participantData = {
                         name: name,
                         teamHistory: [{
-                            team: document.getElementById('participant-team').value,
+                            teamId: document.getElementById('participant-team').value,
                             date: new Date().toISOString().split('T')[0]
                         }],
                         imageUrl: document.getElementById('participant-image-filename').value.trim(),
@@ -1244,7 +1209,7 @@
                 if (button.querySelector('.fa-edit')) { 
                     const participant = participantsData[id];
                     const teamHistory = participant.teamHistory || [];
-                    participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].team : (participant.team || '');
+                    participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].teamId : '';
                     
                     document.getElementById('edit-participant-id').value = id;
                     document.getElementById('edit-participant-name').value = participant.name;

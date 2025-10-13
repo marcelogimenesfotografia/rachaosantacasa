@@ -11,8 +11,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
-    <!-- Estilos Personalizados (mesmos de index.html) -->
+    <!-- Estilos Personalizados -->
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -23,7 +24,7 @@
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
         .card { background-color: var(--card-bg-color); border-radius: 1.5rem; padding: 2.5rem; border: 1px solid var(--border-color); box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05); }
-        .prose { max-width: 65ch; margin: auto; } /* Estilos para texto longo */
+        .prose { max-width: 65ch; margin: auto; }
         .prose h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }
         .prose h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; }
         .prose p { line-height: 1.75; margin-bottom: 1.25rem; color: var(--text-secondary); }
@@ -37,6 +38,8 @@
                 <ul class="flex justify-center gap-6 md:gap-8">
                     <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
                     <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
+                    <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
+                    <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
                     <li><a href="sobre.html" class="font-semibold text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
             </nav>
@@ -58,6 +61,11 @@
                         Mais do que uma competição, o Rachão Santa Casa é uma comunidade. Valorizamos o companheirismo, o apoio mútuo e a diversão. No final de cada etapa, o que realmente importa são as histórias partilhadas e os laços fortalecidos. Como gostamos de dizer: "Nós pedalamos forte, mas o que nos mantém juntos é a amizade."
                     </p>
                 </article>
+            </div>
+             <div class="text-center mt-8">
+                <a href="admin.html" class="inline-block bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition shadow-sm">
+                    <i class="fas fa-user-shield mr-2"></i> Acesso Administrativo
+                </a>
             </div>
         </main>
         

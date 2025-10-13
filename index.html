@@ -126,6 +126,7 @@
                 <ul class="flex justify-center gap-6 md:gap-8">
                     <li><a href="index.html" class="font-semibold text-yellow-500 transition">Classificação</a></li>
                     <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
+                    <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
                     <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
                     <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
@@ -506,7 +507,7 @@
             const el = document.createElement('div');
             el.className = 'comment-box';
             const userHasLiked = userId && (comment.likedBy || []).includes(userId);
-            const canDelete = userId === comment.authorId || userId === ADMIN_USER_ID;
+            const canDelete = userId === comment.authorId;
             el.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-gray-800">${comment.name}</p>${canDelete ? `<button onclick="showDeleteConfirmation('comment', '${comment.id}')" class="text-gray-500 hover:text-red-500 text-sm"><i class="fas fa-trash-alt"></i></button>` : ''}</div><p class="text-gray-600 mt-1 whitespace-pre-wrap">${comment.text}</p><div class="flex items-center gap-4 mt-3 text-xs text-gray-500"><button onclick="toggleCommentLike('${comment.id}')" class="interaction-button text-xs py-1 px-2 ${userHasLiked ? 'liked' : ''}"><i class="fas fa-heart ${userHasLiked ? 'liked' : ''}"></i> <span>${comment.likes || 0}</span></button><button onclick="toggleReplyForm('${comment.id}')" class="font-semibold hover:underline">Responder</button></div><div id="reply-form-container-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-gray-300"><form onsubmit="handleReplySubmit(event, '${comment.id}')" class="space-y-2"><input type="text" name="name" placeholder="Seu nome" required class="comment-input text-sm" value="${savedName}"><textarea name="reply" placeholder="Escreva sua resposta..." required rows="2" class="comment-input text-sm"></textarea><button type="submit" class="bg-gray-700 text-white font-bold py-1 px-3 text-xs rounded-lg hover:bg-gray-600">Enviar</button></form></div><div id="replies-list-${comment.id}" class="mt-4 pl-4 border-l-2 border-gray-200 space-y-3"></div>`;
             loadReplies(comment.id);
             return el;
@@ -520,7 +521,7 @@
             repliesContainer.innerHTML = '';
             snapshot.forEach(doc => {
                 const reply = { id: doc.id, ...doc.data() };
-                const canDelete = userId === reply.authorId || userId === ADMIN_USER_ID;
+                const canDelete = userId === reply.authorId;
                 const replyEl = document.createElement('div');
                 replyEl.className = 'text-sm bg-gray-100 p-3 rounded-md';
                 replyEl.innerHTML = `<div class="flex justify-between items-start"><p class="font-bold text-gray-800">${reply.name}</p>${canDelete ? `<button onclick="showDeleteConfirmation('reply', '${commentId}', '${reply.id}')" class="text-gray-500 hover:text-red-500 text-xs"><i class="fas fa-trash-alt"></i></button>` : ''}</div><p class="text-gray-600 whitespace-pre-wrap">${reply.text}</p>`;
@@ -697,3 +698,4 @@
     </script>
 </body>
 </html>
+

@@ -452,13 +452,67 @@
                 document.getElementById('prompt-modal-cancel').onclick = cancelHandler;
             });
         }
-
+        
         function openLogDetailsModal(logIndex) {
             const log = filteredLogs[logIndex];
             if (!log) return;
             document.getElementById('log-details-before').textContent = log.before ? JSON.stringify(JSON.parse(log.before), null, 2) : 'N/A';
             document.getElementById('log-details-after').textContent = log.after ? JSON.stringify(JSON.parse(log.after), null, 2) : 'N/A';
             openModal('log-details-modal');
+        }
+        
+        function openDeleteOptionsModal(id) {
+            const participantName = participantsData[id]?.name;
+            if (!participantName) return;
+
+            document.getElementById('delete-participant-name').textContent = participantName;
+            
+            const deactivateBtn = document.getElementById('deactivate-btn');
+            const hardDeleteBtn = document.getElementById('hard-delete-btn');
+            const cancelBtn = document.getElementById('cancel-delete-options-btn');
+
+            deactivateBtn.onclick = () => deactivateParticipant(id);
+            hardDeleteBtn.onclick = () => hardDeleteParticipant(id);
+            cancelBtn.onclick = () => closeModal('delete-options-modal');
+            
+            openModal('delete-options-modal');
+        }
+
+        async function deactivateParticipant(id) {
+            const participant = participantsData[id];
+            if (!participant) return;
+
+            if (await openConfirmModal(`Tem a certeza que deseja DESATIVAR ${participant.name}? Ele será removido das listas, mas o seu histórico será mantido.`)) {
+                try {
+                    const participantRef = doc(db, 'participants', id);
+                    await updateDoc(participantRef, { isActive: false });
+                    await logAction('PARTICIPANT_DEACTIVATED', `Participante "${participant.name}" foi desativado.`, { isActive: true }, { isActive: false });
+                    closeModal('delete-options-modal');
+                    openInfoModal('Participante desativado com sucesso.');
+                    loadAllData();
+                } catch (error) {
+                    console.error("Erro ao desativar participante:", error);
+                    openInfoModal("Ocorreu um erro ao desativar o participante.");
+                }
+            }
+        }
+
+        async function hardDeleteParticipant(id) {
+            const participant = participantsData[id];
+            if (!participant) return;
+
+            if (await openConfirmModal(`ATENÇÃO: Exclusão permanente! Tem a certeza ABSOLUTA que deseja apagar ${participant.name} e todo o seu histórico? Esta ação não pode ser desfeita.`)) {
+                try {
+                    await deleteDoc(doc(db, 'participants', id));
+                    await logAction('PARTICIPANT_DELETED', `Participante "${participant.name}" foi permanentemente excluído.`, participant, null);
+                    closeModal('delete-options-modal');
+                    openInfoModal('Participante excluído permanentemente com sucesso.');
+                    loadAllData();
+                } catch (error) {
+                    console.error("Erro ao excluir participante:", error);
+                    openInfoModal("Ocorreu um erro ao excluir o participante.");
+                }
+            }
         }
         // --- End Modal Logic ---
 
@@ -931,7 +985,7 @@
                     btn.textContent = 'Guardar Configurações';
                 }
             });
-
+        
             document.getElementById('results-form').addEventListener('input', (e) => {
                 if (e.target.classList.contains('filter-available-participants')) {
                     const filterText = e.target.value.toLowerCase();
@@ -1229,6 +1283,14 @@
 
             document.getElementById('log-filter-action').addEventListener('change', renderLogs);
             document.getElementById('log-filter-text').addEventListener('input', renderLogs);
+
+            document.getElementById('logs-list').addEventListener('click', (e) => {
+                const logItem = e.target.closest('[data-log-index]');
+                if(logItem) {
+                    const index = logItem.dataset.logIndex;
+                    openLogDetailsModal(index);
+                }
+            });
         }
         
         async function initializeAuth() {

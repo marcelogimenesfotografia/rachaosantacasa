@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Estilos Personalizados (mesmos de index.html) -->
+    <!-- Estilos Personalizados -->
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -35,7 +35,7 @@
         .profile-thumb-wrapper { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
         .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
         .modal { display: none; }
-        .modal.is-open { display: flex; }
+        .modal.is-open { display: flex; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.7); }
         .modal-content.card { max-width: 600px; width: 90%; text-align: center; position: relative; }
         .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
     </style>
@@ -48,6 +48,8 @@
                 <ul class="flex justify-center gap-6 md:gap-8">
                     <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
                     <li><a href="ranking_geral.html" class="font-semibold text-yellow-500 transition">Ranking Geral</a></li>
+                    <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
+                    <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
                     <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
             </nav>
@@ -116,25 +118,36 @@
             return `https://placehold.co/200x200/e5e7eb/000000?text=${firstLetter}`;
         }
 
-        function getTeamForDate(participantData, dateStr = null) {
+        function getTeamForDate(participantData, dateStr = null, teamsData) {
             const history = participantData.teamHistory || [];
-            if (!history.length) {
-                return participantData.team || ''; 
+            if (!history || history.length === 0) {
+                return ''; 
             }
+
             const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
-            if (!dateStr) {
-                return sortedHistory[sortedHistory.length - 1].team;
+
+            if (!dateStr || isNaN(new Date(dateStr))) {
+                 const latestTeamId = sortedHistory[sortedHistory.length - 1].teamId;
+                 return teamsData[latestTeamId]?.name || '';
             }
+
             const competitionDate = new Date(dateStr + 'T00:00:00');
-            let teamForDate = sortedHistory[0].team; 
+            
+            let teamIdForDate = ''; 
+            
             for (const entry of sortedHistory) {
                 if (new Date(entry.date) <= competitionDate) {
-                    teamForDate = entry.team;
+                    teamIdForDate = entry.teamId;
                 } else {
                     break;
                 }
             }
-            return teamForDate;
+            
+            if (teamIdForDate === '' && sortedHistory.length > 0) {
+                teamIdForDate = sortedHistory[0].teamId;
+            }
+            
+            return teamsData[teamIdForDate]?.name || '';
         }
         
         async function calculateLifetimeRanking() {
@@ -142,10 +155,11 @@
             const rankingContainer = document.getElementById('ranking-container');
             
             try {
-                const [pSnap, rSnap, settingsSnap] = await Promise.all([
+                const [pSnap, rSnap, settingsSnap, tSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
-                    getDoc(doc(db, "settings", "config"))
+                    getDoc(doc(db, "settings", "config")),
+                    getDocs(collection(db, "teams"))
                 ]);
 
                 const participantsData = {};
@@ -158,12 +172,13 @@
                     }
                 });
 
+                const teamsData = {};
+                tSnap.forEach(doc => {
+                    teamsData[doc.id] = doc.data();
+                });
+
                 const monthlyData = {};
                 rSnap.forEach(doc => monthlyData[doc.id] = doc.data());
-
-                const latestYearWithData = Object.keys(monthlyData).length > 0
-                    ? [...new Set(Object.keys(monthlyData).map(id => id.split('_')[0]))].sort().reverse()[0]
-                    : new Date().getFullYear().toString();
                 
                 const settings = settingsSnap.exists() ? settingsSnap.data() : {};
                 const sporadicRiders = settings.sporadicRiders || [];
@@ -176,7 +191,6 @@
                     if (!sporadicRiders.includes(id)) {
                         lifetimeStats[id] = {
                             totalPoints: 0,
-                            latestYearPoints: 0,
                             top5Finishes: [0, 0, 0, 0, 0],
                             monthlyRanks: {},
                             pointsHistory: []
@@ -224,10 +238,6 @@
                         const pointsThisMonth = monthStandings[id] || 0;
                         lifetimeStats[id].totalPoints += pointsThisMonth;
                         lifetimeStats[id].pointsHistory.push({ monthId: monthId, points: lifetimeStats[id].totalPoints });
-
-                        if (monthId.startsWith(latestYearWithData)) {
-                             lifetimeStats[id].latestYearPoints += pointsThisMonth;
-                        }
                     });
 
                     const monthParticipants = new Set(Object.keys(monthStandings));
@@ -248,7 +258,7 @@
                     ...lifetimeStats[id]
                 })).sort((a, b) => b.totalPoints - a.totalPoints);
                 
-                renderTable(finalRanking, latestYearWithData);
+                renderTable(finalRanking, teamsData);
 
                 loadingOverlay.style.display = 'none';
                 rankingContainer.style.display = 'block';
@@ -259,7 +269,7 @@
             }
         }
 
-        function renderTable(rankingData, latestYearWithData) {
+        function renderTable(rankingData, teamsData) {
             const tableBody = document.getElementById('ranking-table-body');
             tableBody.innerHTML = '';
             rankingData.forEach((p, index) => {
@@ -273,18 +283,18 @@
                             <div class="profile-thumb-wrapper"><img src="${imageUrl}" class="profile-thumb"></div>
                             <div>
                                 <div class="font-semibold text-gray-800">${p.name}</div>
-                                <div class="text-sm text-gray-400">${getTeamForDate(p) || ''}</div>
+                                <div class="text-sm text-gray-400">${getTeamForDate(p, null, teamsData) || ''}</div>
                             </div>
                         </div>
                     </td>
                     <td class="text-right font-bold text-gray-800">${p.totalPoints}</td>
                 `;
-                row.addEventListener('click', () => renderModal(p, latestYearWithData));
+                row.addEventListener('click', () => renderModal(p, teamsData));
                 tableBody.appendChild(row);
             });
         }
 
-        function renderModal(participant, yearToDisplay) {
+        function renderModal(participant, teamsData) {
             const modalContent = document.getElementById('modal-content-container');
             
             let top5Html = '';
@@ -314,8 +324,7 @@
                 <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
                 <img class="modal-image mx-auto" src="${imageUrl}" alt="Foto de Perfil">
                 <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
-                <p class="text-sm text-gray-600">${getTeamForDate(participant) || 'Sem equipe'}</p>
-                <p class="font-semibold text-gray-800 mt-2">Pontuação (${yearToDisplay}): ${participant.latestYearPoints}</p>
+                <p class="text-sm text-gray-600">${getTeamForDate(participant, null, teamsData) || 'Sem equipe'}</p>
                 
                 <div class="mt-4 w-full text-center border-t border-gray-200 pt-4">
                     <h4 class="text-md font-bold text-gray-800 mb-1">Pontuação Total (Geral)</h4>

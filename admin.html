@@ -477,7 +477,7 @@
             
             openModal('delete-options-modal');
         }
-
+        
         async function deactivateParticipant(id) {
             const participant = participantsData[id];
             if (!participant) return;
@@ -985,6 +985,10 @@
                     btn.textContent = 'Guardar Configurações';
                 }
             });
+
+            document.getElementById('month-select-admin').addEventListener('change', (e) => {
+                renderResultsForm(e.target.value);
+            });
         
             document.getElementById('results-form').addEventListener('input', (e) => {
                 if (e.target.classList.contains('filter-available-participants')) {
@@ -1283,7 +1287,6 @@
 
             document.getElementById('log-filter-action').addEventListener('change', renderLogs);
             document.getElementById('log-filter-text').addEventListener('input', renderLogs);
-
             document.getElementById('logs-list').addEventListener('click', (e) => {
                 const logItem = e.target.closest('[data-log-index]');
                 if(logItem) {

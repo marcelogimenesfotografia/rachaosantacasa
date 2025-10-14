@@ -319,7 +319,7 @@
             }
         }
 
-        function renderContent(monthId, tab) {
+        async function renderContent(monthId, tab) {
             if (!userId) { return; }
 
             renderTabs(monthId);
@@ -362,18 +362,20 @@
                 dataToShow = stageData;
             }
 
-            dynamicContentContainer.appendChild(createContentCard(monthData, dataToShow, isOverall, monthId, tab));
+            const card = await createContentCard(monthData, dataToShow, isOverall, monthId, tab);
+            dynamicContentContainer.appendChild(card);
+
             const stageId = `${monthId}_${isOverall ? 'geral' : tab.replace('tab-','')}`;
             renderCommentsAndReplies(stageId);
         }
         
-        function createContentCard(monthData, data, isOverall, monthId, tab) {
+        async function createContentCard(monthData, data, isOverall, monthId, tab) {
             const card = document.createElement('div');
             card.className = 'card';
             
             const hasData = data && data.length > 0;
             const stageIndex = isOverall ? -1 : parseInt(tab.replace('tab-stage-', ''));
-            const currentStage = isOverall ? null : monthData.stages[stageIndex];
+            const currentStage = isOverall ? null : monthlyData[monthId]?.stages[stageIndex];
 
             if (isOverall) {
                 const titleEl = document.createElement('div');
@@ -403,10 +405,31 @@
             if(currentStage && currentStage.name) {
                 const date = currentStage.date ? new Date(currentStage.date + 'T00:00:00').toLocaleDateString('pt-BR') : '';
                 const details = [date, currentStage.type, currentStage.durationDistance].filter(Boolean).join(' | ');
+                
+                let weatherHtml = '<div class="mt-2 text-xs text-gray-400">A carregar dados do tempo...</div>';
                 card.innerHTML += `<div class="text-center mb-4">
                     <h2 class="text-2xl font-bold">${currentStage.name}</h2>
                     <p class="text-sm text-gray-500">${details}</p>
+                    <div id="weather-info-${stageIndex}">${weatherHtml}</div>
                 </div>`;
+                
+                getWeatherData(currentStage).then(weatherInfo => {
+                    const weatherContainer = document.getElementById(`weather-info-${stageIndex}`);
+                    if (weatherInfo && weatherInfo.special) {
+                        weatherHtml = `<div class="mt-2 text-xs text-gray-400">${weatherInfo.special}</div>`;
+                    } else if (weatherInfo) {
+                        weatherHtml = `
+                            <div class="mt-2 text-xs text-gray-500 flex justify-center items-center gap-4">
+                                <span><i class="fas fa-thermometer-half mr-1"></i> ${weatherInfo.temp}°C (Sensação ${weatherInfo.feelsLike}°C)</span>
+                                <span><i class="fas fa-tint mr-1"></i> ${weatherInfo.humidity}%</span>
+                                <span><i class="fas fa-wind mr-1"></i> ${weatherInfo.wind} km/h</span>
+                            </div>
+                        `;
+                    } else {
+                         weatherHtml = '<div class="mt-2 text-xs text-gray-400">Informação do tempo não disponível.</div>';
+                    }
+                    if(weatherContainer) weatherContainer.innerHTML = weatherHtml;
+                });
             }
 
             if (isOverall && data.length >= 3 && (monthData.isCompleted || false)) {
@@ -431,6 +454,53 @@
             }
             
             return card;
+        }
+
+        async function getWeatherData(stage) {
+            if (!stage.date) return null;
+
+            const lat = -24.04;
+            const lon = -52.38;
+            const raceDate = new Date(stage.date + 'T00:00:00Z'); // Use UTC to avoid timezone issues
+            const today = new Date();
+            today.setUTCHours(0,0,0,0);
+            const raceHour = 20; 
+            const timezone = "America/Sao_Paulo";
+            
+            const diffDays = Math.ceil((raceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 15) {
+                return { special: "Previsão disponível a menos de 16 dias da data." };
+            }
+
+            try {
+                let apiUrl;
+                if (raceDate < today) { // Past
+                    apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${stage.date}&end_date=${stage.date}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&timezone=${timezone}`;
+                } else { // Future or today
+                    apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&forecast_days=${diffDays + 1}&timezone=${timezone}`;
+                }
+
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data.hourly && data.hourly.time) {
+                    const targetDateTime = `${stage.date}T${String(raceHour).padStart(2,'0')}:00`;
+                    const timeIndex = data.hourly.time.indexOf(targetDateTime);
+                    
+                    if (timeIndex !== -1) {
+                        return {
+                            temp: Math.round(data.hourly.temperature_2m[timeIndex]),
+                            humidity: Math.round(data.hourly.relative_humidity_2m[timeIndex]),
+                            wind: Math.round(data.hourly.wind_speed_10m[timeIndex]),
+                            feelsLike: Math.round(data.hourly.apparent_temperature[timeIndex])
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao buscar dados do tempo:", error);
+            }
+            return null;
         }
 
         function createPodium(podiumData) {
@@ -601,7 +671,6 @@
                     }
                 });
 
-                teamsData = {};
                 tSnap.forEach(doc => {
                     teamsData[doc.id] = doc.data();
                 });

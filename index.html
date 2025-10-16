@@ -263,7 +263,9 @@
             const data = monthlyData[monthId] ? JSON.parse(JSON.stringify(monthlyData[monthId])) : { stages: [] };
             if (data.stages && Array.isArray(data.stages)) {
                 data.stages.forEach(stage => {
-                    stage.results = processStageData(stage.results);
+                    if (stage.status !== 'Cancelada' && stage.status !== 'Adiada') {
+                        stage.results = processStageData(stage.results);
+                    }
                 });
             }
             return data;
@@ -272,6 +274,7 @@
         function calculateOverall(stages = []) {
             const participantPoints = {};
             stages.forEach(stage => {
+                if (stage.status === 'Cancelada' || stage.status === 'Adiada') return;
                 (stage.results || []).forEach(p => {
                     const participantId = p.id || nameToIdMap[p.name.toUpperCase()];
                      if (participantId && !sporadicRiders.includes(participantId)) {
@@ -373,9 +376,9 @@
             const card = document.createElement('div');
             card.className = 'card';
             
-            const hasData = data && data.length > 0;
             const stageIndex = isOverall ? -1 : parseInt(tab.replace('tab-stage-', ''));
             const currentStage = isOverall ? null : monthlyData[monthId]?.stages[stageIndex];
+            const hasData = data && data.length > 0 && currentStage?.status !== 'Cancelada' && currentStage?.status !== 'Adiada';
 
             if (isOverall) {
                 const titleEl = document.createElement('div');
@@ -386,20 +389,6 @@
                 }
                 titleEl.innerHTML = `<h2 class="text-2xl font-bold">${titleText}</h2>`;
                 card.appendChild(titleEl);
-            }
-
-            if(!hasData && !isOverall) {
-                const stageInfo = monthlyData[monthId]?.stages[stageIndex] || {};
-                const date = stageInfo.date ? new Date(stageInfo.date + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-                const details = [date, stageInfo.type, stageInfo.durationDistance].filter(Boolean).join(' | ');
-                card.innerHTML += `<div class="text-center mb-4"><h2 class="text-2xl font-bold">${stageInfo.name || 'Etapa'}</h2><p class="text-sm text-gray-500">${details}</p></div><p class="text-center text-gray-400">Etapa não realizada.</p>`;
-                return card;
-            }
-            if (!hasData && isOverall) {
-                if (!card.querySelector('h2')) {
-                    card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
-                }
-                return card;
             }
 
             if(currentStage && currentStage.name) {
@@ -432,16 +421,25 @@
                 });
             }
 
-            if (isOverall && data.length >= 3 && (monthData.isCompleted || false)) {
-                card.appendChild(createPodium(data.slice(0, 3)));
+            const stageStatus = currentStage?.status || 'Realizada';
+            const stageReason = currentStage?.reason || '';
+
+            if (stageStatus === 'Cancelada') {
+                 card.innerHTML += `<p class="text-center font-semibold text-red-500 py-4">Etapa Cancelada${stageReason ? `: ${stageReason}` : ''}</p>`;
+            } else if (stageStatus === 'Adiada') {
+                card.innerHTML += `<p class="text-center font-semibold text-yellow-600 py-4">Etapa Adiada${stageReason ? `: ${stageReason}` : ''}</p>`;
+            } else if (!hasData) {
+                card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado para esta etapa.</p>`;
+            } else {
+                 if (isOverall && data.length >= 3 && (monthData.isCompleted || false)) {
+                    card.appendChild(createPodium(data.slice(0, 3)));
+                }
+                const tableStartIndex = (isOverall && data.length >= 3 && (monthData.isCompleted || false)) ? 3 : 0;
+                card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
             }
-
-            const tableStartIndex = (isOverall && data.length >= 3 && (monthData.isCompleted || false)) ? 3 : 0;
-            card.appendChild(createTable(data.slice(tableStartIndex), isOverall));
-
-            const podiumImageUrl = isOverall ? monthData.geral_podium_img : currentStage?.podium_img;
             
-            if(podiumImageUrl) {
+            const podiumImageUrl = isOverall ? monthData.geral_podium_img : currentStage?.podium_img;
+            if(podiumImageUrl && stageStatus === 'Realizada') {
                 const podiumImageContainer = document.createElement('div');
                 podiumImageContainer.className = 'mt-8 text-center';
                 podiumImageContainer.innerHTML = `<img src="${podiumImageUrl}" alt="Foto do Pódio" class="mx-auto rounded-lg shadow-lg max-w-full h-auto">`;
@@ -458,10 +456,11 @@
 
         async function getWeatherData(stage) {
             if (!stage.date) return null;
+            if (stage.weather) return stage.weather; // Use stored data if available
 
             const lat = -24.04;
             const lon = -52.38;
-            const raceDate = new Date(stage.date + 'T00:00:00Z'); // Use UTC to avoid timezone issues
+            const raceDate = new Date(stage.date + 'T00:00:00Z');
             const today = new Date();
             today.setUTCHours(0,0,0,0);
             const raceHour = 20; 

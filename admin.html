@@ -552,46 +552,35 @@
         function openModal(id) { document.getElementById(id).classList.add('is-open'); }
         window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
 
-        async function standardizeParticipantsData() {
-            // This function is now run automatically once on load
-        }
+        async function addCreationDateToTeams() {
+            const batch = writeBatch(db);
+            let needsUpdate = false;
+            const defaultDate = Timestamp.fromDate(new Date('2025-08-07T00:00:00'));
+            const pelotaoDate = Timestamp.fromDate(new Date('2025-10-06T00:00:00'));
 
-        async function migrateTeams() {
-             const existingTeamsSnap = await getDocs(collection(db, "teams"));
-             const existingTeams = new Set();
-             existingTeamsSnap.forEach(doc => existingTeams.add(doc.data().name.toUpperCase()));
-
-             const teamsToCreate = new Set();
-             Object.values(participantsData).forEach(p => {
-                (p.teamHistory || []).forEach(h => {
-                    if(h.team && !existingTeams.has(h.team.toUpperCase())) {
-                        teamsToCreate.add(h.team);
+            for (const teamId in teamsData) {
+                const team = teamsData[teamId];
+                if (!team.createdAt) {
+                    needsUpdate = true;
+                    const teamRef = doc(db, 'teams', teamId);
+                    if (team.name === 'Pelotão Bike') {
+                        batch.update(teamRef, { createdAt: pelotaoDate, isActive: true });
+                    } else {
+                        batch.update(teamRef, { createdAt: defaultDate, isActive: true });
                     }
-                });
-             });
-
-             if (teamsToCreate.size > 0) {
-                 const batch = writeBatch(db);
-                 teamsToCreate.forEach(teamName => {
-                     const newTeamRef = doc(collection(db, 'teams'));
-                     batch.set(newTeamRef, { name: teamName });
-                 });
-                 await batch.commit();
-                 await logAction('TEAM_MIGRATION', `${teamsToCreate.size} equipes antigas foram migradas.`);
-                 console.log(`${teamsToCreate.size} equipes migradas.`);
-                 return true;
-             }
-             return false;
+                }
+            }
+            if (needsUpdate) {
+                console.log("A adicionar data de criação a equipas existentes...");
+                await batch.commit();
+                console.log("Equipas atualizadas.");
+                return true;
+            }
+            return false;
         }
-
 
         async function loadAllData() {
             try {
-                const standardized = await standardizeParticipantsData();
-                if (standardized) {
-                    console.log("Recarregando dados após padronização de participantes.");
-                }
-
                 const [pSnap, rSnap, settingsSnap, logsSnap, tSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
@@ -619,6 +608,11 @@
                 tSnap.forEach(doc => {
                     teamsData[doc.id] = doc.data();
                 });
+
+                if (await addCreationDateToTeams()) {
+                    await loadAllData();
+                    return;
+                }
 
                 if (settingsSnap.exists()) {
                     const settings = settingsSnap.data();
@@ -654,7 +648,7 @@
 
         function renderTeamSelectors(newTeamToSelect = '') {
             const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team'), document.getElementById('filter-team')];
-            const sortedTeams = Object.entries(teamsData).sort((a,b) => a[1].name.localeCompare(b[1].name));
+            const sortedTeams = Object.entries(teamsData).filter(([id, team]) => team.isActive !== false).sort((a,b) => a[1].name.localeCompare(b[1].name));
             
             selects.forEach(select => {
                 if (!select) return;
@@ -678,7 +672,7 @@
                     const trimmedTeam = newTeam.trim();
                     try {
                         const newDocRef = doc(collection(db, 'teams'));
-                        await setDoc(newDocRef, { name: trimmedTeam });
+                        await setDoc(newDocRef, { name: trimmedTeam, isActive: true, createdAt: serverTimestamp() });
                         await logAction('TEAM_CREATED', `Equipe "${trimmedTeam}" criada.`, null, { name: trimmedTeam });
                         teamsData[newDocRef.id] = { name: trimmedTeam };
                         renderTeamSelectors(newDocRef.id);
@@ -824,10 +818,13 @@
             }).join('');
             
             const hiddenClass = isOpen ? '' : 'hidden';
+            let headerBg = 'bg-gray-50';
+            if (stage.status === 'Cancelada') headerBg = 'bg-red-100';
+            if (stage.status === 'Adiada') headerBg = 'bg-yellow-100';
 
             return `
                 <div class="stage-form-group border-t-2 border-dashed pt-4" data-stage-id="${stageId}">
-                    <div class="accordion-header bg-gray-50 rounded-t-lg p-4">
+                    <div class="accordion-header ${headerBg} rounded-t-lg p-4">
                          <h3 class="font-bold text-lg">${stage.name || `Etapa ${index + 1}`}</h3>
                          <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
@@ -844,6 +841,14 @@
                                 <option value="Crono" ${stage.type === 'Crono' ? 'selected' : ''}>Crono</option>
                             </select>
                             <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
+                        </div>
+                        <div class="mt-3">
+                            <label class="font-medium text-sm">Status da Etapa</label>
+                            <select class="input-field stage-status mt-1">
+                                <option value="Realizada" ${stage.status === 'Realizada' || !stage.status ? 'selected' : ''}>Realizada</option>
+                                <option value="Cancelada" ${stage.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
+                                <option value="Adiada" ${stage.status === 'Adiada' ? 'selected' : ''}>Adiada</option>
+                            </select>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -926,7 +931,7 @@
         function renderTeamsList() {
             const list = document.getElementById('teams-list');
             list.innerHTML = '';
-            const sortedTeams = Object.entries(teamsData).sort((a, b) => a[1].name.localeCompare(b[1].name));
+            const sortedTeams = Object.entries(teamsData).filter(([id, team]) => team.isActive !== false).sort((a, b) => a[1].name.localeCompare(b[1].name));
 
             if (sortedTeams.length === 0) {
                 list.innerHTML = '<p class="text-center text-gray-500">Nenhuma equipe cadastrada.</p>';

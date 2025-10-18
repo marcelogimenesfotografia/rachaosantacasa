@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Adicionado Marked.js para renderizar Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -25,8 +27,15 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             margin-bottom: 2rem; 
         }
+        /* Estilos para o conteúdo renderizado a partir de Markdown */
         .prose { max-width: none; color: var(--text-secondary); }
         .prose p { margin-bottom: 1.25em; line-height: 1.8; font-size: 1.125rem; }
+        .prose a { color: var(--accent-color); text-decoration: underline; font-weight: 500; }
+        .prose strong { color: var(--text-primary); }
+        .prose h2, .prose h3 { color: var(--text-primary); font-weight: 700; margin-top: 2em; margin-bottom: 1em; }
+        .prose ul, .prose ol { margin-left: 1.5rem; margin-bottom: 1.25em; }
+        .prose li { margin-bottom: 0.5em; }
+        .prose img, .prose iframe { width: 100%; border-radius: 0.75rem; margin-top: 2em; margin-bottom: 2em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="antialiased">
@@ -98,16 +107,35 @@
                 if (docSnap.exists()) {
                     const noticia = docSnap.data();
                     const date = noticia.createdAt?.toDate ? noticia.createdAt.toDate().toLocaleDateString('pt-BR') : '';
-                    // Replace newlines with <br> for proper paragraph breaks in HTML
-                    const contentHtml = noticia.content.replace(/\n/g, '<br>');
+                    // Utiliza o Marked.js para converter o conteúdo de Markdown para HTML
+                    const contentHtml = marked.parse(noticia.content);
                     
                     document.title = `${noticia.title} - Rachão Santa Casa`;
+                    
+                    const shareUrl = encodeURIComponent(window.location.href);
+                    const shareTitle = encodeURIComponent(noticia.title);
+
+                    const shareButtonsHtml = `
+                        <div class="mt-10 pt-6 border-t border-gray-200 flex items-center justify-center gap-4">
+                            <span class="font-semibold text-gray-600">Partilhar:</span>
+                            <a href="https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}" target="_blank" class="w-10 h-10 flex items-center justify-center bg-green-500 text-white rounded-full hover:bg-green-600 transition">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" target="_blank" class="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareTitle}" target="_blank" class="w-10 h-10 flex items-center justify-center bg-black text-white rounded-full hover:bg-gray-800 transition">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                        </div>
+                    `;
 
                     noticiaContainer.innerHTML = `
                         <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">${noticia.title}</h1>
                         <p class="text-gray-500 mb-6">${date}</p>
                         <img src="${noticia.imageUrl}" alt="${noticia.title}" class="w-full rounded-xl shadow-lg mb-8 aspect-video object-cover">
                         <div class="prose">${contentHtml}</div>
+                        ${shareButtonsHtml}
                     `;
                 } else {
                     noticiaContainer.innerHTML = '<p class="text-center text-red-500">Notícia não encontrada.</p>';
@@ -126,3 +154,4 @@
     </script>
 </body>
 </html>
+

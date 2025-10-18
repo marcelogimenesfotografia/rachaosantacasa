@@ -11,16 +11,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Estilos Personalizados -->
     <style>
         :root {
             --bg-color: #f4f4f5;
             --card-bg-color: #ffffff;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
             --accent-color: #eab308;
             --gold: #FFD700;
             --silver: #C0C0C0;
@@ -33,80 +33,141 @@
         }
         .card {
             background-color: var(--card-bg-color);
-            border-radius: 1rem;
+            border-radius: 1.5rem;
             padding: 1.5rem;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             margin-bottom: 1.5rem;
         }
+        
+        /* --- Novo Layout --- */
         .filter-container {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             gap: 1.5rem;
+            padding: 2rem;
         }
         #month-select {
-            background-color: var(--bg-color);
+            background-color: #fff;
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            border-radius: 9999px;
-            padding: 0.5rem 1.5rem;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
             font-weight: 600;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             cursor: pointer;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
         }
+        #month-select:hover {
+             border-color: var(--accent-color);
+        }
+
         .tabs {
             display: flex;
-            gap: 0.5rem;
+            background-color: #f3f4f6;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
             flex-wrap: wrap;
             justify-content: center;
         }
         .tab-button {
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 1.25rem;
             font-weight: 600;
-            border-radius: 9999px;
+            border-radius: 0.5rem;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
             color: var(--text-secondary);
+            border: none;
             background-color: transparent;
+        }
+        .tab-button:hover { 
+            background-color: rgba(255, 255, 255, 0.6);
+            color: var(--text-primary);
+        }
+        .tab-button.active { 
+            color: var(--text-primary); 
+            background-color: #fff;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        
+        .podium-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            align-items: flex-end;
+            gap: 1rem;
+            padding: 3rem 1rem 1rem;
             position: relative;
         }
-        .tab-button:hover { color: var(--text-primary); }
-        .tab-button.active { color: var(--accent-color); }
-        .tab-button.active::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
+        .podium-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
         }
-        .podium-container { display: flex; justify-content: center; align-items: flex-end; gap: 1rem; padding: 2rem 0; text-align: center; }
-        .podium-step { display: flex; flex-direction: column; align-items: center; width: 33.33%; }
-        .podium-rank { font-size: 2.5rem; font-weight: 700; line-height: 1; }
-        .podium-rank-1 { color: var(--gold); order: 2; transform: translateY(-20px); }
-        .podium-rank-2 { color: var(--silver); order: 1; }
-        .podium-rank-3 { color: var(--bronze); order: 3; }
-        .podium-image { border-radius: 50%; object-fit: cover; margin-top: 0.5rem; border: 4px solid; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .podium-image-1 { width: 140px; height: 140px; border-color: var(--gold); }
-        .podium-image-2 { width: 110px; height: 110px; border-color: var(--silver); }
-        .podium-image-3 { width: 110px; height: 110px; border-color: var(--bronze); }
-        .podium-name { font-weight: 600; margin-top: 1rem; color: var(--text-primary); }
-        .podium-points { font-size: 0.875rem; color: var(--text-secondary); }
-        .leaderboard-table { width: 100%; border-collapse: collapse; }
-        .leaderboard-table th, .leaderboard-table td { padding: 1rem; text-align: left; }
-        .leaderboard-table thead { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-        .leaderboard-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background-color: 0.2s ease-in-out; }
-        .leaderboard-table tbody tr:last-child { border-bottom: none; }
+        .podium-base {
+            width: 100%;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem 0.75rem 0 0;
+            box-shadow: 0 -5px 20px -5px rgba(0,0,0,0.1);
+            padding: 1.5rem 1rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .podium-rank-1 .podium-base { height: 12rem; justify-content: flex-end; }
+        .podium-rank-2 .podium-base { height: 10rem; justify-content: flex-end; }
+        .podium-rank-3 .podium-base { height: 8rem; justify-content: flex-end; }
+
+        .podium-rank {
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            position: absolute;
+            bottom: -0.5rem;
+            color: rgba(0,0,0,0.05);
+            z-index: 1;
+        }
+        .podium-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 6px solid #fff;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            position: absolute;
+            top: 0;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+        .podium-rank-1 .podium-image { width: 140px; height: 140px; }
+        .podium-name { font-weight: 700; font-size: 1.125rem; margin-top: 1rem; color: var(--text-primary); }
+        .podium-points { font-size: 1rem; font-weight: 500; color: var(--text-secondary); }
+        
+        .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .leaderboard-table th, .leaderboard-table td { padding: 1.25rem 1.5rem; text-align: left; vertical-align: middle; }
+        .leaderboard-table thead th { 
+            background-color: #f9fafb;
+            color: var(--text-secondary); 
+            font-size: 0.875rem; 
+            font-weight: 600;
+            text-transform: uppercase; 
+            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+        }
+        .leaderboard-table thead th:first-child { border-radius: 0.75rem 0 0 0.75rem; }
+        .leaderboard-table thead th:last-child { border-radius: 0 0.75rem 0.75rem 0; }
+        .leaderboard-table tbody tr { transition: background-color 0.2s ease-in-out; }
+        .leaderboard-table tbody tr:not(:last-child) { border-bottom: 1px solid var(--border-color); }
         .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
-        .profile-thumb-wrapper { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .profile-thumb-wrapper { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex-shrink: 0; box-shadow: 0 0 0 3px var(--bg-color); }
         .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
+        
         .modal { display: none; } .modal.is-open { display: flex; }
         .modal-content.card { max-width: 500px; width: 90%; text-align: center; position: relative; }
         .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
@@ -116,6 +177,17 @@
         .comment-input { background-color: #f9fafb; border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 0.75rem; padding: 0.75rem 1rem; width: 100%; }
         .comment-input:focus { outline: none; border-color: var(--accent-color); }
         .comment-box { background-color: #f9fafb; padding: 1rem; border-radius: 1rem; }
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .social-link:hover {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -194,6 +266,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
+        // --- Variáveis de Estado Global ---
         let userId = null;
         let likesData = {};
         let commentsData = {};
@@ -206,6 +279,7 @@
         let currentTab = 'tab-geral';
         let imageBaseUrl = '';
 
+        // --- Funções Utilitárias ---
         function getPlaceholderImageUrl(name) {
             const firstLetter = name ? name.charAt(0).toUpperCase() : '?';
             return `https://placehold.co/200x200/e5e7eb/000000?text=${firstLetter}`;
@@ -213,9 +287,7 @@
         
         function getTeamForDate(participantData, dateStr = null) {
             const history = participantData.teamHistory || [];
-            if (!history || history.length === 0) {
-                 return ''; 
-            }
+            if (!history || history.length === 0) return ''; 
 
             const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -243,6 +315,7 @@
             return teamsData[teamIdForDate]?.name || '';
         }
 
+        // --- Lógica de Processamento de Dados ---
         function processStageData(stageData) {
             if (!stageData) return [];
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
@@ -263,7 +336,7 @@
             const data = monthlyData[monthId] ? JSON.parse(JSON.stringify(monthlyData[monthId])) : { stages: [] };
             if (data.stages && Array.isArray(data.stages)) {
                 data.stages.forEach(stage => {
-                    if (stage.status !== 'Cancelada' && stage.status !== 'Adiada') {
+                     if (stage.status !== 'Cancelada' && stage.status !== 'Adiada') {
                         stage.results = processStageData(stage.results);
                     }
                 });
@@ -286,10 +359,7 @@
                 });
             });
 
-            const overallData = Object.keys(participantPoints).map(id => ({
-                id: id,
-                pts: participantPoints[id]
-            }));
+            const overallData = Object.keys(participantPoints).map(id => ({ id: id, pts: participantPoints[id] }));
             
             overallData.sort((a, b) => b.pts - a.pts);
             return overallData.map((item, index) => ({ ...item, pos: index + 1 }));
@@ -304,6 +374,7 @@
             });
         }
         
+        // --- Funções de Renderização da UI ---
         function renderTabs(monthId) {
             const tabsContainer = document.getElementById('tabs-container');
             tabsContainer.innerHTML = '<button id="tab-geral" class="tab-button">Geral</button>';
@@ -407,11 +478,12 @@
                     if (weatherInfo && weatherInfo.special) {
                         weatherHtml = `<div class="mt-2 text-xs text-gray-400">${weatherInfo.special}</div>`;
                     } else if (weatherInfo) {
-                        weatherHtml = `
-                            <div class="mt-2 text-xs text-gray-500 flex justify-center items-center gap-4">
+                         weatherHtml = `
+                            <div class="mt-2 text-xs text-gray-500 flex justify-center items-center gap-4 flex-wrap">
                                 <span><i class="fas fa-thermometer-half mr-1"></i> ${weatherInfo.temp}°C (Sensação ${weatherInfo.feelsLike}°C)</span>
                                 <span><i class="fas fa-tint mr-1"></i> ${weatherInfo.humidity}%</span>
                                 <span><i class="fas fa-wind mr-1"></i> ${weatherInfo.wind} km/h</span>
+                                <span><i class="fas fa-cloud-rain mr-1"></i> ${weatherInfo.rain}mm (${weatherInfo.rain_prob}%)</span>
                             </div>
                         `;
                     } else {
@@ -422,14 +494,19 @@
             }
 
             const stageStatus = currentStage?.status || 'Realizada';
-            const stageReason = currentStage?.reason || '';
+            const stageReason = currentStage?.motive || '';
 
             if (stageStatus === 'Cancelada') {
                  card.innerHTML += `<p class="text-center font-semibold text-red-500 py-4">Etapa Cancelada${stageReason ? `: ${stageReason}` : ''}</p>`;
             } else if (stageStatus === 'Adiada') {
                 card.innerHTML += `<p class="text-center font-semibold text-yellow-600 py-4">Etapa Adiada${stageReason ? `: ${stageReason}` : ''}</p>`;
-            } else if (!hasData) {
+            } else if (!hasData && !isOverall) {
                 card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado para esta etapa.</p>`;
+            }
+             else if (!hasData && isOverall) {
+                if (!card.querySelector('h2')) {
+                    card.innerHTML += `<p class="text-center text-gray-400">Nenhum resultado geral para este mês.</p>`;
+                }
             } else {
                  if (isOverall && data.length >= 3 && (monthData.isCompleted || false)) {
                     card.appendChild(createPodium(data.slice(0, 3)));
@@ -456,7 +533,6 @@
 
         async function getWeatherData(stage) {
             if (!stage.date) return null;
-            if (stage.weather) return stage.weather; // Use stored data if available
 
             const lat = -24.04;
             const lon = -52.38;
@@ -474,10 +550,10 @@
 
             try {
                 let apiUrl;
-                if (raceDate < today) { // Past
-                    apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${stage.date}&end_date=${stage.date}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&timezone=${timezone}`;
-                } else { // Future or today
-                    apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&forecast_days=${diffDays + 1}&timezone=${timezone}`;
+                if (raceDate < today) { // Passado
+                    apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${stage.date}&end_date=${stage.date}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation&timezone=${timezone}`;
+                } else { // Futuro ou hoje
+                    apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation_probability,precipitation&forecast_days=${diffDays + 1}&timezone=${timezone}`;
                 }
 
                 const response = await fetch(apiUrl);
@@ -492,7 +568,9 @@
                             temp: Math.round(data.hourly.temperature_2m[timeIndex]),
                             humidity: Math.round(data.hourly.relative_humidity_2m[timeIndex]),
                             wind: Math.round(data.hourly.wind_speed_10m[timeIndex]),
-                            feelsLike: Math.round(data.hourly.apparent_temperature[timeIndex])
+                            feelsLike: Math.round(data.hourly.apparent_temperature[timeIndex]),
+                            rain: data.hourly.precipitation ? data.hourly.precipitation[timeIndex] : 0,
+                            rain_prob: data.hourly.precipitation_probability ? data.hourly.precipitation_probability[timeIndex] : 0
                         };
                     }
                 }
@@ -504,16 +582,20 @@
 
         function createPodium(podiumData) {
             const container = document.createElement('div');
-            container.className = 'podium-container mb-8';
-            podiumData.forEach((p) => {
+            container.className = 'podium-container mb-4';
+            const podiumOrder = [1, 0, 2]; // 2nd, 1st, 3rd
+            podiumOrder.forEach(index => {
+                const p = podiumData[index];
                 const rank = p.pos;
                 const step = document.createElement('div');
                 step.className = `podium-step podium-rank-${rank}`;
                 step.innerHTML = `
-                    <div class="podium-rank">${rank}</div>
-                    <img src="${p.image}" alt="Foto de ${p.name}" class="podium-image podium-image-${rank}">
-                    <div class="podium-name">${p.name}</div>
-                    <div class="podium-points">${p.pts} pts</div>
+                    <img src="${p.image}" alt="Foto de ${p.name}" class="podium-image">
+                    <div class="podium-base">
+                        <div class="podium-rank">${rank}</div>
+                        <div class="podium-name">${p.name}</div>
+                        <div class="podium-points">${p.pts} pts</div>
+                    </div>
                 `;
                 step.addEventListener('click', () => openModal(p.id));
                 container.appendChild(step);
@@ -524,24 +606,24 @@
         function createTable(data, isOverall) {
             const table = document.createElement('table');
             table.className = 'leaderboard-table';
-            table.innerHTML = `<thead><tr><th class="w-12">#</th><th>Participante</th><th class="text-right">Pts</th></tr></thead>`;
+            table.innerHTML = `<thead><tr><th>#</th><th>Participante</th><th class="text-right">Pts</th></tr></thead>`;
             const tbody = document.createElement('tbody');
             data.forEach(p => {
                 const isSporadic = !isOverall && sporadicRiders.includes(p.id);
                 const row = document.createElement('tr');
                 row.className = 'cursor-pointer';
                 row.innerHTML = `
-                    <td class="font-semibold text-gray-400">${isSporadic ? `*${p.pos}` : p.pos}</td>
+                    <td class="font-bold text-gray-500 w-12">${isSporadic ? `*${p.pos}` : p.pos}</td>
                     <td>
                         <div class="flex items-center gap-4">
                             <div class="profile-thumb-wrapper"><img src="${p.image}" class="profile-thumb"></div>
                             <div>
-                                <div class="font-semibold text-gray-800">${p.name}</div>
-                                <div class="text-sm text-gray-400">${p.team || ''}</div>
+                                <div class="font-bold text-gray-900">${p.name}</div>
+                                <div class="text-sm text-gray-500">${p.team || ''}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-right font-bold text-gray-800">${isSporadic ? '-' : p.pts}</td>
+                    <td class="text-right font-bold text-lg text-gray-900">${isSporadic ? '-' : p.pts}</td>
                 `;
                 row.addEventListener('click', () => openModal(p.id));
                 tbody.appendChild(row);
@@ -616,13 +698,32 @@
 
                 stagesHtml += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${stage.name || `Etapa ${index+1}`}</p>${result ? `<p class="text-xl font-bold text-gray-800">${sporadicRiders.includes(p.id) ? `*${result.pos}º` : `${result.pos}º`}</p><p class="text-xs text-gray-500">(${(processedResult || {pts:0}).pts} pts)</p>` : `<p class="text-xl font-bold text-gray-400">-</p>`}</div>`;
             });
+            
+            let socialLinksHtml = '';
+            if (p.strava) {
+                socialLinksHtml += `<a href="${p.strava}" target="_blank" class="social-link"><i class="fab fa-strava"></i> Strava</a>`;
+            }
+            if (p.instagram) {
+                socialLinksHtml += `<a href="${p.instagram}" target="_blank" class="social-link"><i class="fab fa-instagram"></i> Instagram</a>`;
+            }
+            if (p.facebook) {
+                socialLinksHtml += `<a href="${p.facebook}" target="_blank" class="social-link"><i class="fab fa-facebook"></i> Facebook</a>`;
+            }
 
-            modalContent.innerHTML = `<span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span><img id="modal-image" class="modal-image mx-auto" src="${p.image}" alt="Foto de Perfil"><h3 class="text-2xl font-bold text-gray-900">${p.name}</h3><p class="text-sm text-gray-600">Posição Geral: ${p.pos}º (${p.pts} pts)</p><p class="text-sm text-gray-600 mt-1">${p.team || 'Sem equipe'}</p><div class="mt-6 w-full"><h4 class="text-md font-bold text-gray-800 mb-2 border-t border-gray-200 pt-4">Resumo de ${monthData.title.split('/')[0]}</h4><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${stagesHtml}</div></div>`;
+            modalContent.innerHTML = `
+                <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
+                <img id="modal-image" class="modal-image mx-auto" src="${p.image}" alt="Foto de Perfil">
+                <h3 class="text-2xl font-bold text-gray-900">${p.name}</h3>
+                <p class="text-sm text-gray-600 mt-1">${p.team || 'Sem equipe'}</p>
+                <div class="flex justify-center gap-4 mt-3 text-sm">${socialLinksHtml}</div>
+                <div class="mt-6 w-full"><h4 class="text-md font-bold text-gray-800 mb-2 border-t border-gray-200 pt-4">Resumo de ${monthData.title.split('/')[0]}</h4><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${stagesHtml}</div></div>
+            `;
             document.getElementById('details-modal').classList.add('is-open');
         }
 
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         
+        // --- Lógica de Inicialização ---
         async function setupDataListeners() {
             if (!userId) return;
             const reRender = () => {
@@ -675,25 +776,7 @@
                 });
                 
                 rSnap.forEach(doc => {
-                    let data = doc.data();
-                    if ((data.etapa1 || data.etapa2 || data.etapa3 || data.etapa4) && !data.stages) {
-                        const migratedStages = [];
-                        const [year, month] = doc.id.split('_');
-                        for (let i = 1; i <= 4; i++) {
-                            const etapaKey = `etapa${i}`;
-                            if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
-                                 const fakeDate = `${year}-${month}-${String(i * 7).padStart(2, '0')}`;
-                                migratedStages.push({
-                                    id: `${etapaKey}_${doc.id}`, name: `Etapa ${i}`, date: fakeDate,
-                                    type: '', durationDistance: '',
-                                    podium_img: data[`${etapaKey}_podium_img`] || '',
-                                    results: data[etapaKey].map(r => ({ ...r, id: nameToIdMap[r.name.toUpperCase()] }))
-                                });
-                            }
-                        }
-                        data.stages = migratedStages;
-                    }
-                    monthlyData[doc.id] = data;
+                    monthlyData[doc.id] = doc.data();
                 });
                 
                 if (settingsSnap.exists()) {

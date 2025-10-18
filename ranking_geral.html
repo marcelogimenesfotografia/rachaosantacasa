@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Estilos Personalizados -->
@@ -19,20 +19,37 @@
         :root {
             --bg-color: #f4f4f5;
             --card-bg-color: #ffffff;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
             --accent-color: #eab308;
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
-        .card { background-color: var(--card-bg-color); border-radius: 1.5rem; padding: 2rem; border: 1px solid var(--border-color); box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05); margin-bottom: 2rem; }
-        .leaderboard-table { width: 100%; border-collapse: collapse; }
-        .leaderboard-table th, .leaderboard-table td { padding: 1rem; text-align: left; }
-        .leaderboard-table thead { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-        .leaderboard-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background-color: 0.2s ease-in-out; }
-        .leaderboard-table tbody tr:last-child { border-bottom: none; }
+        .card { 
+            background-color: var(--card-bg-color); 
+            border-radius: 1.5rem; 
+            padding: 2.5rem; 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem; 
+        }
+        .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .leaderboard-table th, .leaderboard-table td { padding: 1.25rem 1.5rem; text-align: left; vertical-align: middle; }
+        .leaderboard-table thead th { 
+            background-color: #f9fafb;
+            color: var(--text-secondary); 
+            font-size: 0.875rem; 
+            font-weight: 600;
+            text-transform: uppercase; 
+            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+        }
+        .leaderboard-table thead th:first-child { border-radius: 0.75rem 0 0 0.75rem; }
+        .leaderboard-table thead th:last-child { border-radius: 0 0.75rem 0.75rem 0; }
+        .leaderboard-table tbody tr { transition: background-color 0.2s ease-in-out; }
+        .leaderboard-table tbody tr:not(:last-child) { border-bottom: 1px solid var(--border-color); }
         .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
-        .profile-thumb-wrapper { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .profile-thumb-wrapper { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex-shrink: 0; box-shadow: 0 0 0 3px var(--bg-color); }
         .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
         .modal { display: none; }
         .modal.is-open { display: flex; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.7); }
@@ -45,6 +62,17 @@
             overflow-y: auto;
         }
         .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .social-link:hover {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -68,12 +96,12 @@
             </div>
 
             <div id="ranking-container" class="hidden">
-                 <div class="card">
-                    <h1 class="text-3xl font-bold text-center mb-6">Ranking Geral</h1>
-                    <table class="leaderboard-table">
+                 <div class="card overflow-x-auto">
+                    <h1 class="text-3xl font-extrabold text-center mb-8">Ranking Geral Anual</h1>
+                    <table class="leaderboard-table min-w-full">
                         <thead>
                             <tr>
-                                <th class="w-12">#</th>
+                                <th>#</th>
                                 <th>Participante</th>
                                 <th class="text-right">Pontos Totais</th>
                             </tr>
@@ -87,7 +115,7 @@
         </main>
     
         <!-- Modal de Detalhes do Atleta -->
-        <div id="details-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-70 p-4">
+        <div id="details-modal" class="modal p-4">
             <div id="modal-content-container" class="modal-content card">
                 <!-- Conteúdo injetado por JS -->
             </div>
@@ -117,7 +145,8 @@
 
         let imageBaseUrl = '';
 
-        function openModal(modalId) { document.getElementById(modalId).classList.add('is-open'); }
+        // --- Funções Utilitárias ---
+        window.openModal = function(modalId) { document.getElementById(modalId).classList.add('is-open'); }
         window.closeModal = function(modalId) { document.getElementById(modalId).classList.remove('is-open'); }
         
         function getPlaceholderImageUrl(name) {
@@ -127,9 +156,7 @@
 
         function getTeamForDate(participantData, dateStr = null, teamsData) {
             const history = participantData.teamHistory || [];
-            if (!history || history.length === 0) {
-                return ''; 
-            }
+            if (!history || history.length === 0) return ''; 
 
             const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -157,11 +184,13 @@
             return teamsData[teamIdForDate]?.name || '';
         }
         
+        // --- Lógica Principal ---
         async function calculateLifetimeRanking() {
             const loadingOverlay = document.getElementById('loading-overlay');
             const rankingContainer = document.getElementById('ranking-container');
             
             try {
+                // Carrega todos os dados necessários em paralelo
                 const [pSnap, rSnap, settingsSnap, tSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
@@ -198,7 +227,7 @@
                     if (!sporadicRiders.includes(id)) {
                         lifetimeStats[id] = {
                             totalPoints: 0,
-                            top5Finishes: [0, 0, 0, 0, 0],
+                            top5Finishes: [0, 0, 0, 0, 0], // [1st, 2nd, 3rd, 4th, 5th]
                             monthlyRanks: {},
                             pointsHistory: []
                         };
@@ -207,18 +236,15 @@
 
                 const sortedMonthIds = Object.keys(monthlyData).sort();
 
+                // Itera sobre cada mês para calcular pontos
                 for (const monthId of sortedMonthIds) {
                     const monthResults = monthlyData[monthId];
                     let monthStandings = {};
 
-                    let stages = monthResults.stages || [];
-                    if (stages.length === 0 && (monthResults.etapa1 || monthResults.etapa2)) {
-                         for(let i = 1; i <= 4; i++) {
-                            if(monthResults[`etapa${i}`]) stages.push({ results: monthResults[`etapa${i}`] });
-                        }
-                    }
-
-                    stages.forEach(stage => {
+                    // Garante que a estrutura de 'stages' é usada
+                    (monthResults.stages || []).forEach(stage => {
+                         if (stage.status === 'Cancelada' || stage.status === 'Adiada') return;
+                        
                         let pointsIndex = 0;
                         (stage.results || []).forEach((result, resultIndex) => {
                             const participantId = result.id || nameToIdMap[result.name.toUpperCase()];
@@ -241,14 +267,15 @@
                         });
                     });
                     
+                    // Atualiza as estatísticas de vida com os resultados do mês
                     Object.keys(lifetimeStats).forEach(id => {
                         const pointsThisMonth = monthStandings[id] || 0;
                         lifetimeStats[id].totalPoints += pointsThisMonth;
                         lifetimeStats[id].pointsHistory.push({ monthId: monthId, points: lifetimeStats[id].totalPoints });
                     });
 
-                    const monthParticipants = new Set(Object.keys(monthStandings));
-                    const sortedMonth = [...monthParticipants].sort((a, b) => monthStandings[b] - monthStandings[a]);
+                    // Calcula o ranking do mês
+                    const sortedMonth = Object.keys(monthStandings).sort((a, b) => monthStandings[b] - monthStandings[a]);
                     sortedMonth.forEach((id, index) => {
                         if (lifetimeStats[id]) {
                             lifetimeStats[id].monthlyRanks[monthId] = {
@@ -259,6 +286,7 @@
                     });
                 }
                 
+                // Formata e ordena o ranking final
                 const finalRanking = Object.keys(lifetimeStats).map(id => ({
                     id,
                     ...participantsData[id],
@@ -284,17 +312,17 @@
                 row.className = 'cursor-pointer';
                 const imageUrl = p.imageUrl ? `${imageBaseUrl}${p.imageUrl}` : getPlaceholderImageUrl(p.name);
                 row.innerHTML = `
-                    <td class="font-semibold text-gray-400">${index + 1}</td>
+                    <td class="font-bold text-gray-500 w-12">${index + 1}</td>
                     <td>
                         <div class="flex items-center gap-4">
-                            <div class="profile-thumb-wrapper"><img src="${imageUrl}" class="profile-thumb"></div>
+                            <div class="profile-thumb-wrapper"><img src="${imageUrl}" alt="Foto de ${p.name}" class="profile-thumb"></div>
                             <div>
-                                <div class="font-semibold text-gray-800">${p.name}</div>
-                                <div class="text-sm text-gray-400">${getTeamForDate(p, null, teamsData) || ''}</div>
+                                <div class="font-bold text-gray-900">${p.name}</div>
+                                <div class="text-sm text-gray-500">${getTeamForDate(p, null, teamsData) || ''}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="text-right font-bold text-gray-800">${p.totalPoints}</td>
+                    <td class="text-right font-extrabold text-lg text-gray-900">${p.totalPoints}</td>
                 `;
                 row.addEventListener('click', () => renderModal(p, teamsData, monthlyData));
                 tableBody.appendChild(row);
@@ -306,7 +334,7 @@
             
             let top5Html = '';
             participant.top5Finishes.forEach((count, index) => {
-                top5Html += `<div class="bg-gray-100 p-2 rounded-md"><p class="text-xs font-bold text-gray-500 uppercase">${index + 1}º LUGAR</p><p class="text-2xl font-bold text-gray-800">${count}x</p></div>`;
+                top5Html += `<div class="bg-gray-100 p-2 rounded-lg"><p class="text-xs font-bold text-gray-500 uppercase">${index + 1}º LUGAR</p><p class="text-2xl font-bold text-gray-800">${count}x</p></div>`;
             });
 
             let monthlyRanksHtml = '';
@@ -327,11 +355,23 @@
             
             const imageUrl = participant.imageUrl ? `${imageBaseUrl}${participant.imageUrl}` : getPlaceholderImageUrl(participant.name);
 
+            let socialLinksHtml = '';
+            if (participant.strava) {
+                socialLinksHtml += `<a href="${participant.strava}" target="_blank" class="social-link"><i class="fab fa-strava"></i> Strava</a>`;
+            }
+            if (participant.instagram) {
+                socialLinksHtml += `<a href="${participant.instagram}" target="_blank" class="social-link"><i class="fab fa-instagram"></i> Instagram</a>`;
+            }
+            if (participant.facebook) {
+                socialLinksHtml += `<a href="${participant.facebook}" target="_blank" class="social-link"><i class="fab fa-facebook"></i> Facebook</a>`;
+            }
+
             modalContent.innerHTML = `
                 <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
                 <img class="modal-image mx-auto" src="${imageUrl}" alt="Foto de Perfil">
                 <h3 class="text-2xl font-bold text-gray-900">${participant.name}</h3>
                 <p class="text-sm text-gray-600">${getTeamForDate(participant, null, teamsData) || 'Sem equipe'}</p>
+                 <div class="flex justify-center gap-4 mt-3 text-sm">${socialLinksHtml}</div>
                 
                 <div class="mt-4 w-full text-center border-t border-gray-200 pt-4">
                     <h4 class="text-md font-bold text-gray-800 mb-1">Pontuação Total (Geral)</h4>
@@ -355,7 +395,7 @@
             `;
             openModal('details-modal');
 
-            // Render chart
+            // Renderiza o gráfico de evolução
             const ctx = document.getElementById('evolution-chart').getContext('2d');
             const labels = participant.pointsHistory.map(h => monthlyData[h.monthId]?.title.split('/')[0]);
             const data = participant.pointsHistory.map(h => h.points);

@@ -35,7 +35,7 @@
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
             font-weight: 600;
-            transition: background-color 0.2s;
+            transition: background-color: 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -201,6 +201,18 @@
                                 <input id="participant-image-filename" type="text" placeholder="ex: joao.jpg" class="input-field mt-1">
                                 <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta configurada.</p>
                             </div>
+                             <div>
+                                <label for="participant-strava" class="font-medium text-sm">Link do Strava</label>
+                                <input id="participant-strava" type="text" placeholder="Link completo ou apenas ID do atleta" class="input-field mt-1">
+                            </div>
+                             <div>
+                                <label for="participant-instagram" class="font-medium text-sm">Link do Instagram</label>
+                                <input id="participant-instagram" type="text" placeholder="Link completo ou apenas @utilizador" class="input-field mt-1">
+                            </div>
+                             <div>
+                                <label for="participant-facebook" class="font-medium text-sm">Link do Facebook</label>
+                                <input id="participant-facebook" type="text" placeholder="Link completo ou nome de utilizador" class="input-field mt-1">
+                            </div>
                             <button type="submit" class="btn btn-primary w-full">Adicionar Participante</button>
                         </form>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -301,6 +313,18 @@
                     <input id="edit-participant-image-filename" type="text" class="input-field mt-1" placeholder="ex: joao.jpg">
                      <p class="text-xs text-gray-500 mt-1">O ficheiro deve estar na pasta configurada.</p>
                 </div>
+                <div>
+                    <label for="edit-participant-strava" class="font-medium text-sm">Link do Strava</label>
+                    <input id="edit-participant-strava" type="text" placeholder="Link completo ou apenas ID do atleta" class="input-field mt-1">
+                </div>
+                 <div>
+                    <label for="edit-participant-instagram" class="font-medium text-sm">Link do Instagram</label>
+                    <input id="edit-participant-instagram" type="text" placeholder="Link completo ou apenas @utilizador" class="input-field mt-1">
+                </div>
+                 <div>
+                    <label for="edit-participant-facebook" class="font-medium text-sm">Link do Facebook</label>
+                    <input id="edit-participant-facebook" type="text" placeholder="Link completo ou nome de utilizador" class="input-field mt-1">
+                </div>
                 <div class="pt-2">
                     <label class="flex items-center gap-2">
                          <input type="checkbox" id="edit-participant-sporadic" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500">
@@ -387,11 +411,42 @@
         </div>
     </div>
     
+    <!-- Modal para Alterar Status da Etapa -->
+    <div id="status-stage-modal" class="modal">
+        <div class="card w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Alterar Status da Etapa</h2>
+                <button onclick="closeModal('status-stage-modal')" class="text-2xl">&times;</button>
+            </div>
+            <form id="status-stage-form" class="space-y-3">
+                <input type="hidden" id="status-stage-id">
+                <div>
+                    <label for="stage-status-select" class="font-medium">Novo Status</label>
+                    <select id="stage-status-select" class="input-field mt-1">
+                        <option value="A realizar">A realizar</option>
+                        <option value="Realizada">Realizada</option>
+                        <option value="Cancelada">Cancelada</option>
+                        <option value="Adiada">Adiada</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="stage-motive" class="font-medium">Motivo (opcional)</label>
+                    <textarea id="stage-motive" class="input-field mt-1" rows="3" placeholder="Descreva o motivo do cancelamento ou adiamento..."></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                     <button type="button" onclick="closeModal('status-stage-modal')" class="btn btn-secondary">Cancelar</button>
+                     <button type="submit" class="btn btn-primary">Salvar Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
+        // A configuração do Firebase é pública por design. A segurança é garantida pelas Regras de Segurança do Firestore.
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
             authDomain: "rachaosc.firebaseapp.com",
@@ -405,6 +460,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // --- Variáveis Globais de Estado ---
         let participantsData = {};
         let nameToIdMap = {};
         let monthlyData = {};
@@ -416,7 +472,7 @@
         let allLogs = [];
         let filteredLogs = [];
         
-        // --- Modal Logic ---
+        // --- Funções Utilitárias ---
         function openInfoModal(text) {
             document.getElementById('info-modal-text').textContent = text;
             openModal('info-modal');
@@ -477,7 +533,56 @@
             
             openModal('delete-options-modal');
         }
+
+        function normalizeSocialLink(input, platform) {
+            let cleanInput = (input || '').trim();
+            if (!cleanInput) {
+                return '';
+            }
+
+            cleanInput = cleanInput.split('?')[0];
+            if (cleanInput.endsWith('/')) {
+                cleanInput = cleanInput.slice(0, -1);
+            }
+
+            let baseUrl = '';
+            let identifier = '';
+
+            switch (platform) {
+                case 'strava':
+                    baseUrl = 'https://www.strava.com/athletes/';
+                    if (/^\d+$/.test(cleanInput)) {
+                        return baseUrl + cleanInput;
+                    }
+                    identifier = cleanInput.split('athletes/')[1];
+                    if (identifier) {
+                        return baseUrl + identifier.split('/')[0];
+                    }
+                    break;
+
+                case 'instagram':
+                    baseUrl = 'https://www.instagram.com/';
+                    cleanInput = cleanInput.replace(/^@/, '');
+                    identifier = cleanInput.split('instagram.com/')[1];
+                    if (identifier) {
+                        return baseUrl + identifier.split('/')[0];
+                    }
+                    return baseUrl + cleanInput;
+
+                case 'facebook':
+                    baseUrl = 'https://www.facebook.com/';
+                    identifier = cleanInput.split('facebook.com/')[1];
+                    if (identifier) {
+                        return baseUrl + identifier.split('/')[0];
+                    }
+                    return baseUrl + cleanInput;
+            }
+
+            return input; // Retorna o original se não corresponder a nenhuma lógica
+        }
         
+        // --- Funções de Lógica de Negócio ---
+
         async function deactivateParticipant(id) {
             const participant = participantsData[id];
             if (!participant) return;
@@ -489,7 +594,7 @@
                     await logAction('PARTICIPANT_DEACTIVATED', `Participante "${participant.name}" foi desativado.`, { isActive: true }, { isActive: false });
                     closeModal('delete-options-modal');
                     openInfoModal('Participante desativado com sucesso.');
-                    loadAllData();
+                    await loadAllData();
                 } catch (error) {
                     console.error("Erro ao desativar participante:", error);
                     openInfoModal("Ocorreu um erro ao desativar o participante.");
@@ -507,15 +612,14 @@
                     await logAction('PARTICIPANT_DELETED', `Participante "${participant.name}" foi permanentemente excluído.`, participant, null);
                     closeModal('delete-options-modal');
                     openInfoModal('Participante excluído permanentemente com sucesso.');
-                    loadAllData();
+                    await loadAllData();
                 } catch (error) {
                     console.error("Erro ao excluir participante:", error);
                     openInfoModal("Ocorreu um erro ao excluir o participante.");
                 }
             }
         }
-        // --- End Modal Logic ---
-
+        
         async function logAction(action, details, before, after) {
             if (!auth.currentUser) return;
             try {
@@ -524,9 +628,9 @@
                     adminEmail: auth.currentUser.email,
                     action: action,
                     details: details,
-                 };
-                 if (before) logEntry.before = JSON.stringify(before, null, 2);
-                 if (after) logEntry.after = JSON.stringify(after, null, 2);
+                };
+                if (before) logEntry.before = JSON.stringify(before, null, 2);
+                if (after) logEntry.after = JSON.stringify(after, null, 2);
 
                 await addDoc(collection(db, 'logs'), logEntry);
             } catch (error) {
@@ -534,6 +638,7 @@
             }
         }
 
+        // --- Funções de Navegação e UI ---
         function showDashboard() {
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('dashboard-section').style.display = 'block';
@@ -552,40 +657,14 @@
         function openModal(id) { document.getElementById(id).classList.add('is-open'); }
         window.closeModal = function(id) { document.getElementById(id).classList.remove('is-open'); }
 
-        async function addCreationDateToTeams() {
-            const batch = writeBatch(db);
-            let needsUpdate = false;
-            const defaultDate = Timestamp.fromDate(new Date('2025-08-07T00:00:00'));
-            const pelotaoDate = Timestamp.fromDate(new Date('2025-10-06T00:00:00'));
-
-            for (const teamId in teamsData) {
-                const team = teamsData[teamId];
-                if (!team.createdAt) {
-                    needsUpdate = true;
-                    const teamRef = doc(db, 'teams', teamId);
-                    if (team.name === 'Pelotão Bike') {
-                        batch.update(teamRef, { createdAt: pelotaoDate, isActive: true });
-                    } else {
-                        batch.update(teamRef, { createdAt: defaultDate, isActive: true });
-                    }
-                }
-            }
-            if (needsUpdate) {
-                console.log("A adicionar data de criação a equipas existentes...");
-                await batch.commit();
-                console.log("Equipas atualizadas.");
-                return true;
-            }
-            return false;
-        }
-
+        // --- Carregamento de Dados ---
         async function loadAllData() {
             try {
                 const [pSnap, rSnap, settingsSnap, logsSnap, tSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
                     getDoc(doc(db, "settings", "config")),
-                    getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50))),
+                    getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(100))),
                     getDocs(collection(db, "teams"))
                 ]);
                 
@@ -609,11 +688,6 @@
                     teamsData[doc.id] = doc.data();
                 });
 
-                if (await addCreationDateToTeams()) {
-                    await loadAllData();
-                    return;
-                }
-
                 if (settingsSnap.exists()) {
                     const settings = settingsSnap.data();
                     sporadicRiders = settings.sporadicRiders || [];
@@ -624,6 +698,7 @@
                 allLogs = [];
                 logsSnap.forEach(doc => allLogs.push(doc.data()));
 
+                // Re-renderiza todos os componentes da UI com os novos dados
                 renderParticipants();
                 renderMonthSelector();
                 renderTeamSelectors();
@@ -645,7 +720,8 @@
                 }
             }
         }
-
+        
+        // --- Funções de Renderização da UI ---
         function renderTeamSelectors(newTeamToSelect = '') {
             const selects = [document.getElementById('participant-team'), document.getElementById('edit-participant-team'), document.getElementById('filter-team')];
             const sortedTeams = Object.entries(teamsData).filter(([id, team]) => team.isActive !== false).sort((a,b) => a[1].name.localeCompare(b[1].name));
@@ -670,6 +746,13 @@
                 const newTeam = await openPromptModal("Digite o nome da nova equipe:");
                 if (newTeam && newTeam.trim()) {
                     const trimmedTeam = newTeam.trim();
+                    const teamExists = Object.values(teamsData).some(t => t.name.toUpperCase() === trimmedTeam.toUpperCase());
+                    if (teamExists) {
+                        openInfoModal("Essa equipe já existe.");
+                        select.value = '';
+                        return;
+                    }
+
                     try {
                         const newDocRef = doc(collection(db, 'teams'));
                         await setDoc(newDocRef, { name: trimmedTeam, isActive: true, createdAt: serverTimestamp() });
@@ -718,13 +801,13 @@
                 let hasDetails = log.before || log.after;
 
                 div.innerHTML = `
-                     <div class="flex justify-between items-center ${hasDetails ? 'cursor-pointer' : ''}" data-log-index="${index}">
-                        <div>
-                            <p><strong class="font-semibold">${log.details}</strong></p>
-                            <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
-                        </div>
-                        ${hasDetails ? '<i class="fas fa-eye text-gray-400"></i>' : ''}
-                    </div>
+                      <div class="flex justify-between items-center ${hasDetails ? 'cursor-pointer' : ''}" data-log-index="${index}">
+                          <div>
+                              <p><strong class="font-semibold">${log.details}</strong></p>
+                              <p class="text-xs text-gray-400">${log.adminEmail} em ${date}</p>
+                          </div>
+                          ${hasDetails ? '<i class="fas fa-eye text-gray-400"></i>' : ''}
+                      </div>
                 `;
                 list.appendChild(div);
             });
@@ -818,14 +901,35 @@
             }).join('');
             
             const hiddenClass = isOpen ? '' : 'hidden';
-            let headerBg = 'bg-gray-50';
+            let headerBg = 'bg-gray-50'; // Cor padrão para dados antigos/sem status
+            if (stage.status === 'Realizada') headerBg = 'bg-green-100';
             if (stage.status === 'Cancelada') headerBg = 'bg-red-100';
             if (stage.status === 'Adiada') headerBg = 'bg-yellow-100';
+            if (stage.status === 'A realizar') headerBg = 'bg-blue-100';
+
+            // Create the status badge HTML
+            let statusBadge = '';
+            if (stage.status) {
+                let badgeColor = '';
+                switch (stage.status) {
+                    case 'Realizada': badgeColor = 'bg-green-500'; break;
+                    case 'Cancelada': badgeColor = 'bg-red-500'; break;
+                    case 'Adiada': badgeColor = 'bg-yellow-500'; break;
+                    case 'A realizar': badgeColor = 'bg-blue-500'; break;
+                }
+                statusBadge = `<span class="ml-3 text-xs font-semibold text-white ${badgeColor} px-2.5 py-0.5 rounded-full">${stage.status}</span>`;
+            }
+
+            const isRealizada = stage.status === 'Realizada';
+            const isCanceledOrAdiada = stage.status === 'Cancelada' || stage.status === 'Adiada';
 
             return `
                 <div class="stage-form-group border-t-2 border-dashed pt-4" data-stage-id="${stageId}">
                     <div class="accordion-header ${headerBg} rounded-t-lg p-4">
-                         <h3 class="font-bold text-lg">${stage.name || `Etapa ${index + 1}`}</h3>
+                         <div class="flex items-center">
+                            <h3 class="font-bold text-lg">${stage.name || `Etapa ${index + 1}`}</h3>
+                            ${statusBadge}
+                         </div>
                          <i class="fas fa-chevron-down accordion-icon"></i>
                     </div>
                     <div class="accordion-content p-4 border border-t-0 rounded-b-lg ${hiddenClass}">
@@ -842,14 +946,6 @@
                             </select>
                             <input type="text" placeholder="Duração/Distância" class="input-field stage-duration-distance" value="${stage.durationDistance || ''}">
                         </div>
-                        <div class="mt-3">
-                            <label class="font-medium text-sm">Status da Etapa</label>
-                            <select class="input-field stage-status mt-1">
-                                <option value="Realizada" ${stage.status === 'Realizada' || !stage.status ? 'selected' : ''}>Realizada</option>
-                                <option value="Cancelada" ${stage.status === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
-                                <option value="Adiada" ${stage.status === 'Adiada' ? 'selected' : ''}>Adiada</option>
-                            </select>
-                        </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                             <div>
@@ -865,7 +961,18 @@
 
                         <label class="font-medium text-sm mt-3 block">URL da Foto do Pódio</label>
                         <input type="url" class="input-field mt-1 stage-podium-img" value="${stage.podium_img || ''}">
-                        <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn mt-4">Remover Etapa</button>
+                        <div class="flex items-center justify-between mt-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500 stage-realizada-checkbox" 
+                                       ${isRealizada ? 'checked' : ''} 
+                                       ${isCanceledOrAdiada ? 'disabled' : ''}>
+                                <span class="font-medium">Etapa Realizada</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <button type="button" class="btn-danger text-sm py-1 px-2 remove-stage-btn">Remover Etapa</button>
+                                <button type="button" class="btn-secondary text-sm py-1 px-2 change-status-btn">Alterar Status</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -876,25 +983,11 @@
             if (!monthId || !monthlyData[monthId]) {
                 document.getElementById('month-completed-checkbox').checked = false;
                 document.getElementById('geral_podium_img').value = '';
-                container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>'; return;
+                container.innerHTML = '<p class="text-center text-gray-500">Este mês ainda não foi criado. Clique em "Novo Mês" para começar.</p>';
+                return;
             }
             let data = monthlyData[monthId];
             
-             if ((data.etapa1 || data.etapa2) && !data.stages) {
-                const migratedStages = [];
-                for (let i = 1; i <= 4; i++) {
-                    const etapaKey = `etapa${i}`;
-                    if (data[etapaKey] && Array.isArray(data[etapaKey]) && data[etapaKey].length > 0) {
-                        migratedStages.push({
-                            id: `${etapaKey}_${monthId}`, name: `Etapa ${i}`, date: '', type: '', durationDistance: '',
-                            podium_img: data[`${etapaKey}_podium_img`] || '',
-                            results: data[etapaKey]
-                        });
-                    }
-                }
-                data.stages = migratedStages;
-            }
-
             document.getElementById('month-completed-checkbox').checked = data.isCompleted || false;
             document.getElementById('geral_podium_img').value = data.geral_podium_img || '';
             const stages = data.stages || [];
@@ -920,7 +1013,7 @@
             const thursdays = [];
             const date = new Date(year, month - 1, 1);
             while (date.getMonth() === month - 1) {
-                if (date.getDay() === 4) { // Thursday
+                if (date.getDay() === 4) { // Quinta-feira
                     thursdays.push(new Date(date.getTime()));
                 }
                 date.setDate(date.getDate() + 1);
@@ -951,7 +1044,38 @@
                 list.appendChild(div);
             });
         }
+
+        function updateStageHeaderUI(stageGroup, status) {
+            const header = stageGroup.querySelector('.accordion-header');
+            const titleHolder = header.querySelector('.flex.items-center');
+            const h3 = titleHolder.querySelector('h3');
+            const stageName = h3.textContent;
+
+            // 1. Update Badge
+            let statusBadge = '';
+            if (status) {
+                let badgeColor = '';
+                switch (status) {
+                    case 'Realizada': badgeColor = 'bg-green-500'; break;
+                    case 'Cancelada': badgeColor = 'bg-red-500'; break;
+                    case 'Adiada': badgeColor = 'bg-yellow-500'; break;
+                    case 'A realizar': badgeColor = 'bg-blue-500'; break;
+                }
+                statusBadge = `<span class="ml-3 text-xs font-semibold text-white ${badgeColor} px-2.5 py-0.5 rounded-full">${status}</span>`;
+            }
+            titleHolder.innerHTML = `<h3 class="font-bold text-lg">${stageName}</h3>${statusBadge}`;
+
+            // 2. Update Header Background
+            header.classList.remove('bg-gray-50', 'bg-red-100', 'bg-yellow-100', 'bg-blue-100', 'bg-green-100');
+            let headerBg = 'bg-gray-50'; // default
+            if (status === 'Realizada') headerBg = 'bg-green-100';
+            if (status === 'Cancelada') headerBg = 'bg-red-100';
+            if (status === 'Adiada') headerBg = 'bg-yellow-100';
+            if (status === 'A realizar') headerBg = 'bg-blue-100';
+            header.classList.add(headerBg);
+        }
         
+        // --- Event Listeners ---
         function setupDashboardEventListeners() {
             document.getElementById('info-modal-close').addEventListener('click', () => closeModal('info-modal'));
             
@@ -993,6 +1117,16 @@
 
             document.getElementById('month-select-admin').addEventListener('change', (e) => {
                 renderResultsForm(e.target.value);
+            });
+
+            document.getElementById('results-form').addEventListener('change', (e) => {
+                if (e.target.classList.contains('stage-realizada-checkbox')) {
+                    const stageGroup = e.target.closest('.stage-form-group');
+                    const newStatus = e.target.checked ? 'Realizada' : 'A realizar';
+                    
+                    stageGroup.dataset.newStatus = newStatus;
+                    updateStageHeaderUI(stageGroup, newStatus);
+                }
             });
         
             document.getElementById('results-form').addEventListener('input', (e) => {
@@ -1067,13 +1201,24 @@
                     if(confirmed) {
                          button.closest('.stage-form-group').remove();
                     }
+                } else if (button.classList.contains('change-status-btn')) {
+                    const stageGroup = button.closest('.stage-form-group');
+                    const stageId = stageGroup.dataset.stageId;
+                    const monthId = document.getElementById('month-select-admin').value;
+                    const stageData = monthlyData[monthId]?.stages.find(s => s.id === stageId) || {};
+
+                    document.getElementById('status-stage-id').value = stageId;
+                    document.getElementById('stage-status-select').value = stageData.status || 'Realizada';
+                    document.getElementById('stage-motive').value = stageData.motive || '';
+
+                    openModal('status-stage-modal');
                 }
             });
             
             document.getElementById('add-stage-btn').addEventListener('click', () => {
                 const container = document.getElementById('results-form');
                 const newIndex = container.querySelectorAll('.stage-form-group').length;
-                const newStageHTML = createStageFormHTML({ id: `new_stage_${Date.now()}`}, newIndex, true);
+                const newStageHTML = createStageFormHTML({ id: `new_stage_${Date.now()}`, status: 'A realizar'}, newIndex, true);
                 
                 if(newIndex === 0 && container.querySelector('p')) container.innerHTML = ''; 
                 container.insertAdjacentHTML('beforeend', newStageHTML);
@@ -1093,15 +1238,19 @@
                     group.querySelectorAll('.classified-list .classified-participant').forEach(item => {
                         classifiedIds.push(item.dataset.id);
                     });
+                    const stageId = group.dataset.stageId;
+                    const originalStageData = monthlyData[monthId]?.stages.find(s => s.id === stageId) || {};
 
                     const stage = {
-                        id: group.dataset.stageId || `new_stage_${Date.now()}`,
+                        id: stageId || `new_stage_${Date.now()}`,
                         name: group.querySelector('.stage-name').value.trim(),
                         date: group.querySelector('.stage-date').value,
                         type: group.querySelector('.stage-type').value,
                         durationDistance: group.querySelector('.stage-duration-distance').value.trim(),
                         podium_img: group.querySelector('.stage-podium-img').value.trim(),
-                        results: classifiedIds.map(id => ({ id }))
+                        results: classifiedIds.map(id => ({ id })),
+                        status: group.hasAttribute('data-new-status') ? group.dataset.newStatus : (originalStageData.status || 'Realizada'),
+                        motive: group.hasAttribute('data-new-motive') ? group.dataset.newMotive : (originalStageData.motive || '')
                     };
                     newStages.push(stage);
                 });
@@ -1118,11 +1267,41 @@
                     await setDoc(docRef, dataToSave, { merge: true });
                     await logAction('RESULTS_SAVED', `Resultados do mês "${dataToSave.title}" foram guardados.`, oldData, dataToSave);
                     openInfoModal('Resultados guardados com sucesso!');
-                    loadAllData();
+                    await loadAllData();
                 } catch (error) {
                     console.error("Erro ao guardar resultados:", error);
                     openInfoModal("Ocorreu um erro ao guardar os resultados.");
                 }
+            });
+
+            document.getElementById('status-stage-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const stageId = document.getElementById('status-stage-id').value;
+                const newStatus = document.getElementById('stage-status-select').value;
+                const newMotive = document.getElementById('stage-motive').value.trim();
+
+                const stageGroup = document.querySelector(`.stage-form-group[data-stage-id="${stageId}"]`);
+                if (stageGroup) {
+                    stageGroup.dataset.newStatus = newStatus;
+                    stageGroup.dataset.newMotive = newMotive;
+
+                    const checkbox = stageGroup.querySelector('.stage-realizada-checkbox');
+                    
+                    updateStageHeaderUI(stageGroup, newStatus);
+
+                    if (newStatus === 'Cancelada' || newStatus === 'Adiada') {
+                        checkbox.checked = false;
+                        checkbox.disabled = true;
+                    } else if (newStatus === 'Realizada') {
+                        checkbox.checked = true;
+                        checkbox.disabled = false;
+                    } else { // 'A realizar'
+                        checkbox.checked = false;
+                        checkbox.disabled = false;
+                    }
+                }
+                closeModal('status-stage-modal');
+                openInfoModal('Status atualizado. Clique em "Guardar Alterações do Mês" para salvar permanentemente.');
             });
             
             document.getElementById('new-month-btn').addEventListener('click', async () => {
@@ -1149,7 +1328,8 @@
                         type: 'Circuito',
                         durationDistance: '55 min + 1 volta',
                         podium_img: '',
-                        results: []
+                        results: [],
+                        status: 'A realizar'
                     }));
 
                     const newMonthData = { title: monthTitle, stages: newStages, isCompleted: false, geral_podium_img: '' };
@@ -1187,7 +1367,7 @@
                     await logAction('TEAM_CREATED', `Equipe "${newTeamName}" criada.`, null, { name: newTeamName });
                     openInfoModal("Equipe adicionada com sucesso!");
                     e.target.reset();
-                    loadAllData();
+                    await loadAllData();
                 } catch (error) {
                     console.error("Erro ao adicionar equipe:", error);
                     openInfoModal("Ocorreu um erro ao adicionar a equipe.");
@@ -1208,7 +1388,7 @@
                             await updateDoc(doc(db, 'teams', teamId), { name: newName.trim() });
                             await logAction('TEAM_UPDATED', `Equipe "${teamName}" foi renomeada para "${newName.trim()}".`, { name: teamName }, { name: newName.trim() });
                             openInfoModal("Equipe atualizada com sucesso.");
-                            loadAllData();
+                            await loadAllData();
                         } catch (error) {
                             console.error("Erro ao editar equipe:", error);
                             openInfoModal("Ocorreu um erro ao editar a equipe.");
@@ -1230,7 +1410,7 @@
                             await deleteDoc(doc(db, 'teams', teamId));
                             await logAction('TEAM_DELETED', `Equipe "${teamName}" foi excluída.`, { name: teamName }, null);
                             openInfoModal("Equipe excluída com sucesso.");
-                            loadAllData();
+                            await loadAllData();
                         } catch (error) {
                              console.error("Erro ao excluir equipe:", error);
                              openInfoModal("Ocorreu um erro ao excluir a equipe.");
@@ -1253,6 +1433,9 @@
                             date: new Date().toISOString().split('T')[0]
                         }],
                         imageUrl: document.getElementById('participant-image-filename').value.trim(),
+                        strava: normalizeSocialLink(document.getElementById('participant-strava').value, 'strava'),
+                        instagram: normalizeSocialLink(document.getElementById('participant-instagram').value, 'instagram'),
+                        facebook: normalizeSocialLink(document.getElementById('participant-facebook').value, 'facebook'),
                         isActive: true,
                         createdAt: serverTimestamp()
                     };
@@ -1260,7 +1443,7 @@
                     await setDoc(doc(db, "participants", participantId), participantData);
                     await logAction('PARTICIPANT_CREATED', `Participante "${name}" criado.`, null, participantData);
                     e.target.reset();
-                    loadAllData();
+                    await loadAllData();
                 }
             });
 
@@ -1278,6 +1461,9 @@
                     document.getElementById('edit-participant-name').value = participant.name;
                     document.getElementById('edit-participant-team').value = participantOriginalTeam;
                     document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
+                    document.getElementById('edit-participant-strava').value = participant.strava || '';
+                    document.getElementById('edit-participant-instagram').value = participant.instagram || '';
+                    document.getElementById('edit-participant-facebook').value = participant.facebook || '';
                     document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
 
                     document.getElementById('team-change-options').style.display = 'none';
@@ -1287,6 +1473,70 @@
                     openModal('edit-participant-modal');
                 } else if (button.querySelector('.fa-trash')) {
                     openDeleteOptionsModal(id);
+                }
+            });
+
+            document.getElementById('edit-participant-team').addEventListener('change', (e) => {
+                handleTeamSelection('edit-participant-team');
+                const newTeamId = e.target.value;
+                document.getElementById('team-change-options').style.display = newTeamId !== participantOriginalTeam && newTeamId !== 'new_team' ? 'block' : 'none';
+            });
+
+            document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-participant-id').value;
+                const oldData = participantsData[id];
+
+                const name = document.getElementById('edit-participant-name').value.trim();
+                const newTeamId = document.getElementById('edit-participant-team').value;
+                const imageUrl = document.getElementById('edit-participant-image-filename').value.trim();
+                const strava = normalizeSocialLink(document.getElementById('edit-participant-strava').value, 'strava');
+                const instagram = normalizeSocialLink(document.getElementById('edit-participant-instagram').value, 'instagram');
+                const facebook = normalizeSocialLink(document.getElementById('edit-participant-facebook').value, 'facebook');
+                const isSporadic = document.getElementById('edit-participant-sporadic').checked;
+
+                const dataToUpdate = { name, imageUrl, strava, instagram, facebook };
+
+                if (newTeamId && newTeamId !== 'new_team' && newTeamId !== participantOriginalTeam) {
+                    const isCorrection = document.getElementById('correction-checkbox').checked;
+                    const transferDate = document.getElementById('transfer-date').value;
+                    const newTeamHistory = JSON.parse(JSON.stringify(oldData.teamHistory || []));
+
+                    if (isCorrection) {
+                        if (newTeamHistory.length > 0) {
+                            newTeamHistory[newTeamHistory.length - 1].teamId = newTeamId;
+                        } else {
+                            newTeamHistory.push({ teamId: newTeamId, date: new Date().toISOString().split('T')[0] });
+                        }
+                    } else {
+                        if (!transferDate) {
+                            openInfoModal("Por favor, selecione a data da transferência.");
+                            return;
+                        }
+                        newTeamHistory.push({ teamId: newTeamId, date: transferDate });
+                    }
+                    dataToUpdate.teamHistory = newTeamHistory;
+                }
+
+                try {
+                    const participantRef = doc(db, 'participants', id);
+                    await updateDoc(participantRef, dataToUpdate);
+                    
+                    const settingsRef = doc(db, "settings", "config");
+                    if (isSporadic && !sporadicRiders.includes(id)) {
+                        await updateDoc(settingsRef, { sporadicRiders: arrayUnion(id) });
+                    } else if (!isSporadic && sporadicRiders.includes(id)) {
+                        await updateDoc(settingsRef, { sporadicRiders: arrayRemove(id) });
+                    }
+                    
+                    await logAction('PARTICIPANT_UPDATED', `Participante "${name}" foi atualizado.`, oldData, dataToUpdate);
+                    
+                    closeModal('edit-participant-modal');
+                    openInfoModal('Participante atualizado com sucesso!');
+                    await loadAllData();
+                } catch (error) {
+                    console.error("Erro ao atualizar participante:", error);
+                    openInfoModal("Ocorreu um erro ao atualizar o participante.");
                 }
             });
 

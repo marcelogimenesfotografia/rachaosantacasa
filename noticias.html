@@ -35,14 +35,9 @@
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         <header class="text-center mb-10">
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
-            <nav class="mt-4">
-                <ul class="flex justify-center gap-6 md:gap-8">
-                    <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
-                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
-                    <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
-                    <li><a href="noticias.html" class="font-semibold text-yellow-500 transition">Notícias</a></li>
-                    <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
-                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+            <nav id="main-nav" class="mt-4">
+                <ul id="nav-list" class="flex justify-center gap-6 md:gap-8">
+                    <!-- O menu dinâmico será inserido aqui -->
                 </ul>
             </nav>
         </header>
@@ -70,7 +65,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
@@ -83,24 +78,75 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        let menuSettings = {};
+
+        function renderMenu() {
+            const navList = document.getElementById('nav-list');
+            if (!navList) return;
+
+            navList.innerHTML = ''; // Limpa o menu estático
+            const currentPage = "noticias.html"; // Define a página atual
+
+            const sortedMenu = Object.entries(menuSettings)
+                .sort(([, a], [, b]) => a.order - b.order);
+
+            for (const [key, value] of sortedMenu) {
+                if (value.isVisible) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = key;
+                    a.textContent = value.name;
+                    
+                    if (key === currentPage) {
+                        a.className = "font-semibold text-yellow-500 transition";
+                    } else {
+                        a.className = "font-semibold text-gray-700 hover:text-yellow-500 transition";
+                    }
+                    
+                    li.appendChild(a);
+                    navList.appendChild(li);
+                }
+            }
+        }
 
         async function loadNoticias() {
             const loadingOverlay = document.getElementById('loading-overlay');
             const newsGrid = document.getElementById('news-grid');
 
             try {
-                const q = query(collection(db, "noticias"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
+                const [menuSnap, newsSnap] = await Promise.all([
+                    getDoc(doc(db, "settings", "menu")),
+                    getDocs(query(collection(db, "noticias"), orderBy("createdAt", "desc")))
+                ]);
 
-                if (querySnapshot.empty) {
+                if (menuSnap.exists()) {
+                    menuSettings = menuSnap.data();
+                } else {
+                    menuSettings = {
+                        "index.html": { name: "Classificação", isVisible: true, order: 1 },
+                        "ranking_geral.html": { name: "Ranking Geral", isVisible: true, order: 2 },
+                        "equipes.html": { name: "Equipes", isVisible: true, order: 3 },
+                        "noticias.html": { name: "Notícias", isVisible: true, order: 4 },
+                        "bolao.html": { name: "Bolão", isVisible: true, order: 5 },
+                        "sobre.html": { name: "Sobre o Rachão", isVisible: true, order: 6 }
+                    };
+                }
+                renderMenu();
+
+
+                if (newsSnap.empty) {
                     newsGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full">Nenhuma notícia encontrada.</p>';
                     return;
                 }
 
-                querySnapshot.forEach(doc => {
+                newsSnap.forEach(doc => {
                     const noticia = doc.data();
                     const date = noticia.createdAt?.toDate ? noticia.createdAt.toDate().toLocaleDateString('pt-BR') : '';
-                    const snippet = noticia.content.substring(0, 100) + '...';
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = noticia.content;
+                    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+                    const snippet = textContent.substring(0, 100) + '...';
 
                     const card = document.createElement('a');
                     card.href = `noticia.html?id=${doc.id}`;
@@ -128,3 +174,4 @@
     </script>
 </body>
 </html>
+

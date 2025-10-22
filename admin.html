@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -113,6 +116,10 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
+        #noticia-editor {
+            height: 300px;
+            background-color: white;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -130,6 +137,12 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
                     <input type="password" id="password" class="input-field mt-1" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center text-sm text-gray-700">
+                        <input id="remember-me" type="checkbox" class="rounded border-gray-300 text-yellow-500 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200 focus:ring-opacity-50">
+                        <span class="ml-2">Lembrar-me</span>
+                    </label>
                 </div>
                 <button type="submit" class="btn btn-primary w-full">Entrar</button>
             </form>
@@ -151,6 +164,7 @@
                         <li><a href="#" data-target="section-resultados" class="admin-menu-item"><i class="fas fa-trophy w-6 mr-2"></i>Resultados</a></li>
                         <li><a href="#" data-target="section-participantes" class="admin-menu-item"><i class="fas fa-users w-6 mr-2"></i>Participantes</a></li>
                         <li><a href="#" data-target="section-equipes" class="admin-menu-item"><i class="fas fa-shield-alt w-6 mr-2"></i>Equipes</a></li>
+                        <li><a href="#" data-target="section-noticias" class="admin-menu-item"><i class="fas fa-newspaper w-6 mr-2"></i>Notícias</a></li>
                         <li><a href="#" data-target="section-config" class="admin-menu-item"><i class="fas fa-cog w-6 mr-2"></i>Configurações</a></li>
                         <li><a href="#" data-target="section-logs" class="admin-menu-item"><i class="fas fa-clipboard-list w-6 mr-2"></i>Logs</a></li>
                     </ul>
@@ -194,7 +208,8 @@
                      <div class="card">
                         <h2 class="text-xl font-bold mb-4">Gerir Participantes</h2>
                         <form id="add-participant-form" class="space-y-3 mb-6">
-                            <input id="participant-name" type="text" placeholder="Nome" class="input-field" required>
+                            <input id="participant-name" type="text" placeholder="Nome de Exibição (Apelido)" class="input-field" required>
+                            <input id="participant-fullname" type="text" placeholder="Nome Completo" class="input-field" required>
                             <select id="participant-team" class="input-field"></select>
                             <div>
                                 <label for="participant-image-filename" class="font-medium text-sm">Nome do Ficheiro da Foto</label>
@@ -242,6 +257,22 @@
                     </div>
                 </div>
 
+                <!-- Seção Gerir Notícias -->
+                <div id="section-noticias" class="admin-section hidden">
+                    <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Gerir Notícias</h2>
+                        <form id="add-noticia-form" class="space-y-3 mb-6">
+                            <input id="noticia-id" type="hidden"> <!-- For editing -->
+                            <input id="noticia-title" type="text" placeholder="Título da Matéria" class="input-field" required>
+                            <input id="noticia-image" type="url" placeholder="URL da Imagem de Destaque" class="input-field" required>
+                            <div id="noticia-editor"></div>
+                            <button type="submit" class="btn btn-primary w-full mt-4">Publicar Notícia</button>
+                        </form>
+                        <h3 class="text-lg font-bold mt-8 mb-4 border-t pt-4">Notícias Publicadas</h3>
+                        <div id="noticias-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
                 <!-- Seção Configurações -->
                 <div id="section-config" class="admin-section hidden">
                     <div class="card">
@@ -281,7 +312,7 @@
 
     <!-- Modais -->
     <div id="edit-participant-modal" class="modal">
-        <div class="card w-full max-w-md">
+        <div class="card w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Editar Participante</h2>
                 <button onclick="closeModal('edit-participant-modal')" class="text-2xl">&times;</button>
@@ -289,8 +320,12 @@
             <form id="edit-participant-form" class="space-y-3">
                 <input type="hidden" id="edit-participant-id">
                 <div>
-                    <label for="edit-participant-name" class="font-medium">Nome</label>
+                    <label for="edit-participant-name" class="font-medium">Nome de Exibição (Apelido)</label>
                     <input id="edit-participant-name" type="text" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="edit-participant-fullname" class="font-medium">Nome Completo</label>
+                    <input id="edit-participant-fullname" type="text" class="input-field mt-1" required>
                 </div>
                 <div>
                     <label for="edit-participant-team" class="font-medium">Equipe</label>
@@ -441,10 +476,23 @@
         </div>
     </div>
 
+    <!-- Modal para Moderação de Comentários -->
+    <div id="comments-modal" class="modal">
+        <div class="card w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Moderar Comentários</h2>
+                <button onclick="closeModal('comments-modal')" class="text-2xl">&times;</button>
+            </div>
+            <div id="comments-list-container" class="overflow-y-auto space-y-3">
+                <!-- Comentários para moderação serão inseridos aqui -->
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, writeBatch, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, Timestamp, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // A configuração do Firebase é pública por design. A segurança é garantida pelas Regras de Segurança do Firestore.
         const firebaseConfig = {
@@ -471,6 +519,8 @@
         let dashboardInitialized = false;
         let allLogs = [];
         let filteredLogs = [];
+        let noticiasData = [];
+        let quill;
         
         // --- Funções Utilitárias ---
         function openInfoModal(text) {
@@ -521,7 +571,7 @@
             const participantName = participantsData[id]?.name;
             if (!participantName) return;
 
-            document.getElementById('delete-participant-name').textContent = participantName;
+            document.getElementById('delete-participant-name').textContent = participantName.toUpperCase();
             
             const deactivateBtn = document.getElementById('deactivate-btn');
             const hardDeleteBtn = document.getElementById('hard-delete-btn');
@@ -587,7 +637,7 @@
             const participant = participantsData[id];
             if (!participant) return;
 
-            if (await openConfirmModal(`Tem a certeza que deseja DESATIVAR ${participant.name}? Ele será removido das listas, mas o seu histórico será mantido.`)) {
+            if (await openConfirmModal(`Tem a certeza que deseja DESATIVAR ${participant.name.toUpperCase()}? Ele será removido das listas, mas o seu histórico será mantido.`)) {
                 try {
                     const participantRef = doc(db, 'participants', id);
                     await updateDoc(participantRef, { isActive: false });
@@ -606,7 +656,7 @@
             const participant = participantsData[id];
             if (!participant) return;
 
-            if (await openConfirmModal(`ATENÇÃO: Exclusão permanente! Tem a certeza ABSOLUTA que deseja apagar ${participant.name} e todo o seu histórico? Esta ação não pode ser desfeita.`)) {
+            if (await openConfirmModal(`ATENÇÃO: Exclusão permanente! Tem a certeza ABSOLUTA que deseja apagar ${participant.name.toUpperCase()} e todo o seu histórico? Esta ação não pode ser desfeita.`)) {
                 try {
                     await deleteDoc(doc(db, 'participants', id));
                     await logAction('PARTICIPANT_DELETED', `Participante "${participant.name}" foi permanentemente excluído.`, participant, null);
@@ -652,6 +702,7 @@
         function showLogin() {
             document.getElementById('login-section').style.display = 'flex';
             document.getElementById('dashboard-section').style.display = 'none';
+            setupLoginListener();
         }
         
         function openModal(id) { document.getElementById(id).classList.add('is-open'); }
@@ -660,12 +711,13 @@
         // --- Carregamento de Dados ---
         async function loadAllData() {
             try {
-                const [pSnap, rSnap, settingsSnap, logsSnap, tSnap] = await Promise.all([
+                const [pSnap, rSnap, settingsSnap, logsSnap, tSnap, nSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
                     getDoc(doc(db, "settings", "config")),
                     getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(100))),
-                    getDocs(collection(db, "teams"))
+                    getDocs(collection(db, "teams")),
+                    getDocs(query(collection(db, "noticias"), orderBy("createdAt", "desc")))
                 ]);
                 
                 participantsData = {};
@@ -698,12 +750,16 @@
                 allLogs = [];
                 logsSnap.forEach(doc => allLogs.push(doc.data()));
 
+                noticiasData = [];
+                nSnap.forEach(doc => noticiasData.push({ id: doc.id, ...doc.data() }));
+
                 // Re-renderiza todos os componentes da UI com os novos dados
                 renderParticipants();
                 renderMonthSelector();
                 renderTeamSelectors();
                 renderLogs();
                 renderTeamsList();
+                renderNoticias();
                 
                 const initialMonth = document.getElementById('month-select-admin').value;
                 if(initialMonth) renderResultsForm(initialMonth);
@@ -842,7 +898,7 @@
                 const isSporadic = sporadicRiders.includes(id);
                 div.innerHTML = `
                     <div>
-                        <span class="font-medium">${participant.name}</span>
+                        <span class="font-medium">${participant.name.toUpperCase()}</span>
                         ${isSporadic ? '<span class="ml-2 text-xs font-bold text-white bg-blue-500 px-2 py-1 rounded-full">ESPORÁDICO</span>' : ''}
                     </div>
                     <div class="space-x-2">
@@ -880,7 +936,7 @@
 
             const availableParticipantsHtml = availableParticipants.map(([id, p]) => `
                 <div class="participant-item available-participant" data-id="${id}" data-name="${p.name.toLowerCase()}">
-                    <span>${p.name}</span>
+                    <span>${p.name.toUpperCase()}</span>
                     <button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>
                 </div>
             `).join('');
@@ -890,7 +946,7 @@
                 if (!p) return '';
                 return `
                     <div class="participant-item classified-participant" data-id="${id}">
-                        <span>${idx + 1}. ${p.name}</span>
+                        <span>${idx + 1}. ${p.name.toUpperCase()}</span>
                         <div class="space-x-2">
                             <button type="button" class="text-gray-500 hover:text-gray-700 move-up-btn"><i class="fas fa-arrow-up"></i></button>
                             <button type="button" class="text-gray-500 hover:text-gray-700 move-down-btn"><i class="fas fa-arrow-down"></i></button>
@@ -1045,6 +1101,33 @@
             });
         }
 
+        function renderNoticias() {
+            const list = document.getElementById('noticias-list');
+            list.innerHTML = '';
+            if (noticiasData.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Nenhuma notícia publicada.</p>';
+                return;
+            }
+
+            noticiasData.forEach(noticia => {
+                const date = noticia.createdAt?.toDate ? noticia.createdAt.toDate().toLocaleDateString('pt-BR') : 'Data inválida';
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded-md';
+                div.innerHTML = `
+                    <div>
+                        <span class="font-medium">${noticia.title}</span>
+                        <p class="text-xs text-gray-500">Publicado em: ${date}</p>
+                    </div>
+                    <div class="space-x-2">
+                        <button class="text-gray-500 hover:text-gray-700 moderate-comments-btn" data-id="${noticia.id}" title="Moderar Comentários"><i class="fas fa-comments"></i></button>
+                        <button class="text-blue-500 hover:text-blue-700 edit-noticia-btn" data-id="${noticia.id}" title="Editar Notícia"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500 hover:text-red-700 delete-noticia-btn" data-id="${noticia.id}" title="Apagar Notícia"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
         function updateStageHeaderUI(stageGroup, status) {
             const header = stageGroup.querySelector('.accordion-header');
             const titleHolder = header.querySelector('.flex.items-center');
@@ -1075,8 +1158,45 @@
             header.classList.add(headerBg);
         }
         
-        // --- Event Listeners ---
+        // --- 6. EVENT LISTENERS (SETUP PRINCIPAL) ---
+        function setupLoginListener() {
+            const loginForm = document.getElementById('login-form');
+            if (!loginForm) return;
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const rememberMe = document.getElementById('remember-me').checked;
+                
+                const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+
+                try { 
+                    await setPersistence(auth, persistence);
+                    await signInWithEmailAndPassword(auth, email, password); 
+                } catch (error) { 
+                    console.error("Erro no login:", error);
+                    openInfoModal('Email ou palavra-passe incorreta!'); 
+                }
+            });
+        }
+        
         function setupDashboardEventListeners() {
+            // Inicializa o editor Quill
+            quill = new Quill('#noticia-editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link', 'image', 'video'],
+                        ['clean']
+                    ]
+                }
+            });
+
+            // --- Listeners Gerais ---
             document.getElementById('info-modal-close').addEventListener('click', () => closeModal('info-modal'));
             
             document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -1094,6 +1214,7 @@
             });
             document.querySelector('.admin-menu-item[data-target="section-resultados"]').classList.add('active');
             
+            // --- Listeners de Configurações ---
             document.getElementById('save-settings-btn').addEventListener('click', async () => {
                 const btn = document.getElementById('save-settings-btn');
                 btn.disabled = true;
@@ -1115,6 +1236,7 @@
                 }
             });
 
+            // --- Listeners de Resultados ---
             document.getElementById('month-select-admin').addEventListener('change', (e) => {
                 renderResultsForm(e.target.value);
             });
@@ -1156,14 +1278,14 @@
                 const renumberClassifiedList = (list) => {
                     list.querySelectorAll('.classified-participant').forEach((item, index) => {
                         const nameSpan = item.querySelector('span');
-                        nameSpan.textContent = `${index + 1}. ${participantsData[item.dataset.id].name}`;
+                        nameSpan.textContent = `${index + 1}. ${participantsData[item.dataset.id].name.toUpperCase()}`;
                     });
                 };
 
                 if (button.classList.contains('add-participant-to-stage-btn')) {
                     const classifiedList = participantItem.closest('.grid').querySelector('.classified-list');
                     const pId = participantItem.dataset.id;
-                    const pName = participantsData[pId].name;
+                    const pName = participantsData[pId].name.toUpperCase();
 
                     const newItem = document.createElement('div');
                     newItem.className = 'participant-item classified-participant';
@@ -1182,7 +1304,7 @@
                     newItem.className = 'participant-item available-participant';
                     newItem.dataset.id = pId;
                     newItem.dataset.name = pName.toLowerCase();
-                    newItem.innerHTML = `<span>${pName}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
+                    newItem.innerHTML = `<span>${pName.toUpperCase()}</span><button type="button" class="text-green-500 hover:text-green-700 add-participant-to-stage-btn"><i class="fas fa-plus-circle"></i></button>`;
                     availableList.appendChild(newItem);
                     participantItem.remove();
                     renumberClassifiedList(classifiedList);
@@ -1348,9 +1470,143 @@
                 }
             });
 
+            // --- Listeners de Participantes ---
             document.getElementById('filter-team').addEventListener('change', renderParticipants);
             document.getElementById('filter-name').addEventListener('input', renderParticipants);
 
+            document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('participant-name').value.trim();
+                const fullName = document.getElementById('participant-fullname').value.trim();
+                if (name && fullName) {
+                    const sanitizedName = name.replace(/\s+/g, '-').toLowerCase();
+                    const participantId = `${sanitizedName}-${Math.random().toString(36).substring(2, 8)}`;
+                    
+                    const participantData = {
+                        name: name,
+                        fullName: fullName,
+                        teamHistory: [{
+                            teamId: document.getElementById('participant-team').value,
+                            date: new Date().toISOString().split('T')[0]
+                        }],
+                        imageUrl: document.getElementById('participant-image-filename').value.trim(),
+                        strava: normalizeSocialLink(document.getElementById('participant-strava').value, 'strava'),
+                        instagram: normalizeSocialLink(document.getElementById('participant-instagram').value, 'instagram'),
+                        facebook: normalizeSocialLink(document.getElementById('participant-facebook').value, 'facebook'),
+                        isActive: true,
+                        createdAt: serverTimestamp()
+                    };
+
+                    await setDoc(doc(db, "participants", participantId), participantData);
+                    await logAction('PARTICIPANT_CREATED', `Participante "${name}" criado.`, null, participantData);
+                    e.target.reset();
+                    await loadAllData();
+                } else {
+                    openInfoModal("Por favor, preencha o Nome de Exibição e o Nome Completo.");
+                }
+            });
+
+            document.getElementById('participants-list').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                const id = button.dataset.id;
+                
+                if (button.querySelector('.fa-edit')) { 
+                    const participant = participantsData[id];
+                    const teamHistory = participant.teamHistory || [];
+                    participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].teamId : '';
+                    
+                    document.getElementById('edit-participant-id').value = id;
+                    document.getElementById('edit-participant-name').value = participant.name;
+                    document.getElementById('edit-participant-fullname').value = participant.fullName || '';
+                    document.getElementById('edit-participant-team').value = participantOriginalTeam;
+                    document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
+                    document.getElementById('edit-participant-strava').value = participant.strava || '';
+                    document.getElementById('edit-participant-instagram').value = participant.instagram || '';
+                    document.getElementById('edit-participant-facebook').value = participant.facebook || '';
+                    document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
+
+                    document.getElementById('team-change-options').style.display = 'none';
+                    document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('correction-checkbox').checked = false;
+
+                    openModal('edit-participant-modal');
+                } else if (button.querySelector('.fa-trash')) {
+                    openDeleteOptionsModal(id);
+                }
+            });
+
+            document.getElementById('edit-participant-team').addEventListener('change', (e) => {
+                handleTeamSelection('edit-participant-team');
+                const newTeamId = e.target.value;
+                document.getElementById('team-change-options').style.display = newTeamId !== participantOriginalTeam && newTeamId !== 'new_team' ? 'block' : 'none';
+            });
+
+            document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-participant-id').value;
+                const oldData = participantsData[id];
+
+                const name = document.getElementById('edit-participant-name').value.trim();
+                const fullName = document.getElementById('edit-participant-fullname').value.trim();
+                const newTeamId = document.getElementById('edit-participant-team').value;
+                const imageUrl = document.getElementById('edit-participant-image-filename').value.trim();
+                const strava = normalizeSocialLink(document.getElementById('edit-participant-strava').value, 'strava');
+                const instagram = normalizeSocialLink(document.getElementById('edit-participant-instagram').value, 'instagram');
+                const facebook = normalizeSocialLink(document.getElementById('edit-participant-facebook').value, 'facebook');
+                const isSporadic = document.getElementById('edit-participant-sporadic').checked;
+                
+                if (!name || !fullName) {
+                     openInfoModal("Por favor, preencha o Nome de Exibição e o Nome Completo.");
+                    return;
+                }
+
+                const dataToUpdate = { name, fullName, imageUrl, strava, instagram, facebook };
+
+                if (newTeamId && newTeamId !== 'new_team' && newTeamId !== participantOriginalTeam) {
+                    const isCorrection = document.getElementById('correction-checkbox').checked;
+                    const transferDate = document.getElementById('transfer-date').value;
+                    const newTeamHistory = JSON.parse(JSON.stringify(oldData.teamHistory || []));
+
+                    if (isCorrection) {
+                        if (newTeamHistory.length > 0) {
+                            newTeamHistory[newTeamHistory.length - 1].teamId = newTeamId;
+                        } else {
+                            newTeamHistory.push({ teamId: newTeamId, date: new Date().toISOString().split('T')[0] });
+                        }
+                    } else {
+                        if (!transferDate) {
+                            openInfoModal("Por favor, selecione a data da transferência.");
+                            return;
+                        }
+                        newTeamHistory.push({ teamId: newTeamId, date: transferDate });
+                    }
+                    dataToUpdate.teamHistory = newTeamHistory;
+                }
+
+                try {
+                    const participantRef = doc(db, 'participants', id);
+                    await updateDoc(participantRef, dataToUpdate);
+                    
+                    const settingsRef = doc(db, "settings", "config");
+                    if (isSporadic && !sporadicRiders.includes(id)) {
+                        await updateDoc(settingsRef, { sporadicRiders: arrayUnion(id) });
+                    } else if (!isSporadic && sporadicRiders.includes(id)) {
+                        await updateDoc(settingsRef, { sporadicRiders: arrayRemove(id) });
+                    }
+                    
+                    await logAction('PARTICIPANT_UPDATED', `Participante "${name}" foi atualizado.`, oldData, dataToUpdate);
+                    
+                    closeModal('edit-participant-modal');
+                    openInfoModal('Participante atualizado com sucesso!');
+                    await loadAllData();
+                } catch (error) {
+                    console.error("Erro ao atualizar participante:", error);
+                    openInfoModal("Ocorreu um erro ao atualizar o participante.");
+                }
+            });
+
+            // --- Listeners de Equipes ---
             document.getElementById('add-team-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const newTeamName = document.getElementById('new-team-name').value.trim();
@@ -1419,127 +1675,143 @@
                 }
             });
 
-             document.getElementById('add-participant-form').addEventListener('submit', async (e) => {
+            // --- Listeners de Notícias ---
+            document.getElementById('add-noticia-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const name = document.getElementById('participant-name').value.trim();
-                if (name) {
-                    const sanitizedName = name.replace(/\s+/g, '-').toLowerCase();
-                    const participantId = `${sanitizedName}-${Math.random().toString(36).substring(2, 8)}`;
-                    
-                    const participantData = {
-                        name: name,
-                        teamHistory: [{
-                            teamId: document.getElementById('participant-team').value,
-                            date: new Date().toISOString().split('T')[0]
-                        }],
-                        imageUrl: document.getElementById('participant-image-filename').value.trim(),
-                        strava: normalizeSocialLink(document.getElementById('participant-strava').value, 'strava'),
-                        instagram: normalizeSocialLink(document.getElementById('participant-instagram').value, 'instagram'),
-                        facebook: normalizeSocialLink(document.getElementById('participant-facebook').value, 'facebook'),
-                        isActive: true,
-                        createdAt: serverTimestamp()
-                    };
-
-                    await setDoc(doc(db, "participants", participantId), participantData);
-                    await logAction('PARTICIPANT_CREATED', `Participante "${name}" criado.`, null, participantData);
-                    e.target.reset();
-                    await loadAllData();
-                }
-            });
-
-            document.getElementById('participants-list').addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-                const id = button.dataset.id;
+                const form = e.target;
+                const id = form.querySelector('#noticia-id').value;
+                const title = form.querySelector('#noticia-title').value;
+                const imageUrl = form.querySelector('#noticia-image').value;
+                const content = quill.root.innerHTML;
                 
-                if (button.querySelector('.fa-edit')) { 
-                    const participant = participantsData[id];
-                    const teamHistory = participant.teamHistory || [];
-                    participantOriginalTeam = teamHistory.length > 0 ? teamHistory[teamHistory.length - 1].teamId : '';
-                    
-                    document.getElementById('edit-participant-id').value = id;
-                    document.getElementById('edit-participant-name').value = participant.name;
-                    document.getElementById('edit-participant-team').value = participantOriginalTeam;
-                    document.getElementById('edit-participant-image-filename').value = participant.imageUrl || '';
-                    document.getElementById('edit-participant-strava').value = participant.strava || '';
-                    document.getElementById('edit-participant-instagram').value = participant.instagram || '';
-                    document.getElementById('edit-participant-facebook').value = participant.facebook || '';
-                    document.getElementById('edit-participant-sporadic').checked = sporadicRiders.includes(id);
-
-                    document.getElementById('team-change-options').style.display = 'none';
-                    document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
-                    document.getElementById('correction-checkbox').checked = false;
-
-                    openModal('edit-participant-modal');
-                } else if (button.querySelector('.fa-trash')) {
-                    openDeleteOptionsModal(id);
-                }
-            });
-
-            document.getElementById('edit-participant-team').addEventListener('change', (e) => {
-                handleTeamSelection('edit-participant-team');
-                const newTeamId = e.target.value;
-                document.getElementById('team-change-options').style.display = newTeamId !== participantOriginalTeam && newTeamId !== 'new_team' ? 'block' : 'none';
-            });
-
-            document.getElementById('edit-participant-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('edit-participant-id').value;
-                const oldData = participantsData[id];
-
-                const name = document.getElementById('edit-participant-name').value.trim();
-                const newTeamId = document.getElementById('edit-participant-team').value;
-                const imageUrl = document.getElementById('edit-participant-image-filename').value.trim();
-                const strava = normalizeSocialLink(document.getElementById('edit-participant-strava').value, 'strava');
-                const instagram = normalizeSocialLink(document.getElementById('edit-participant-instagram').value, 'instagram');
-                const facebook = normalizeSocialLink(document.getElementById('edit-participant-facebook').value, 'facebook');
-                const isSporadic = document.getElementById('edit-participant-sporadic').checked;
-
-                const dataToUpdate = { name, imageUrl, strava, instagram, facebook };
-
-                if (newTeamId && newTeamId !== 'new_team' && newTeamId !== participantOriginalTeam) {
-                    const isCorrection = document.getElementById('correction-checkbox').checked;
-                    const transferDate = document.getElementById('transfer-date').value;
-                    const newTeamHistory = JSON.parse(JSON.stringify(oldData.teamHistory || []));
-
-                    if (isCorrection) {
-                        if (newTeamHistory.length > 0) {
-                            newTeamHistory[newTeamHistory.length - 1].teamId = newTeamId;
-                        } else {
-                            newTeamHistory.push({ teamId: newTeamId, date: new Date().toISOString().split('T')[0] });
-                        }
-                    } else {
-                        if (!transferDate) {
-                            openInfoModal("Por favor, selecione a data da transferência.");
-                            return;
-                        }
-                        newTeamHistory.push({ teamId: newTeamId, date: transferDate });
-                    }
-                    dataToUpdate.teamHistory = newTeamHistory;
-                }
+                const data = { title, imageUrl, content };
 
                 try {
-                    const participantRef = doc(db, 'participants', id);
-                    await updateDoc(participantRef, dataToUpdate);
-                    
-                    const settingsRef = doc(db, "settings", "config");
-                    if (isSporadic && !sporadicRiders.includes(id)) {
-                        await updateDoc(settingsRef, { sporadicRiders: arrayUnion(id) });
-                    } else if (!isSporadic && sporadicRiders.includes(id)) {
-                        await updateDoc(settingsRef, { sporadicRiders: arrayRemove(id) });
+                    if (id) { // Update
+                        const docRef = doc(db, 'noticias', id);
+                        data.updatedAt = serverTimestamp();
+                        await updateDoc(docRef, data);
+                        await logAction('NEWS_UPDATED', `Notícia "${title}" atualizada.`);
+                        openInfoModal('Notícia atualizada com sucesso!');
+                    } else { // Create
+                        data.createdAt = serverTimestamp();
+                        await addDoc(collection(db, 'noticias'), data);
+                        await logAction('NEWS_CREATED', `Notícia "${title}" criada.`);
+                        openInfoModal('Notícia publicada com sucesso!');
                     }
-                    
-                    await logAction('PARTICIPANT_UPDATED', `Participante "${name}" foi atualizado.`, oldData, dataToUpdate);
-                    
-                    closeModal('edit-participant-modal');
-                    openInfoModal('Participante atualizado com sucesso!');
+                    form.reset();
+                    quill.root.innerHTML = '';
+                    form.querySelector('#noticia-id').value = '';
+                    form.querySelector('button[type="submit"]').textContent = 'Publicar Notícia';
                     await loadAllData();
                 } catch (error) {
-                    console.error("Erro ao atualizar participante:", error);
-                    openInfoModal("Ocorreu um erro ao atualizar o participante.");
+                    console.error('Erro ao salvar notícia:', error);
+                    openInfoModal('Erro ao salvar notícia.');
                 }
             });
 
+            document.getElementById('noticias-list').addEventListener('click', async (e) => {
+                const editBtn = e.target.closest('.edit-noticia-btn');
+                const deleteBtn = e.target.closest('.delete-noticia-btn');
+                const moderateBtn = e.target.closest('.moderate-comments-btn');
+
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
+                    const noticia = noticiasData.find(n => n.id === id);
+                    if(noticia) {
+                        const form = document.getElementById('add-noticia-form');
+                        form.querySelector('#noticia-id').value = noticia.id;
+                        form.querySelector('#noticia-title').value = noticia.title;
+                        form.querySelector('#noticia-image').value = noticia.imageUrl;
+                        quill.root.innerHTML = noticia.content;
+                        form.querySelector('button[type="submit"]').textContent = 'Atualizar Notícia';
+                        window.scrollTo(0, 0);
+                    }
+                }
+
+                if (deleteBtn) {
+                    const id = deleteBtn.dataset.id;
+                    const noticia = noticiasData.find(n => n.id === id);
+                    if (await openConfirmModal(`Tem a certeza que deseja apagar a notícia "${noticia.title}"?`)) {
+                        try {
+                            await deleteDoc(doc(db, 'noticias', id));
+                            await logAction('NEWS_DELETED', `Notícia "${noticia.title}" apagada.`);
+                            openInfoModal('Notícia apagada com sucesso!');
+                            await loadAllData();
+                        } catch(error) {
+                            console.error('Erro ao apagar notícia:', error);
+                            openInfoModal('Erro ao apagar notícia.');
+                        }
+                    }
+                }
+                if (moderateBtn) {
+                    const id = moderateBtn.dataset.id;
+                    openCommentsModal(id);
+                }
+            });
+
+            // Lógica de Moderação de Comentários
+            async function openCommentsModal(newsId) {
+                const container = document.getElementById('comments-list-container');
+                container.innerHTML = '<p>A carregar comentários...</p>';
+                openModal('comments-modal');
+
+                const q = query(collection(db, 'comments'), where('newsId', '==', newsId));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p>Nenhum comentário para esta notícia.</p>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+                const comments = [];
+                querySnapshot.forEach(doc => comments.push({ id: doc.id, ...doc.data() }));
+
+                comments.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+                comments.forEach(comment => {
+                    const date = comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleString('pt-BR') : 'Data inválida';
+                    const isActive = comment.isActive !== false;
+                    const div = document.createElement('div');
+                    div.className = `p-3 rounded-lg ${isActive ? 'bg-white' : 'bg-red-50'}`;
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold">${comment.name} <span class="text-xs text-gray-400 font-normal">(${comment.contact})</span></p>
+                                <p class="text-xs text-gray-500">${date}</p>
+                            </div>
+                            <button class="toggle-comment-status btn ${isActive ? 'btn-danger' : 'btn-secondary'} text-sm py-1 px-2" data-id="${comment.id}" data-status="${isActive}">
+                                ${isActive ? 'Inativar' : 'Reativar'}
+                            </button>
+                        </div>
+                        <p class="mt-2 text-gray-700">${comment.text}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            document.getElementById('comments-list-container').addEventListener('click', async (e) => {
+                const toggleBtn = e.target.closest('.toggle-comment-status');
+                if (toggleBtn) {
+                    const id = toggleBtn.dataset.id;
+                    const currentStatus = toggleBtn.dataset.status === 'true';
+                    try {
+                        await updateDoc(doc(db, 'comments', id), { isActive: !currentStatus });
+                        toggleBtn.dataset.status = !currentStatus;
+                        toggleBtn.textContent = !currentStatus ? 'Inativar' : 'Reativar';
+                        toggleBtn.classList.toggle('btn-danger');
+                        toggleBtn.classList.toggle('btn-secondary');
+                        toggleBtn.closest('div.p-3').classList.toggle('bg-white');
+                        toggleBtn.closest('div.p-3').classList.toggle('bg-red-50');
+                    } catch (error) {
+                        console.error('Erro ao alterar status do comentário:', error);
+                        openInfoModal('Erro ao alterar status do comentário.');
+                    }
+                }
+            });
+
+            // --- Listeners de Logs ---
             document.getElementById('log-filter-action').addEventListener('change', renderLogs);
             document.getElementById('log-filter-text').addEventListener('input', renderLogs);
             document.getElementById('logs-list').addEventListener('click', (e) => {
@@ -1551,9 +1823,10 @@
             });
         }
         
+        // --- 7. PONTO DE ENTRADA (ENTRY POINT) ---
         async function initializeAuth() {
             try {
-                await setPersistence(auth, browserSessionPersistence);
+                // A persistência é definida no login listener, não aqui.
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         showDashboard();
@@ -1562,27 +1835,12 @@
                     }
                 });
             } catch (error) {
-                console.error("Erro ao definir a persistência da autenticação:", error);
-                onAuthStateChanged(auth, (user) => {
-                    if (user) { showDashboard(); } else { showLogin(); }
-                });
+                console.error("Erro ao inicializar autenticação:", error);
+                showLogin();
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            const loginForm = document.getElementById('login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    try { 
-                        await signInWithEmailAndPassword(auth, email, password); 
-                    } catch (error) { 
-                        openInfoModal('Email ou palavra-passe incorreta!'); 
-                    }
-                });
-            }
             initializeAuth();
         });
 

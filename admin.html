@@ -120,6 +120,46 @@
             height: 300px;
             background-color: white;
         }
+        /* Estilo para o Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -165,6 +205,7 @@
                         <li><a href="#" data-target="section-participantes" class="admin-menu-item"><i class="fas fa-users w-6 mr-2"></i>Participantes</a></li>
                         <li><a href="#" data-target="section-equipes" class="admin-menu-item"><i class="fas fa-shield-alt w-6 mr-2"></i>Equipes</a></li>
                         <li><a href="#" data-target="section-noticias" class="admin-menu-item"><i class="fas fa-newspaper w-6 mr-2"></i>Notícias</a></li>
+                        <li><a href="#" data-target="section-menu" class="admin-menu-item"><i class="fas fa-bars w-6 mr-2"></i>Gerir Menu</a></li>
                         <li><a href="#" data-target="section-config" class="admin-menu-item"><i class="fas fa-cog w-6 mr-2"></i>Configurações</a></li>
                         <li><a href="#" data-target="section-logs" class="admin-menu-item"><i class="fas fa-clipboard-list w-6 mr-2"></i>Logs</a></li>
                     </ul>
@@ -270,6 +311,18 @@
                         </form>
                         <h3 class="text-lg font-bold mt-8 mb-4 border-t pt-4">Notícias Publicadas</h3>
                         <div id="noticias-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Seção Gerir Menu -->
+                <div id="section-menu" class="admin-section hidden">
+                    <div class="card">
+                        <h2 class="text-xl font-bold mb-4">Gerir Menu Principal</h2>
+                        <p class="text-gray-600 mb-6">Controle quais páginas devem aparecer no menu de navegação do site público.</p>
+                        <div id="menu-management-list" class="space-y-4">
+                            <!-- Itens do menu serão carregados aqui -->
+                        </div>
+                        <button id="save-menu-btn" class="btn btn-primary w-full mt-6">Guardar Alterações do Menu</button>
                     </div>
                 </div>
 
@@ -520,6 +573,7 @@
         let allLogs = [];
         let filteredLogs = [];
         let noticiasData = [];
+        let menuSettings = {};
         let quill;
         
         // --- Funções Utilitárias ---
@@ -711,13 +765,14 @@
         // --- Carregamento de Dados ---
         async function loadAllData() {
             try {
-                const [pSnap, rSnap, settingsSnap, logsSnap, tSnap, nSnap] = await Promise.all([
+                const [pSnap, rSnap, settingsSnap, logsSnap, tSnap, nSnap, menuSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
                     getDoc(doc(db, "settings", "config")),
                     getDocs(query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(100))),
                     getDocs(collection(db, "teams")),
-                    getDocs(query(collection(db, "noticias"), orderBy("createdAt", "desc")))
+                    getDocs(query(collection(db, "noticias"), orderBy("createdAt", "desc"))),
+                    getDoc(doc(db, "settings", "menu"))
                 ]);
                 
                 participantsData = {};
@@ -753,6 +808,23 @@
                 noticiasData = [];
                 nSnap.forEach(doc => noticiasData.push({ id: doc.id, ...doc.data() }));
 
+                // Carregar ou criar definições do menu
+                if (menuSnap.exists()) {
+                    menuSettings = menuSnap.data();
+                } else {
+                    // Criar menu padrão se não existir
+                    menuSettings = {
+                        "index.html": { name: "Classificação", isVisible: true, order: 1 },
+                        "ranking_geral.html": { name: "Ranking Geral", isVisible: true, order: 2 },
+                        "equipes.html": { name: "Equipes", isVisible: true, order: 3 },
+                        "noticias.html": { name: "Notícias", isVisible: true, order: 4 },
+                        "bolao.html": { name: "Bolão", isVisible: true, order: 5 },
+                        "sobre.html": { name: "Sobre o Rachão", isVisible: true, order: 6 }
+                    };
+                    await setDoc(doc(db, "settings", "menu"), menuSettings);
+                }
+
+
                 // Re-renderiza todos os componentes da UI com os novos dados
                 renderParticipants();
                 renderMonthSelector();
@@ -760,6 +832,7 @@
                 renderLogs();
                 renderTeamsList();
                 renderNoticias();
+                renderMenuManagement();
                 
                 const initialMonth = document.getElementById('month-select-admin').value;
                 if(initialMonth) renderResultsForm(initialMonth);
@@ -1157,6 +1230,26 @@
             if (status === 'A realizar') headerBg = 'bg-blue-100';
             header.classList.add(headerBg);
         }
+
+        function renderMenuManagement() {
+            const container = document.getElementById('menu-management-list');
+            container.innerHTML = '';
+            
+            const sortedMenu = Object.entries(menuSettings).sort(([, a], [, b]) => a.order - b.order);
+
+            for (const [key, value] of sortedMenu) {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg';
+                div.innerHTML = `
+                    <span class="font-medium text-lg">${value.name}</span>
+                    <label class="switch">
+                        <input type="checkbox" data-key="${key}" ${value.isVisible ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                `;
+                container.appendChild(div);
+            }
+        }
         
         // --- 6. EVENT LISTENERS (SETUP PRINCIPAL) ---
         function setupLoginListener() {
@@ -1233,6 +1326,34 @@
                 } finally {
                     btn.disabled = false;
                     btn.textContent = 'Guardar Configurações';
+                }
+            });
+
+            // --- Listener do Menu ---
+            document.getElementById('save-menu-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('save-menu-btn');
+                btn.disabled = true;
+                btn.textContent = 'A guardar...';
+
+                const newMenuSettings = { ...menuSettings };
+                document.querySelectorAll('#menu-management-list input[type="checkbox"]').forEach(toggle => {
+                    const key = toggle.dataset.key;
+                    if (newMenuSettings[key]) {
+                        newMenuSettings[key].isVisible = toggle.checked;
+                    }
+                });
+
+                try {
+                    await setDoc(doc(db, "settings", "menu"), newMenuSettings);
+                    menuSettings = newMenuSettings; // Atualiza o estado local
+                    await logAction('MENU_UPDATED', 'Menu de navegação atualizado.');
+                    openInfoModal('Menu atualizado com sucesso!');
+                } catch (error) {
+                    console.error("Erro ao guardar menu:", error);
+                    openInfoModal('Ocorreu um erro ao guardar o menu.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Guardar Alterações do Menu';
                 }
             });
 

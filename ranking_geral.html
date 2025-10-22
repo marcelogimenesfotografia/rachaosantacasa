@@ -79,14 +79,9 @@
     <div class="max-w-5xl mx-auto p-4 md:p-8">
         <header class="text-center mb-6">
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
-            <nav class="mt-4">
-                <ul class="flex justify-center gap-6 md:gap-8">
-                    <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
-                    <li><a href="ranking_geral.html" class="font-semibold text-yellow-500 transition">Ranking Geral</a></li>
-                    <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
-                    <li><a href="noticias.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Notícias</a></li>
-                    <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
-                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+            <nav id="main-nav" class="mt-4">
+                <ul id="nav-list" class="flex justify-center gap-6 md:gap-8">
+                    <!-- O menu dinâmico será inserido aqui -->
                 </ul>
             </nav>
         </header>
@@ -145,6 +140,7 @@
         const db = getFirestore(app);
 
         let imageBaseUrl = '';
+        let menuSettings = {};
 
         // --- Funções Utilitárias ---
         window.openModal = function(modalId) { document.getElementById(modalId).classList.add('is-open'); }
@@ -185,6 +181,37 @@
             return teamsData[teamIdForDate]?.name || '';
         }
         
+        function renderMenu() {
+            const navList = document.getElementById('nav-list');
+            if (!navList) return;
+
+            navList.innerHTML = ''; // Limpa o menu estático
+            const currentPage = "ranking_geral.html"; // Define a página atual
+
+            // Ordena os itens do menu com base na propriedade 'order'
+            const sortedMenu = Object.entries(menuSettings)
+                .sort(([, a], [, b]) => a.order - b.order);
+
+            // Constrói o menu dinamicamente
+            for (const [key, value] of sortedMenu) {
+                if (value.isVisible) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = key;
+                    a.textContent = value.name;
+                    
+                    if (key === currentPage) {
+                        a.className = "font-semibold text-yellow-500 transition";
+                    } else {
+                        a.className = "font-semibold text-gray-700 hover:text-yellow-500 transition";
+                    }
+                    
+                    li.appendChild(a);
+                    navList.appendChild(li);
+                }
+            }
+        }
+
         // --- Lógica Principal ---
         async function calculateLifetimeRanking() {
             const loadingOverlay = document.getElementById('loading-overlay');
@@ -192,11 +219,12 @@
             
             try {
                 // Carrega todos os dados necessários em paralelo
-                const [pSnap, rSnap, settingsSnap, tSnap] = await Promise.all([
+                const [pSnap, rSnap, settingsSnap, tSnap, menuSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "results")),
                     getDoc(doc(db, "settings", "config")),
-                    getDocs(collection(db, "teams"))
+                    getDocs(collection(db, "teams")),
+                    getDoc(doc(db, "settings", "menu"))
                 ]);
 
                 const participantsData = {};
@@ -220,6 +248,20 @@
                 const settings = settingsSnap.exists() ? settingsSnap.data() : {};
                 const sporadicRiders = settings.sporadicRiders || [];
                 imageBaseUrl = settings.imageBaseUrl || '';
+
+                if (menuSnap.exists()) {
+                    menuSettings = menuSnap.data();
+                } else {
+                    menuSettings = {
+                        "index.html": { name: "Classificação", isVisible: true, order: 1 },
+                        "ranking_geral.html": { name: "Ranking Geral", isVisible: true, order: 2 },
+                        "equipes.html": { name: "Equipes", isVisible: true, order: 3 },
+                        "noticias.html": { name: "Notícias", isVisible: true, order: 4 },
+                        "bolao.html": { name: "Bolão", isVisible: true, order: 5 },
+                        "sobre.html": { name: "Sobre o Rachão", isVisible: true, order: 6 }
+                    };
+                }
+                renderMenu();
                 
                 const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
 

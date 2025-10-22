@@ -89,6 +89,7 @@
                     <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
                     <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
                     <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
+                    <li><a href="noticias.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Notícias</a></li>
                     <li><a href="bolao.html" class="font-semibold text-yellow-500 transition">Bolão</a></li>
                     <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
@@ -282,7 +283,7 @@
             selects.forEach(select => {
                 select.innerHTML = '<option value="">Selecione um participante...</option>';
                 sortedParticipants.forEach(([id, p]) => {
-                    select.add(new Option(p.name, id));
+                    select.add(new Option(p.name.toUpperCase(), id));
                 });
             });
         }
@@ -309,11 +310,11 @@
             const userBet = allStageBets.find(b => b.userId === userId);
 
             if (userBet) {
-                const first = participantsData[userBet.firstPlace]?.name || 'N/A';
-                const second = participantsData[userBet.secondPlace]?.name || 'N/A';
-                const third = participantsData[userBet.thirdPlace]?.name || 'N/A';
-                const fourth = participantsData[userBet.fourthPlace]?.name || 'N/A';
-                const fifth = participantsData[userBet.fifthPlace]?.name || 'N/A';
+                const first = participantsData[userBet.firstPlace]?.name.toUpperCase() || 'N/A';
+                const second = participantsData[userBet.secondPlace]?.name.toUpperCase() || 'N/A';
+                const third = participantsData[userBet.thirdPlace]?.name.toUpperCase() || 'N/A';
+                const fourth = participantsData[userBet.fourthPlace]?.name.toUpperCase() || 'N/A';
+                const fifth = participantsData[userBet.fifthPlace]?.name.toUpperCase() || 'N/A';
                 document.getElementById('user-bet-text').innerHTML = `<b>1º:</b> ${first}, <b>2º:</b> ${second}, <b>3º:</b> ${third}, <br><b>4º:</b> ${fourth}, <b>5º:</b> ${fifth}`;
                 betForm.style.display = 'none';
                 userBetDisplay.style.display = 'block';
@@ -360,7 +361,7 @@
 
                 sortedVotes.forEach(([participantId, count]) => {
                     const percentage = ((count / allStageBets.length) * 100);
-                    const participantName = participantsData[participantId]?.name || 'Desconhecido';
+                    const participantName = participantsData[participantId]?.name.toUpperCase() || 'Desconhecido';
                     const barHtml = `
                         <div>
                             <div class="flex justify-between items-center mb-1">

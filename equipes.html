@@ -67,6 +67,7 @@
                     <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
                     <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
                     <li><a href="equipes.html" class="font-semibold text-yellow-500 transition">Equipes</a></li>
+                    <li><a href="noticias.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Notícias</a></li>
                     <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
                     <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
@@ -306,7 +307,7 @@
                     return `
                         <div class="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-100 cursor-pointer transition" onclick="openParticipantModal('${pId}')">
                             <img src="${imageUrl}" alt="Foto de ${pData.name}" class="w-12 h-12 rounded-full object-cover">
-                            <span class="font-bold text-lg text-gray-800">${pData.name}</span>
+                            <span class="font-bold text-lg text-gray-800">${pData.name.toUpperCase()}</span>
                         </div>
                     `;
                 }).join('');
@@ -384,7 +385,7 @@
             modalContent.innerHTML = `
                 <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('details-modal')">&times;</span>
                 <img class="modal-image mx-auto" src="${imageUrl}" alt="Foto de Perfil">
-                <h3 class="text-2xl font-bold text-gray-900">${p.name}</h3>
+                <h3 class="text-2xl font-bold text-gray-900">${(p.fullName || p.name).toUpperCase()}</h3>
                 <div class="flex justify-center gap-4 mt-3 text-sm">${socialLinksHtml}</div>
                 
                 <div class="mt-6 w-full text-center border-t border-gray-200 pt-4">

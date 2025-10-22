@@ -62,14 +62,9 @@
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         <header class="text-center mb-6">
             <img src="https://marcelogimenesfotografia.github.io/rachaosantacasa/logorachao.png" alt="Logo Rachão Santa Casa" class="w-full max-w-[280px] mx-auto">
-            <nav class="mt-4">
-                <ul class="flex justify-center gap-6 md:gap-8">
-                    <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
-                    <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
-                    <li><a href="equipes.html" class="font-semibold text-yellow-500 transition">Equipes</a></li>
-                    <li><a href="noticias.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Notícias</a></li>
-                    <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
-                    <li><a href="sobre.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Sobre o Rachão</a></li>
+            <nav id="main-nav" class="mt-4">
+                <ul id="nav-list" class="flex justify-center gap-6 md:gap-8">
+                    <!-- O menu dinâmico será inserido aqui -->
                 </ul>
             </nav>
         </header>
@@ -131,6 +126,7 @@
         let sporadicRiders = [];
         let nameToIdMap = {};
         let teamRankings = [];
+        let menuSettings = {};
 
         // --- Funções Utilitárias ---
         window.openModal = function(modalId) { document.getElementById(modalId).classList.add('is-open'); }
@@ -211,11 +207,12 @@
 
         async function loadDataAndRender() {
             try {
-                const [pSnap, tSnap, rSnap, settingsSnap] = await Promise.all([
+                const [pSnap, tSnap, rSnap, settingsSnap, menuSnap] = await Promise.all([
                     getDocs(collection(db, "participants")),
                     getDocs(collection(db, "teams")),
                     getDocs(collection(db, "results")),
-                    getDoc(doc(db, "settings", "config"))
+                    getDoc(doc(db, "settings", "config")),
+                    getDoc(doc(db, "settings", "menu"))
                 ]);
 
                 pSnap.forEach(doc => {
@@ -238,6 +235,20 @@
                     imageBaseUrl = settings.imageBaseUrl || '';
                     sporadicRiders = settings.sporadicRiders || [];
                 }
+
+                if (menuSnap.exists()) {
+                    menuSettings = menuSnap.data();
+                } else {
+                    menuSettings = {
+                        "index.html": { name: "Classificação", isVisible: true, order: 1 },
+                        "ranking_geral.html": { name: "Ranking Geral", isVisible: true, order: 2 },
+                        "equipes.html": { name: "Equipes", isVisible: true, order: 3 },
+                        "noticias.html": { name: "Notícias", isVisible: true, order: 4 },
+                        "bolao.html": { name: "Bolão", isVisible: true, order: 5 },
+                        "sobre.html": { name: "Sobre o Rachão", isVisible: true, order: 6 }
+                    };
+                }
+                renderMenu();
                 
                 calculateTeamRankings();
                 renderTeamsPage();
@@ -252,6 +263,37 @@
         }
         
         // --- Funções de Renderização da UI ---
+        function renderMenu() {
+            const navList = document.getElementById('nav-list');
+            if (!navList) return;
+
+            navList.innerHTML = ''; // Limpa o menu estático
+            const currentPage = "equipes.html"; // Define a página atual
+
+            // Ordena os itens do menu com base na propriedade 'order'
+            const sortedMenu = Object.entries(menuSettings)
+                .sort(([, a], [, b]) => a.order - b.order);
+
+            // Constrói o menu dinamicamente
+            for (const [key, value] of sortedMenu) {
+                if (value.isVisible) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = key;
+                    a.textContent = value.name;
+                    
+                    if (key === currentPage) {
+                        a.className = "font-semibold text-yellow-500 transition";
+                    } else {
+                        a.className = "font-semibold text-gray-700 hover:text-yellow-500 transition";
+                    }
+                    
+                    li.appendChild(a);
+                    navList.appendChild(li);
+                }
+            }
+        }
+
         function renderTeamsPage() {
             const teamListContainer = document.getElementById('team-list-container');
             teamListContainer.innerHTML = '';

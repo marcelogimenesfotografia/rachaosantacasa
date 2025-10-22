@@ -8,26 +8,58 @@
     
     <!-- CDNs de Estilos e Fontes -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Estilos Personalizados -->
     <style>
         :root {
             --bg-color: #f4f4f5;
             --card-bg-color: #ffffff;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --accent-color: #eab308;
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); }
-        .card { background-color: var(--card-bg-color); border-radius: 1.5rem; padding: 2.5rem; border: 1px solid var(--border-color); box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.05); }
-        .prose { max-width: 65ch; margin: auto; }
-        .prose h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }
-        .prose h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; }
-        .prose p { line-height: 1.75; margin-bottom: 1.25rem; color: var(--text-secondary); }
+        .card { 
+            background-color: var(--card-bg-color); 
+            border-radius: 1.5rem; 
+            padding: 3rem; 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem; 
+        }
+        .prose { max-width: none; color: var(--text-secondary); }
+        .prose h2 {
+            color: var(--text-primary);
+            font-weight: 800;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .prose p { margin-bottom: 1.25em; line-height: 1.8; font-size: 1.125rem; }
+        .prose ul { 
+            list-style-type: none; 
+            padding-left: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .prose li { 
+            position: relative;
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+        .prose li strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -39,6 +71,7 @@
                     <li><a href="index.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Classificação</a></li>
                     <li><a href="ranking_geral.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Ranking Geral</a></li>
                     <li><a href="equipes.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Equipes</a></li>
+                    <li><a href="noticias.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Notícias</a></li>
                     <li><a href="bolao.html" class="font-semibold text-gray-700 hover:text-yellow-500 transition">Bolão</a></li>
                     <li><a href="sobre.html" class="font-semibold text-yellow-500 transition">Sobre o Rachão</a></li>
                 </ul>
@@ -47,25 +80,27 @@
 
         <main>
             <div class="card">
-                <article class="prose">
-                    <h1>Sobre o Rachão Santa Casa</h1>
-                    <p>
-                        Bem-vindo à página oficial do Rachão Santa Casa, o ponto de encontro dos ciclistas mais empenhados da região. O que começou como um treino amigável entre colegas transformou-se numa competição mensal que celebra a paixão pelo ciclismo, a superação e, acima de tudo, a amizade.
-                    </p>
-                    <h2>A Competição</h2>
-                    <p>
-                        Todos os meses, os nossos atletas enfrentam quatro etapas desafiadoras, acumulando pontos com base no seu desempenho. A competição é feroz, mas o respeito mútuo prevalece sempre. Aqui, cada sprint e cada subida contam para a classificação geral do mês e para o cobiçado título de campeão anual.
-                    </p>
-                    <h2>O Espírito</h2>
-                    <p>
-                        Mais do que uma competição, o Rachão Santa Casa é uma comunidade. Valorizamos o companheirismo, o apoio mútuo e a diversão. No final de cada etapa, o que realmente importa são as histórias partilhadas e os laços fortalecidos. Como gostamos de dizer: "Nós pedalamos forte, mas o que nos mantém juntos é a amizade."
-                    </p>
-                </article>
-            </div>
-             <div class="text-center mt-8">
-                <a href="admin.html" class="inline-block bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition shadow-sm">
-                    <i class="fas fa-user-shield mr-2"></i> Acesso Administrativo
-                </a>
+                <h1 class="text-4xl md:text-5xl font-extrabold mb-8 text-center text-gray-900">Sobre o Rachão Santa Casa</h1>
+                <div class="prose">
+                    <p>O <strong>Rachão Santa Casa</strong> é mais do que uma simples competição de ciclismo; é uma celebração da amizade, da superação e da paixão pelo esporte. Nascido de encontros informais entre amigos, o evento cresceu e se tornou um campeonato organizado, mantendo sempre o espírito de camaradagem que o originou.</p>
+                    <p>Nossa missão é promover a prática do ciclismo na região, oferecendo um ambiente seguro e competitivo para atletas de todos os níveis. As etapas são cuidadosamente planejadas para desafiar os participantes e proporcionar um espetáculo para os espectadores.</p>
+                    
+                    <h2 class="text-3xl">Regras e Pontuação</h2>
+                    <p>O campeonato é dividido em temporadas mensais, com etapas realizadas semanalmente. A pontuação é distribuída aos 10 primeiros colocados de cada etapa que não sejam "esporádicos", seguindo o seguinte critério:</p>
+                    <ul>
+                        <li><strong>1º Lugar:</strong> 15 pontos</li>
+                        <li><strong>2º Lugar:</strong> 13 pontos</li>
+                        <li><strong>3º Lugar:</strong> 11 pontos</li>
+                        <li><strong>4º Lugar:</strong> 9 pontos</li>
+                        <li><strong>5º Lugar:</strong> 7 pontos</li>
+                        <li><strong>6º Lugar:</strong> 5 pontos</li>
+                        <li><strong>7º Lugar:</strong> 3 pontos</li>
+                        <li><strong>8º Lugar:</strong> 1 ponto</li>
+                        <li><strong>9º Lugar:</strong> 1 ponto</li>
+                        <li><strong>10º Lugar:</strong> 1 ponto</li>
+                    </ul>
+                    <p>Ao final de cada mês, o ciclista com a maior pontuação acumulada é declarado o campeão do mês. Valorizamos o fair play e o respeito entre todos os competidores.</p>
+                </div>
             </div>
         </main>
         

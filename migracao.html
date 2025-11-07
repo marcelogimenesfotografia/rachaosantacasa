@@ -3,184 +3,616 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ferramenta de Migração - Rachão Santa Casa</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f4f5; }
-        .card { background-color: #ffffff; border-radius: 1.5rem; padding: 2rem; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 16px 0 rgba(0,0,0,0.05); }
-        .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    </style>
-</head>
-<body class="antialiased">
+    <title>EMC - Equipe de Ciclismo Mourãoense</title>
+    
+    <!-- Dependências Externas (Fontes e Ícones) --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
-    <div id="login-section" class="min-h-screen flex items-center justify-center">
-        <div class="card w-full max-w-sm">
-            <h2 class="text-2xl font-bold text-center mb-6">Acesso à Ferramenta de Migração</h2>
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="email" class="w-full mt-1 p-2 border rounded-md" required>
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Palavra-passe</label>
-                    <input type="password" id="password" class="w-full mt-1 p-2 border rounded-md" required>
-                </div>
-                <button type="submit" class="btn bg-yellow-500 text-white w-full">Entrar</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="migration-section" class="hidden min-h-screen flex items-center justify-center">
-        <div class="card w-full max-w-2xl text-center">
-            <h1 class="text-3xl font-bold mb-4">Ferramenta de Migração de Dados</h1>
-            <p class="text-gray-600 mb-6">Esta ferramenta irá atualizar a estrutura da sua base de dados para usar IDs de equipe. Execute esta operação apenas uma vez.</p>
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-                <p class="font-bold">Atenção!</p>
-                <p>Esta ação é irreversível. Faça um backup da sua base de dados antes de continuar, se desejar.</p>
-            </div>
-            <button id="run-migration-btn" class="btn bg-blue-600 text-white w-full">Iniciar Migração</button>
-            <div id="status-log" class="mt-6 text-left text-sm bg-gray-100 p-4 rounded-lg max-h-64 overflow-y-auto">
-                <p>A aguardar o início...</p>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, writeBatch, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCWsgx2mSOPwNwWBwl373DJ3oj7VuFwy9Y",
-            authDomain: "rachaosc.firebaseapp.com",
-            projectId: "rachaosc",
-            storageBucket: "rachaosc.appspot.com",
-            messagingSenderId: "28309536958",
-            appId: "1:28309536958:web:eac51586cdabd82f691eef"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        const loginSection = document.getElementById('login-section');
-        const migrationSection = document.getElementById('migration-section');
-        const loginForm = document.getElementById('login-form');
-        const runMigrationBtn = document.getElementById('run-migration-btn');
-        const statusLog = document.getElementById('status-log');
-        
-        function log(message) {
-            statusLog.innerHTML += `<p>${message}</p>`;
-            statusLog.scrollTop = statusLog.scrollHeight;
+    <!-- CSS EMBUTIDO DENTRO DA TAG <style> --><style>
+        /* --- CONFIGURAÇÕES GLOBAIS E VARIÁVEIS DE COR --- */
+        :root {
+            --cyan-team: #7ED9ED;       /* Ciano suave */
+            --magenta-team: #F09BE2;    /* Magenta suave */
+            --dark-bg: #1A2E4E;         /* Fundo azul marinho suave */
+            --light-bg: #2B466A;        /* Fundo de seção um pouco mais claro e suave */
+            --text-color: #E0E7EB;     /* Cor de texto principal (cinza azulado claro) */
+            --white: #FFFFFF;
+            --font-heading: 'Montserrat', sans-serif;
+            --font-body: 'Roboto', sans-serif;
         }
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                await setPersistence(auth, browserSessionPersistence);
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                alert('Credenciais inválidas.');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            text-align: center;
+            margin-bottom: 60px;
+            text-transform: uppercase;
+        }
+
+        h2::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--cyan-team), var(--magenta-team));
+            margin: 10px auto 0;
+            border-radius: 2px;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+
+        /* --- CABEÇALHO --- */
+        header {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            background-color: rgba(26, 46, 78, 0.8); /* Fundo suave com transparência */
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(43, 70, 106, 0.5); /* Borda mais suave */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* Efeito de scroll no cabeçalho */
+        header.scrolled {
+            background-color: var(--dark-bg);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            padding: 0 5%;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--white);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .logo span {
+            background: linear-gradient(90deg, var(--cyan-team), var(--magenta-team));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+
+        .nav-links { display: flex; list-style: none; }
+        .nav-links li { margin: 0 15px; }
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        .nav-links a:hover, .nav-links a.active { color: var(--cyan-team); }
+        
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        /* --- SEÇÃO HERO --- */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--dark-bg);
+            overflow: hidden;
+            padding-top: 70px; /* Compensa o cabeçalho fixo */
+        }
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .hero-text h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+        .hero-text h1 span {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--cyan-team);
+        }
+        .hero-text .slogan {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+        }
+        .hero-image {
+            text-align: center;
+        }
+        .hero-image img {
+            max-width: 100%;
+            height: auto;
+            max-height: 80vh;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 15px 35px;
+            background: linear-gradient(90deg, var(--cyan-team), var(--magenta-team));
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 50px;
+            transition: transform 0.3s ease, box-shadow 0.3s;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(240, 155, 226, 0.3); /* Sombra mais suave */
+        }
+        
+        /* --- SEÇÃO SOBRE NÓS --- */
+        #historia { background-color: var(--light-bg); }
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+        .about-image img {
+            width: 100%;
+            border-radius: 8px;
+        }
+        .about-text h3 {
+            font-size: 1.8rem;
+            color: var(--cyan-team);
+            margin-bottom: 1rem;
+        }
+        .about-text p { margin-bottom: 1.5rem; }
+
+        /* --- SEÇÃO EQUIPE --- */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            /* Adicionado para centralizar quando houver 3 membros */
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .team-member {
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            text-align: center;
+            border: 1px solid rgba(var(--text-color), 0.1); /* Borda mais suave */
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .team-member:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(126, 217, 237, 0.2); /* Sombra mais suave */
+            border-color: var(--cyan-team);
+        }
+        .team-member img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            object-position: top center;
+        }
+        .member-info { padding: 20px; }
+        .member-info h3 {
+            margin: 0 0 5px;
+            color: var(--white);
+        }
+        .member-info p {
+            color: var(--cyan-team);
+            font-weight: 500;
+        }
+
+        /* --- SEÇÃO CALENDÁRIO --- */
+        #calendario { background-color: var(--light-bg); }
+        .table-wrapper {
+            overflow-x: auto; /* Garante a rolagem em ecrãs pequenos */
+        }
+        .race-calendar {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 600px; /* Evita que a tabela quebre muito */
+        }
+        .race-calendar th, .race-calendar td {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(var(--text-color), 0.1); /* Borda mais suave */
+            white-space: nowrap;
+        }
+        .race-calendar th {
+            background-color: #3B5E87; /* Tom um pouco mais escuro para o cabeçalho da tabela */
+            color: var(--white);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        .status-concluida {
+            background-color: #6DC284; /* Verde suave */
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .status-proxima {
+            background-color: var(--magenta-team);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        /* --- SEÇÃO PATROCINADORES --- */
+        .sponsors-intro {
+            text-align: center;
+            max-width: 600px;
+            margin: -30px auto 50px;
+        }
+        .sponsors-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+        }
+        .sponsor-logo img {
+            max-height: 60px;
+            max-width: 180px;
+            filter: grayscale(80%) brightness(5) opacity(0.6); /* Ajustado para suave */
+            opacity: 0.8;
+            transition: filter 0.3s, opacity 0.3s;
+        }
+        .sponsor-logo img:hover {
+            filter: grayscale(0%) brightness(1) opacity(1);
+            opacity: 1;
+        }
+        
+        /* --- CONTATO E RODAPÉ --- */
+        #contato { background-color: var(--light-bg); }
+        .contact-info {
+            text-align: center;
+        }
+        .contact-info p {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        .contact-info .email {
+            color: var(--cyan-team);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        footer {
+            background-color: var(--dark-bg);
+            padding: 20px 0;
+            text-align: center;
+            border-top: 1px solid rgba(43, 70, 106, 0.5); /* Borda mais suave */
+        }
+        .copyright {
+            font-size: 0.9rem;
+            color: #A0B0C4; /* Cor mais suave para o copyright */
+        }
+        
+        /* --- RESPONSIVIDADE --- */
+        @media (max-width: 992px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
             }
-        });
-
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                loginSection.style.display = 'none';
-                migrationSection.style.display = 'flex';
-            } else {
-                loginSection.style.display = 'flex';
-                migrationSection.style.display = 'none';
+            .hero-image { grid-row: 1; margin-bottom: 2rem; }
+            .hero-text { grid-row: 2; }
+            .hero-text h1 { font-size: 2.8rem; }
+        }
+        @media (max-width: 768px) {
+            h2 { font-size: 2rem; }
+            .about-content { grid-template-columns: 1fr; }
+            
+            /* --- Estilos do Menu Móvel --- */
+            .menu-toggle {
+                display: block;
             }
-        });
-
-        runMigrationBtn.addEventListener('click', async () => {
-            if (!confirm("Tem a certeza ABSOLUTA de que deseja iniciar a migração? Esta ação não pode ser desfeita.")) {
-                return;
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 100%;
+                height: 100vh;
+                background: var(--light-bg);
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                transform: translateX(100%);
+                transition: transform 0.3s ease-in-out;
+                padding: 0;
             }
+            .nav-links.active {
+                transform: translateX(0);
+            }
+            .nav-links li {
+                margin: 20px 0;
+            }
+            .nav-links a {
+                font-size: 1.5rem; /* Letras maiores no menu móvel */
+            }
+        }
+    </style>
+</head>
+<body>
 
-            runMigrationBtn.disabled = true;
-            runMigrationBtn.textContent = "Migração em Andamento...";
-            statusLog.innerHTML = '';
-            log("Iniciando migração...");
+    <!-- CABEÇALHO E NAVEGAÇÃO --><header>
+        <nav>
+            <a class="logo" href="#inicio">EM<span>C</span></a>
+            <ul class="nav-links">
+                <li><a class="nav-link" href="#historia">Nossa História</a></li>
+                <li><a class="nav-link" href="#equipe">A Equipe</a></li>
+                <li><a class="nav-link" href="#calendario">Calendário</a></li>
+                <li><a class="nav-link" href="#patrocinadores">Patrocinadores</a></li>
+                <li><a class="nav-link" href="#contato">Contato</a></li>
+            </ul>
+            <!-- Botão do Menu Hambúrguer --><button class="menu-toggle" aria-label="Abrir menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </header>
 
-            try {
-                // 1. Carregar todos os participantes
-                log("1/4 - A carregar participantes...");
-                const pSnap = await getDocs(collection(db, "participants"));
-                const participantsData = [];
-                pSnap.forEach(doc => participantsData.push({ id: doc.id, ...doc.data() }));
-                log(`${participantsData.length} participantes encontrados.`);
-                
-                // 2. Extrair todas as equipes únicas
-                log("2/4 - A extrair nomes de equipes únicas...");
-                const teamNames = new Set();
-                participantsData.forEach(p => {
-                    (p.teamHistory || []).forEach(h => {
-                        if (h.team) teamNames.add(h.team);
-                    });
+    <main>
+        <!-- SEÇÃO PRINCIPAL (HERO) --><section id="inicio" class="hero-section">
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <h1><span>Equipe de Ciclismo</span>Mourãoense</h1>
+                    <p class="slogan">A força de uma cidade em cada pedalada.</p>
+                    <a class="cta-button" href="#equipe">Conheça os Atletas</a>
+                </div>
+                <div class="hero-image">
+                    <img src="https://i.ibb.co/L5hY59y/ciclista-emc.png" alt="Ciclista da Equipe EMC">
+                </div>
+            </div>
+        </section>
+
+        <!-- NOSSA HISTÓRIA --><section id="historia">
+            <div class="container">
+                <h2>NOSSA TRAJETÓRIA</h2>
+                <div class="about-content">
+                    <div class="about-image">
+                        <img src="https://images.unsplash.com/photo-1541625602330-2277a4c46182?w=800" alt="Equipe EMC em ação">
+                    </div>
+                    <div class="about-text">
+                        <h3>COMPROMISSO E PAIXÃO</h3>
+                        <p>A Equipe de Ciclismo Mourãoense (EMC) nasceu do sonho de levar o nome de Campo Mourão aos pódios mais altos do ciclismo nacional. Somos mais que um time; somos uma família unida pela paixão pela bicicleta, pela disciplina diária e pelo orgulho de representar nossa comunidade.</p>
+                        <p>Nosso objetivo é fomentar o esporte, inspirar novos talentos e demonstrar que, com trabalho em equipe e dedicação, não há linha de chegada inalcançável. Cada competição é uma oportunidade de superar nossos limites e honrar a confiança de nossos patrocinadores e torcedores.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- A EQUIPE --><section id="equipe">
+            <div class="container">
+                <h2>NOSSOS ATLETAS</h2>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <img src="https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/refs/heads/main/fotosparticipantes/maique.png" alt="Foto de Maique">
+                        <div class="member-info">
+                            <h3>Maique</h3>
+                            <p>Diretor</p>
+                        </div>
+                    </div>
+                    <div class="team-member">
+                        <img src="https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/refs/heads/main/fotosparticipantes/edson.png" alt="Foto de Edson">
+                        <div class="member-info">
+                            <h3>Edson</h3>
+                            <p>Gregário</p>
+                        </div>
+                    </div>
+                    <div class="team-member">
+                        <img src="https://raw.githubusercontent.com/marcelogimenesfotografia/rachaosantacasa/refs/heads/main/fotosparticipantes/vinicius.png" alt="Foto de Vinicius">
+                        <div class="member-info">
+                            <h3>Vinicius</h3>
+                            <p>Sprintista</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- CALENDÁRIO --><section id="calendario">
+            <div class="container">
+                <h2>CALENDÁRIO 2024</h2>
+                <div class="table-wrapper">
+                    <table class="race-calendar">
+                        <thead>
+                            <tr>
+                                <th>Competição</th>
+                                <th>Local</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Copa Brasil de Ciclismo</td>
+                                <td>Brasília, DF</td>
+                                <td>15/03/2024</td>
+                                <td><span class="status-concluida">Concluída</span></td>
+                            </tr>
+                            <tr>
+                                <td>Volta de Santa Catarina</td>
+                                <td>SC</td>
+                                <td>20/04/2024</td>
+                                <td><span class="status-concluida">Concluída</span></td>
+                            </tr>
+                            <tr>
+                                <td>Campeonato Brasileiro de Estrada</td>
+                                <td>A definir</td>
+                                <td>25/06/2024</td>
+                                <td><span class="status-proxima">Próxima</span></td>
+                            </tr>
+                            <tr>
+                                <td>Tour do Rio</td>
+                                <td>Rio de Janeiro, RJ</td>
+                                <td>05/08/2024</td>
+                                <td><span class="status-proxima">Próxima</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PATROCINADORES --><section id="patrocinadores">
+            <div class="container">
+                <h2>NOSSOS PARCEIROS</h2>
+                <p class="sponsors-intro">Agradecemos a confiança e o apoio fundamental dos nossos patrocinadores, que pedalam conosco rumo à vitória.</p>
+                <div class="sponsors-grid">
+                    <div class="sponsor-logo"><img src="https://via.placeholder.com/200x80/ffffff/000000?text=ITAIPU" alt="Logo Itaipu"></div>
+                    <div class="sponsor-logo"><img src="https://via.placeholder.com/200x80/ffffff/000000?text=Integrado" alt="Logo Integrado"></div>
+                    <div class="sponsor-logo"><img src="https://via.placeholder.com/200x80/ffffff/000000?text=Prime" alt="Logo Prime"></div>
+                    <div class="sponsor-logo"><img src="https://via.placeholder.com/200x80/ffffff/000000?text=Prix" alt="Logo Prix"></div>
+                    <div class="sponsor-logo"><img src="https://via.placeholder.com/200x80/ffffff/000000?text=Durão+Bikes" alt="Logo Durão Bikes"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTATO --><section id="contato">
+            <div class="container">
+                <h2>FALE CONOSCO</h2>
+                <div class="contact-info">
+                    <p>Para propostas de patrocínio, imprensa ou mais informações, entre em contato.</p>
+                    <a href="mailto:contato@emcciclismo.com.br" class="email">contato@emcciclismo.com.br</a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- RODAPÉ --><footer>
+        <div class="container">
+            <div class="copyright">
+                <p>&copy; 2024 EMC - Equipe de Ciclismo Mourãoense. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT EMBUTIDO --><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Lógica do Menu Móvel ---
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navLinks = document.querySelector('.nav-links');
+            const navIcon = menuToggle.querySelector('i');
+
+            menuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+                // Troca o ícone de barras para "X"
+                if (navLinks.classList.contains('active')) {
+                    navIcon.classList.remove('fa-bars');
+                    navIcon.classList.add('fa-times');
+                } else {
+                    navIcon.classList.remove('fa-times');
+                    navIcon.classList.add('fa-bars');
+                }
+            });
+
+            // Fecha o menu móvel ao clicar num link
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.classList.remove('active');
+                    navIcon.classList.remove('fa-times');
+                    navIcon.classList.add('fa-bars');
                 });
-                log(`${teamNames.size} equipes únicas encontradas.`);
-                
-                // 3. Criar coleção de equipes e mapear nomes para IDs
-                log("3/4 - A criar coleção 'teams' e a mapear IDs...");
-                const teamNameToId = {};
-                const batchTeams = writeBatch(db);
-                
-                // Carregar equipes existentes para evitar duplicados
-                const existingTeamsSnap = await getDocs(collection(db, "teams"));
-                existingTeamsSnap.forEach(doc => {
-                    const teamData = doc.data();
-                    teamNameToId[teamData.name] = doc.id;
-                });
-                
-                teamNames.forEach(name => {
-                    if (!teamNameToId[name]) {
-                        const newTeamRef = doc(collection(db, "teams"));
-                        batchTeams.set(newTeamRef, { name });
-                        teamNameToId[name] = newTeamRef.id;
-                        log(`  - Nova equipe a ser criada: ${name}`);
-                    } else {
-                        log(`  - Equipe já existente: ${name}`);
+            });
+
+            // --- Efeito do Cabeçalho ao Rolar ---
+            const header = document.querySelector('header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            // --- ScrollSpy (Destaca link ativo no menu) ---
+            const sections = document.querySelectorAll('section[id]');
+            const navLinksAnchors = document.querySelectorAll('.nav-links a');
+
+            const observerCallback = (entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const navLink = document.querySelector(`.nav-links a[href="#${id}"]`);
+
+                    if (entry.isIntersecting) {
+                        // Remove 'active' de todos os links
+                        navLinksAnchors.forEach(link => link.classList.remove('active'));
+                        // Adiciona 'active' ao link da seção visível
+                        if (navLink) {
+                            navLink.classList.add('active');
+                        }
                     }
                 });
-                await batchTeams.commit();
-                log("Coleção 'teams' criada/atualizada com sucesso.");
+            };
 
-                // 4. Atualizar o teamHistory de cada participante para usar IDs
-                log("4/4 - A atualizar participantes com IDs de equipes...");
-                const batchParticipants = writeBatch(db);
-                participantsData.forEach(p => {
-                    if (p.teamHistory && p.teamHistory.length > 0) {
-                        const newTeamHistory = p.teamHistory.map(h => {
-                            if (h.team && teamNameToId[h.team]) {
-                                return { teamId: teamNameToId[h.team], date: h.date };
-                            }
-                            return h; // Mantém o registo se algo falhar
-                        });
-                        const pRef = doc(db, 'participants', p.id);
-                        batchParticipants.update(pRef, { teamHistory: newTeamHistory });
-                    }
-                });
-                await batchParticipants.commit();
-                log("Todos os participantes foram atualizados com sucesso!");
-                
-                log("\n--- MIGRAÇÃO COMPLETA ---");
-                alert("Migração concluída com sucesso! Pode agora usar o painel de administração normalmente.");
-                runMigrationBtn.textContent = "Migração Concluída";
+            const observerOptions = {
+                rootMargin: '-20% 0px -80% 0px', // Tenta ativar quando a seção está mais ao centro
+                threshold: 0
+            };
 
-            } catch (error) {
-                console.error("ERRO na migração:", error);
-                log(`ERRO: ${error.message}`);
-                alert("Ocorreu um erro grave durante a migração. Verifique a consola para mais detalhes.");
-                runMigrationBtn.disabled = false;
-                runMigrationBtn.textContent = "Tentar Migração Novamente";
-            }
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
         });
     </script>
 </body>

@@ -20,31 +20,16 @@
         .card {
             background-color: var(--card-bg-color);
             border-radius: 1.5rem;
-            padding: 2.5rem;
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            overflow: hidden; /* Para conter os cantos arredondados */
         }
         .modal { display: none; }
         .modal.is-open { display: flex; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.7); }
         .modal-content.card { max-width: 600px; width: 90%; text-align: center; position: relative; max-height: 90vh; overflow-y: auto;}
         .modal-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--border-color); }
         
-        .team-list-item {
-            display: block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-            text-align: left;
-        }
-        .team-list-item:hover {
-            background-color: #f3f4f6;
-        }
-        .team-list-item.active {
-            background-color: var(--accent-color);
-            color: white;
-        }
         .social-link {
             display: inline-flex;
             align-items: center;
@@ -56,6 +41,25 @@
         .social-link:hover {
             color: var(--text-primary);
         }
+        .profile-thumb-wrapper { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color); }
+        .profile-thumb { width: 100%; height: 100%; object-fit: cover; }
+        
+        .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .leaderboard-table th, .leaderboard-table td { padding: 1.25rem 1.5rem; text-align: left; vertical-align: middle; }
+        .leaderboard-table thead th { 
+            background-color: #f9fafb;
+            color: var(--text-secondary); 
+            font-size: 0.875rem; 
+            font-weight: 600;
+            text-transform: uppercase; 
+            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+        }
+        .leaderboard-table thead th:first-child { border-radius: 0.75rem 0 0 0.75rem; }
+        .leaderboard-table thead th:last-child { border-radius: 0 0.75rem 0.75rem 0; }
+        .leaderboard-table tbody tr { transition: background-color 0.2s ease-in-out; }
+        .leaderboard-table tbody tr:not(:last-child) { border-bottom: 1px solid var(--border-color); }
+        .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
     </style>
 </head>
 <body class="antialiased">
@@ -75,23 +79,37 @@
             </div>
 
             <div id="teams-container" class="hidden">
-                 <div class="card">
-                    <h1 class="text-3xl font-extrabold text-center mb-8">Equipes em Competição</h1>
-                    <div id="teams-layout" class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                        <div id="team-list-container" class="md:col-span-1">
-                            <!-- Lista de equipes será inserida aqui -->
-                        </div>
-                        <div id="team-details-container" class="md:col-span-3">
-                             <!-- Detalhes da equipe serão inseridos aqui -->
-                        </div>
-                    </div>
+                 <div class="card overflow-x-auto p-0 md:p-4">
+                    <h1 class="text-3xl font-extrabold text-center my-8">Classificação de Equipes</h1>
+                    
+                    <table class="leaderboard-table min-w-full">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Equipe</th>
+                                <th class="text-right">Atletas</th>
+                                <th class="text-right">Top 3 (Mês)</th>
+                                <th class="text-right">Pontos Totais</th>
+                            </tr>
+                        </thead>
+                        <tbody id="team-ranking-body">
+                            <!-- Linhas da tabela de equipes serão inseridas aqui -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     
+        <!-- Modal de Detalhes da Equipe -->
+        <div id="team-modal" class="modal p-4">
+            <div id="team-modal-content-container" class="modal-content card !p-8">
+                <!-- Conteúdo do modal da equipe -->
+            </div>
+        </div>
+
         <!-- Modal de Detalhes do Atleta -->
         <div id="details-modal" class="modal p-4">
-            <div id="modal-content-container" class="modal-content card">
+            <div id="modal-content-container" class="modal-content card !p-8">
                 <!-- Conteúdo injetado por JS -->
             </div>
         </div>
@@ -159,33 +177,69 @@
         
         // --- Lógica de Cálculo e Carregamento de Dados ---
         function calculateTeamRankings() {
-            // Nota de performance: Este cálculo é feito no cliente. Para apps maiores,
-            // considere usar Cloud Functions para pré-calcular e armazenar estes rankings.
             let stats = {};
             Object.keys(teamsData).forEach(id => {
                 if (teamsData[id].isActive !== false) {
-                    stats[id] = { totalPoints: 0, currentMembers: 0, name: teamsData[id].name };
+                    stats[id] = { 
+                        totalPoints: 0, 
+                        currentMembers: 0, 
+                        name: teamsData[id].name,
+                        top5Etapas: 0,
+                        top3Geral: 0
+                    };
                 }
             });
 
             const pointsDistribution = [15, 13, 11, 9, 7, 5, 3, 1, 1, 1];
 
             Object.values(monthlyData).forEach(month => {
+                let monthStandings = {};
+                let lastDateOfMonth = null;
+
                 (month.stages || []).forEach(stage => {
                     if(!stage.date || stage.status === 'Cancelada' || stage.status === 'Adiada') return;
+                    
+                    if (!lastDateOfMonth || new Date(stage.date) > new Date(lastDateOfMonth)) {
+                        lastDateOfMonth = stage.date;
+                    }
+
                     let pointsIndex = 0;
-                    (stage.results || []).forEach(result => {
+                    (stage.results || []).forEach((result, resultIndex) => {
                         const participantId = result.id || nameToIdMap[result.name.toUpperCase()];
-                        if (participantId && !sporadicRiders.includes(participantId) && participantsData[participantId]) {
+                        if (participantId && participantsData[participantId] && !sporadicRiders.includes(participantId)) {
                             const teamId = getTeamIdForDate(participantsData[participantId], stage.date);
+                            
                             if (teamId && stats[teamId]) {
+                                // Estatística de Top 5 em Etapas
+                                if (resultIndex < 5) {
+                                    stats[teamId].top5Etapas++;
+                                }
+
+                                // Pontos para o geral do mês
                                 const points = pointsDistribution[pointsIndex] || 0;
                                 stats[teamId].totalPoints += points;
+                                
+                                if (!monthStandings[participantId]) monthStandings[participantId] = 0;
+                                monthStandings[participantId] += points;
+
                                 pointsIndex++;
                             }
                         }
                     });
                 });
+
+                // Calcular Top 3 Geral do Mês
+                if (month.isCompleted && lastDateOfMonth) {
+                    const sortedMonth = Object.keys(monthStandings).sort((a, b) => monthStandings[b] - monthStandings[a]);
+                    sortedMonth.slice(0, 3).forEach(participantId => {
+                        if (participantsData[participantId]) {
+                            const teamId = getTeamIdForDate(participantsData[participantId], lastDateOfMonth);
+                            if (teamId && stats[teamId]) {
+                                stats[teamId].top3Geral++;
+                            }
+                        }
+                    });
+                }
             });
 
             Object.values(participantsData).forEach(p => {
@@ -297,89 +351,84 @@
         }
 
         function renderTeamsPage() {
-            const teamListContainer = document.getElementById('team-list-container');
-            teamListContainer.innerHTML = '';
+            const tableBody = document.getElementById('team-ranking-body');
+            tableBody.innerHTML = '';
             
             if (teamRankings.length === 0) {
-                document.getElementById('teams-layout').innerHTML = '<p class="text-center text-gray-500 col-span-3">Nenhuma equipe cadastrada.</p>';
+                document.getElementById('teams-container').innerHTML = '<p class="text-center text-gray-500 col-span-full card">Nenhuma equipe cadastrada.</p>';
                 return;
             }
 
-            const ul = document.createElement('ul');
-            ul.className = 'space-y-2';
-            teamListContainer.appendChild(ul);
-
-            teamRankings.forEach(({ id, name }) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<a href="#" class="team-list-item" data-team-id="${id}">${name}</a>`;
-                ul.appendChild(li);
+            teamRankings.forEach((team) => {
+                const row = document.createElement('tr');
+                row.className = 'cursor-pointer hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="font-bold text-gray-500 w-12">${team.rank}</td>
+                    <td class="font-bold text-gray-900">${team.name}</td>
+                    <td class="text-right font-extrabold text-lg text-gray-900">${team.currentMembers}</td>
+                    <td class="text-right font-extrabold text-lg text-gray-900">${team.top3Geral}</td>
+                    <td class="text-right font-extrabold text-lg text-gray-900">${team.totalPoints}</td>
+                `;
+                row.addEventListener('click', () => openTeamModal(team.id));
+                tableBody.appendChild(row);
             });
-
-            teamListContainer.addEventListener('click', (e) => {
-                e.preventDefault();
-                const link = e.target.closest('a.team-list-item');
-                if (!link) return;
-
-                document.querySelectorAll('.team-list-item').forEach(item => item.classList.remove('active'));
-                link.classList.add('active');
-
-                const teamId = link.dataset.teamId;
-                renderTeamMembers(teamId);
-            });
-
-            if (teamRankings.length > 0) {
-                const firstTeamId = teamRankings[0].id;
-                document.querySelector(`.team-list-item[data-team-id="${firstTeamId}"]`).classList.add('active');
-                renderTeamMembers(firstTeamId);
-            }
         }
-
-        function renderTeamMembers(teamId) {
-            const teamDetailsContainer = document.getElementById('team-details-container');
+        
+        window.openTeamModal = function(teamId) {
             const team = teamRankings.find(t => t.id === teamId);
             if (!team) return;
 
+            const modalContent = document.getElementById('team-modal-content-container');
+            
             const teamMembers = Object.entries(participantsData).filter(([pId, pData]) => {
                 const history = pData.teamHistory || [];
                 return history.length > 0 && history[history.length - 1].teamId === teamId && pData.isActive !== false;
             }).sort((a, b) => a[1].name.localeCompare(b[1].name));
 
-            let membersHtml = '<p class="text-center text-gray-500 py-8">Nenhum atleta nesta equipe.</p>';
+            let membersHtml = '<p class="text-center text-gray-500 py-4">Nenhum atleta nesta equipe.</p>';
             if (teamMembers.length > 0) {
                 membersHtml = teamMembers.map(([pId, pData]) => {
                     const imageUrl = pData.imageUrl ? `${imageBaseUrl}${pData.imageUrl}` : getPlaceholderImageUrl(pData.name);
                     return `
-                        <div class="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-100 cursor-pointer transition" onclick="openParticipantModal('${pId}')">
-                            <img src="${imageUrl}" alt="Foto de ${pData.name}" class="w-12 h-12 rounded-full object-cover">
-                            <span class="font-bold text-lg text-gray-800">${pData.name.toUpperCase()}</span>
+                        <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer transition" onclick="openParticipantModal('${pId}')">
+                            <img src="${imageUrl}" alt="Foto de ${pData.name}" class="w-10 h-10 rounded-full object-cover">
+                            <span class="font-bold text-gray-800">${pData.name.toUpperCase()}</span>
                         </div>
                     `;
                 }).join('');
             }
-            
-            teamDetailsContainer.innerHTML = `
-                <div class="bg-gray-50/50 rounded-xl p-6">
-                    <h2 class="text-4xl font-extrabold mb-4">${team.name}</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center mb-8 border-y border-gray-200 py-6">
-                        <div>
-                            <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">POSIÇÃO</p>
-                            <p class="text-5xl font-extrabold text-yellow-500">#${team.rank}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">PONTOS TOTAIS</p>
-                            <p class="text-5xl font-extrabold text-yellow-500">${team.totalPoints}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">ATLETAS</p>
-                            <p class="text-5xl font-extrabold text-yellow-500">${team.currentMembers}</p>
-                        </div>
+
+             modalContent.innerHTML = `
+                <span class="close-button absolute top-4 right-6 text-2xl cursor-pointer" onclick="closeModal('team-modal')">&times;</span>
+                <h2 class="text-3xl font-extrabold mb-4 text-center">${team.name}</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6 border-y border-gray-200 py-6">
+                    <div>
+                        <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">POSIÇÃO</p>
+                        <p class="text-4xl font-extrabold text-yellow-500">#${team.rank}</p>
                     </div>
-                    <div class="space-y-2">${membersHtml}</div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">PONTOS TOTAIS</p>
+                        <p class="text-4xl font-extrabold text-yellow-500">${team.totalPoints}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">Top 5 (Etapas)</p>
+                        <p class="text-4xl font-extrabold text-yellow-500">${team.top5Etapas}</p>
+                    </div>
+                     <div>
+                        <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">Top 3 (Mês)</p>
+                        <p class="text-4xl font-extrabold text-yellow-500">${team.top3Geral}</p>
+                    </div>
                 </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Membros (${team.currentMembers})</h3>
+                <div class="space-y-2 max-h-60 overflow-y-auto pr-2 text-left">${membersHtml}</div>
             `;
+            openModal('team-modal');
         }
-        
+
         window.openParticipantModal = function(participantId) {
+            // Fecha o modal da equipa antes de abrir o do atleta
+            closeModal('team-modal');
+            
             const p = participantsData[participantId];
             if (!p) return;
 
@@ -464,4 +513,3 @@
     </script>
 </body>
 </html>
-
